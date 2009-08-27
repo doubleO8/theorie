@@ -78,16 +78,14 @@ class Automat(object):
 		if not self.delta.has_key(Zustand):
 			self.log.warning("Kein Zustand '%s' ?" % Zustand)
 		else:
-			for keyObject in self.delta[zustand].keys():
-				if isinstance(keyObject, string):
-					print "key: %s (string)" % keyObject
-				elif isinstance(keyObject, list):
-					print "key: %s (list)" % keyObject
-			if not self.delta[Zustand].has_key(Zeichen):
-				self.log.warning("Kein Zustand/Zeichen '%s/%s' ?" % (Zustand, Zeichen))
-				self.log.warning(self.delta[Zustand])
-			else:
-				return self.delta[Zustand][Zeichen]
+			for keyObject in self.delta[Zustand].keys():
+				if isinstance(keyObject, tuple):
+					if Zeichen in keyObject:
+						return self.delta[Zustand][keyObject]
+				elif Zeichen == keyObject:
+					return self.delta[Zustand][keyObject]
+			
+			self.log.warning("Kein Zustand/Zeichen '%s/%s' ?" % (Zustand, Zeichen))
 		return None
 
 	def addFehlerzustand(self, sF = 'sF'):
@@ -298,12 +296,47 @@ if __name__ == '__main__':
 							"8" : 's7',
 							"9" : 's7',
 						},
-				'sX' : {
-							('eins', 'zwei', 'drei') : 'sXX',
-						},
 			}
 	B = Automat(bS, bs0, bF, bSigma, bdelta)
-	print A
-	print B
-	A.check("1001")
-	print B.check("-1.02")
+
+	cS = 's0 s1 s2 s3 s4 s5 s6 s7'.split(' ')
+	cs0 = 's0'
+	cF = 's2 s4 s7'.split(' ')
+	cSigma = '0 1 2 3 4 5 6 7 8 9 + - . e'.split(' ')
+	cdelta = {
+				's0' : {
+							('0', '1', '2', '3', '4', '5', '6', '7', '8', '9') : 's2',
+							("+", '-') : 's1',
+						},
+				's1' : {
+							('0', '1', '2', '3', '4', '5', '6', '7', '8', '9') : 's2',
+						},
+				's2' : {
+							('0', '1', '2', '3', '4', '5', '6', '7', '8', '9') : 's2',
+							"." : "s3",
+							"e" : "s5"
+						},
+				's3' : {
+							('0', '1', '2', '3', '4', '5', '6', '7', '8', '9') : 's4',
+						},
+				's4' : {
+							('0', '1', '2', '3', '4', '5', '6', '7', '8', '9') : 's4',
+							"e" : 's5',
+						},
+				's5' : {
+							('0', '1', '2', '3', '4', '5', '6', '7', '8', '9'): 's7',
+							("+", '-') : "s6",
+						},
+				's6' : {
+							('0', '1', '2', '3', '4', '5', '6', '7', '8', '9'): 's7',
+						},
+				's7' : {
+							('0', '1', '2', '3', '4', '5', '6', '7', '8', '9') : 's7',
+						},
+			}
+	C = Automat(cS, cs0, cF, cSigma, cdelta, name="C Automat")
+
+	#print A
+	print C
+	#A.check("1001")
+	#print B.check("-1.02")
