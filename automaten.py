@@ -78,6 +78,11 @@ class Automat(object):
 		if not self.delta.has_key(Zustand):
 			self.log.warning("Kein Zustand '%s' ?" % Zustand)
 		else:
+			for keyObject in self.delta[zustand].keys():
+				if isinstance(keyObject, string):
+					print "key: %s (string)" % keyObject
+				elif isinstance(keyObject, list):
+					print "key: %s (list)" % keyObject
 			if not self.delta[Zustand].has_key(Zeichen):
 				self.log.warning("Kein Zustand/Zeichen '%s/%s' ?" % (Zustand, Zeichen))
 				self.log.warning(self.delta[Zustand])
@@ -292,6 +297,9 @@ if __name__ == '__main__':
 							"7" : 's7',
 							"8" : 's7',
 							"9" : 's7',
+						},
+				'sX' : {
+							('eins', 'zwei', 'drei') : 'sXX',
 						},
 			}
 	B = Automat(bS, bs0, bF, bSigma, bdelta)
