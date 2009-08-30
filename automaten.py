@@ -9,6 +9,8 @@ class NoDeltaError(Exception):
 		return repr(self.value)
 
 class Automat(object):
+	log = None
+	
 	def test():
 		"""
 		doctest (unit testing)
@@ -18,12 +20,13 @@ class Automat(object):
 		print "doctest: %d/%d tests failed." % (failed, total)
 
 	def __init__(self, S=list(), s0=None, F=list(), Sigma=list(), delta=dict(), name="EinAutomat"):
-		self.log = logging.getLogger()
-		lhandler = logging.StreamHandler()
-		lformatter = logging.Formatter('%(asctime)s %(levelname)s:  %(message)s')
-		lhandler.setFormatter(lformatter)
-		self.log.addHandler(lhandler)
-		self.log.setLevel(logging.INFO)
+		self.log = logging.getLogger("x")
+		if len(self.log.handlers) == 0:
+			lhandler = logging.StreamHandler()
+			lformatter = logging.Formatter('%(asctime)s %(levelname)s:  %(message)s')
+			lhandler.setFormatter(lformatter)
+			self.log.addHandler(lhandler)
+			self.log.setLevel(logging.INFO)
 
 		if len(S) == 0:
 			raise ValueError('Die "endliche Menge der möglichen Zustände" S des Automaten ist leer')
@@ -52,6 +55,24 @@ class Automat(object):
 		"""
 		self.Lesekopf = 0
 		self.Zustand = self.s0
+		self.Eingabeband = '#'
+
+	def lies(self):
+		self.Zustand = self._delta(self.Zustand, self.Eingabeband[0])
+		self.Eingabeband = self.Eingabeband[1:]
+
+	def pruefWort(self, Wort):
+		self.reset()
+		self.Eingabeband = Wort + (not Wort.endswith('#') and '#' or '')
+		while self.Zustand:
+			altZustand = self.Zustand
+			zeichen = self.Eingabeband[0]
+			self.lies()
+			if self.Zustand:
+				self.log.info("[%2s] Lese %2d. Zeichen '%s' => %2s" % (altZustand, self.Lesekopf+1, zeichen, self.Zustand))
+				self.Lesekopf += 1
+
+		self.log.info("Das Wort '%s' gehoert%s zur Sprache des Automaten." % (Wort, (self.Zustand in self.F and '' or ' nicht')))
 
 	def check(self, Wort):
 		"""
@@ -78,6 +99,9 @@ class Automat(object):
 		if not self.delta.has_key(Zustand):
 			self.log.warning("Kein Zustand '%s' ?" % Zustand)
 		else:
+			if Zeichen == '#':
+				self.log.warning("Bandzeichen # !")
+				return self.Zustand
 			for keyObject in self.delta[Zustand].keys():
 				if isinstance(keyObject, tuple):
 					if Zeichen in keyObject:
@@ -85,7 +109,7 @@ class Automat(object):
 				elif Zeichen == keyObject:
 					return self.delta[Zustand][keyObject]
 			
-			self.log.warning("Kein Zustand/Zeichen '%s/%s' ?" % (Zustand, Zeichen))
+			self.log.debug("Kein Zustand/Zeichen '%s/%s' ?" % (Zustand, Zeichen))
 		return None
 
 	def addFehlerzustand(self, sF = 'sF'):
@@ -225,4 +249,4 @@ if __name__ == '__main__':
 			}
 	C = Automat(cS, cs0, cF, cSigma, cdelta, name="C Automat")
 
-	print C
+	C.pruefWort("-17.0839292738-")
