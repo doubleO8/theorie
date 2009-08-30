@@ -73,6 +73,7 @@ class Automat(object):
 				self.Lesekopf += 1
 
 		self.log.info("Das Wort '%s' gehoert%s zur Sprache des Automaten." % (Wort, (self.Zustand in self.F and '' or ' nicht')))
+		return self.Zustand in self.F
 
 	def check(self, Wort):
 		"""
