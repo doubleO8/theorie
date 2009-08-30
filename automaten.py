@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 import logging, logging.config
+import os
 
 class NoDeltaError(Exception):
 	def __init__(self, value):
@@ -146,7 +147,7 @@ class Automat(object):
 					self.delta[zustand][zeichen] = sF
 		self.deltaVollstaendig = True
 
-	def _getDeltaTable(self):
+	def _getAsciiArtDeltaTable(self):
 		maxLength = 1
 		
 		for zeichen in self.Sigma:
@@ -183,11 +184,94 @@ class Automat(object):
 		s += "Menge der Endzustände F :\n {%s}\n" % ', '.join(self.F)
 		s += "Endliche Menge der Eingabezeichen Σ :\n {%s}\n" % ', '.join(self.Sigma)
 		s += "Überführungsfunktion:\n"
-		s += self._getDeltaTable()
+		s += self._getAsciiArtDeltaTable()
 		s += "%80s\n" % ('(' + (self.isDeltaVollstaendig() and 'vollständig' or 'partiell') + ')' )
 		s += "%s\n\n" % ("=" * 80)
 		return s
+
+	def _TeXNode(self, Zustand, orientation=''):
+		styles = ['state']
+		description = Zustand
+		name = Zustand
+		#	\node[initial,state]	(A)						{$q_a$};
+		if Zustand == self.s0:
+			styles.append('initial')
+		if Zustand in self.F:
+			styles.append("accepting")
+		return "\\node[%s]\t(%s)\t%s\t{%s};" % (','.join(styles), name, orientation, description)
+
+	def _TeXEdge(self, Zustand):
+		#(A) edge              node {0,1,L} (B)
+		#    edge              node {1,1,R} (C)
+		quelle = Zustand
+		s = "\t(%s)" % Zustand
 		
+		erreichbareZiele = dict()
+		for zeichen in self.Sigma:
+			ziel = self._delta(Zustand, zeichen)
+			if ziel:
+				if not erreichbareZiele.has_key(ziel):
+					erreichbareZiele[ziel] = list()
+				erreichbareZiele[ziel].append(zeichen)
+
+		oMoeglichkeiten = ('', '[bend left]', '[bend right]')
+		omLen = len(oMoeglichkeiten)
+		
+		zielZaehler = 0
+		for ziel in erreichbareZiele:
+			orientation = ''
+			if ziel == Zustand:
+				orientation = '[loop above]'
+			else:
+				oNum = zielZaehler % omLen
+				orientation = oMoeglichkeiten[oNum]
+				zielZaehler +=1
+
+			if len(erreichbareZiele[ziel]) < 5:
+				zeichen = ','.join(erreichbareZiele[ziel])
+			else:
+				zeichen = "%s,..,%s" % (erreichbareZiele[ziel][0], erreichbareZiele[ziel][-1])
+			s += "\tedge\t%s\tnode\t{%s}\t(%s)\n\t" % (orientation, zeichen, ziel)
+		return s
+
+	def _TeXSpecification(self):
+		s = "\\begin{itemize}\n"
+		#s = "Deterministischer Automat '%s'\n%s\n" % (self.name, "=" * 80)
+		s += "\\item[] Endliche Menge der möglichen Zustände $S = {%s}$\n" % ', '.join(self.S)
+		s += "\\item[] %s ist Anfangszustand\n" % self.s0
+		s += "\\item[] Menge der Endzustände $F = {%s}$\n" % ', '.join(self.F)
+		s += "\\item[] Endliche Menge der Eingabezeichen $\\Sigma = {%s}$\n" % ', '.join(self.Sigma)
+		return s + "\n\\end{itemize}"
+		
+	def _toTeX(self):
+		template = 'texOutput/template.tex'
+		if not os.path.isfile(template):
+			raise IOError("Template '%s' nicht gefunden." % (template))
+		content = open(template).read()
+		s = content
+		tNodes = []
+		tEdges = []
+		orientation = ''
+		for zustand in self.S:
+			tNodes.append(self._TeXNode(zustand, orientation))
+			tEdges.append(self._TeXEdge(zustand))
+			orientation = '[right of=%s]' % zustand
+		s = s.replace("%%__NODES__", "\n".join(tNodes))
+		s = s.replace("%%__PATH__", "\path\n" + "\n".join(tEdges) + ";\n")
+		s = s.replace("%%__SPEC__", self._TeXSpecification())
+		
+		return s
+
+	def createTeXDocument(self, filename = "texOutput/OUT.tex"):
+		out = open(filename, "w")
+		rawLines = self._toTeX().split("\n")
+		content = list()
+		for line in rawLines:
+			if not line.strip().startswith("%"):
+				content.append(line)
+		out.write("\n".join(content))
+		out.close()
+
 if __name__ == '__main__':
 	S = 's0 s1 s2 s3'.split(' ')
 	s0 = 's0'
@@ -212,7 +296,8 @@ if __name__ == '__main__':
 						},
 			}
 	A = Automat(S, s0, F, Sigma, delta)
-
+	A.createTeXDocument("texOutput/A.tex")
+	
 	cS = 's0 s1 s2 s3 s4 s5 s6 s7'.split(' ')
 	cs0 = 's0'
 	cF = 's2 s4 s7'.split(' ')
@@ -250,4 +335,5 @@ if __name__ == '__main__':
 			}
 	C = Automat(cS, cs0, cF, cSigma, cdelta, name="C Automat")
 
-	C.pruefWort("-17.0839292738-")
+	#C.pruefWort("-17.0839292738-")
+	C.createTeXDocument("texOutput/C.tex")
