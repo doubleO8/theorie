@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 import logging, logging.config
-import os
+import os,sys
 
 class NoDeltaError(Exception):
 	def __init__(self, value):
@@ -49,6 +49,7 @@ class Automat(object):
 		self.deltaVollstaendig = None
 		self.name = name
 		self.ZustandIndex = dict()
+		
 		self.reset()
 
 	def reset(self):
@@ -105,6 +106,7 @@ class Automat(object):
 			if Zeichen == '#':
 				self.log.debug("Bandzeichen # !")
 				return self.Zustand
+
 			for keyObject in self.delta[Zustand].keys():
 				if isinstance(keyObject, tuple):
 					if Zeichen in keyObject:
@@ -262,6 +264,21 @@ class Automat(object):
 		s += "\\item[] Endliche Menge der Eingabezeichen $\\Sigma = \\{%s\\}$\n" % ', '.join(self.Sigma)
 		return s + "\n\\end{itemize}"
 
+	def _TeXDeltaTable(self):
+		headerLine = ['$\delta$']
+		for zeichen in self.Sigma:
+			headerLine.append(zeichen)
+		s = "\\begin{tabular}{r|%s}\n" % ('c' * (len(headerLine)-1))
+		s += "\t&\t".join(headerLine) + "\\\\\n\\hline\n"
+
+		for zustand in self.S:
+			line = [zustand]
+			for zeichen in self.Sigma:
+				zielZustand = self._delta(zustand, zeichen)
+				line.append(zielZustand != None and zielZustand or '-')
+			s += "\t&\t".join(line) + "\t\\\\\n"
+		return s + "\end{tabular}"
+
 	def _genZustandIndex(self, force=False):
 		if self.ZustandIndex and not force:
 			return self.ZustandIndex
@@ -289,7 +306,7 @@ class Automat(object):
 		s = s.replace("%%__NODES__", "\n".join(tNodes))
 		s = s.replace("%%__PATH__", "\path\n" + "\n".join(tEdges) + ";\n")
 		s = s.replace("%%__SPEC__", self._TeXSpecification())
-		
+		s = s.replace("%%__DELTA__", self._TeXDeltaTable())
 		return s
 
 	def createTeXDocument(self, filename = "texOutput/OUT.tex"):
