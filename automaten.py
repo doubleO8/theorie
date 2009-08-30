@@ -100,7 +100,7 @@ class Automat(object):
 			self.log.warning("Kein Zustand '%s' ?" % Zustand)
 		else:
 			if Zeichen == '#':
-				self.log.warning("Bandzeichen # !")
+				self.log.debug("Bandzeichen # !")
 				return self.Zustand
 			for keyObject in self.delta[Zustand].keys():
 				if isinstance(keyObject, tuple):
