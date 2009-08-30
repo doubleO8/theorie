@@ -48,6 +48,7 @@ class Automat(object):
 		self.delta = delta
 		self.deltaVollstaendig = None
 		self.name = name
+		self.ZustandIndex = dict()
 		self.reset()
 
 	def reset(self):
@@ -216,35 +217,64 @@ class Automat(object):
 
 		oMoeglichkeiten = ('', '[bend left]', '[bend right]')
 		omLen = len(oMoeglichkeiten)
+		zustandIndex = self._genZustandIndex()
 		
+		# Quell Index-Nummer
+		qIndex = zustandIndex[Zustand]
 		zielZaehler = 0
+		
 		for ziel in erreichbareZiele:
 			orientation = ''
-			if ziel == Zustand:
+			eZieleLen = len(erreichbareZiele[ziel])
+
+			# Ziel Index-Nummer
+			zIndex = zustandIndex[ziel]
+			
+			indexDelta = qIndex - zIndex
+			
+			if indexDelta == 0:
 				orientation = '[loop above]'
-			else:
+
+			if indexDelta > 1:
+				orientation = '[bend right]'
+			elif indexDelta < -1:
+				orientation = '[bend left]'
+
+			if eZieleLen > 0 and orientation == '':
 				oNum = zielZaehler % omLen
 				orientation = oMoeglichkeiten[oNum]
 				zielZaehler +=1
 
-			if len(erreichbareZiele[ziel]) < 5:
+			if eZieleLen < 5:
 				zeichen = ','.join(erreichbareZiele[ziel])
 			else:
 				zeichen = "%s,..,%s" % (erreichbareZiele[ziel][0], erreichbareZiele[ziel][-1])
+
 			s += "\tedge\t%s\tnode\t{%s}\t(%s)\n\t" % (orientation, zeichen, ziel)
 		return s
 
 	def _TeXSpecification(self):
 		s = "\\begin{itemize}\n"
 		#s = "Deterministischer Automat '%s'\n%s\n" % (self.name, "=" * 80)
-		s += "\\item[] Endliche Menge der möglichen Zustände $S = {%s}$\n" % ', '.join(self.S)
+		s += "\\item[] Endliche Menge der möglichen Zustände $S = \\{%s\\}$\n" % ', '.join(self.S)
 		s += "\\item[] %s ist Anfangszustand\n" % self.s0
-		s += "\\item[] Menge der Endzustände $F = {%s}$\n" % ', '.join(self.F)
-		s += "\\item[] Endliche Menge der Eingabezeichen $\\Sigma = {%s}$\n" % ', '.join(self.Sigma)
+		s += "\\item[] Menge der Endzustände $F = \\{%s\\}$\n" % ', '.join(self.F)
+		s += "\\item[] Endliche Menge der Eingabezeichen $\\Sigma = \\{%s\\}$\n" % ', '.join(self.Sigma)
 		return s + "\n\\end{itemize}"
-		
+
+	def _genZustandIndex(self, force=False):
+		if self.ZustandIndex and not force:
+			return self.ZustandIndex
+
+		self.ZustandIndex = dict()
+		i = 0
+		for zustand in self.S:
+			self.ZustandIndex[zustand] = i
+			i += 1
+
 	def _toTeX(self):
 		template = 'texOutput/template.tex'
+		self._genZustandIndex(True)
 		if not os.path.isfile(template):
 			raise IOError("Template '%s' nicht gefunden." % (template))
 		content = open(template).read()
