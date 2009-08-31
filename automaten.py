@@ -10,8 +10,6 @@ class NoDeltaError(Exception):
 		return repr(self.value)
 
 class Automat(object):
-	log = None
-	
 	def test():
 		"""
 		doctest (unit testing)
@@ -66,8 +64,9 @@ class Automat(object):
 
 	def pruefWort(self, Wort):
 		self.reset()
+		Wort = str(Wort)
 		self.Eingabeband = Wort + (not Wort.endswith('#') and '#' or '')
-		while self.Zustand:
+		while self.Zustand and len(self.Eingabeband) > 0:
 			altZustand = self.Zustand
 			zeichen = self.Eingabeband[0]
 			self.lies()
@@ -83,6 +82,7 @@ class Automat(object):
 		Prüft, ob das gegebene Wort zur akzeptierten Sprache des Automaten gehoert
 		"""
 		self.reset()
+		Wort = str(Wort)
 		for Zeichen in Wort:
 			if Zeichen not in self.Sigma:
 				self.log.error("Zeichen '%s' nicht teil des Alphabets." %  Zeichen)
@@ -104,7 +104,7 @@ class Automat(object):
 			self.log.warning("Kein Zustand '%s' ?" % Zustand)
 		else:
 			if Zeichen == '#':
-				self.log.debug("Bandzeichen # !")
+				self.log.warning("Bandzeichen # !")
 				return self.Zustand
 
 			for keyObject in self.delta[Zustand].keys():
