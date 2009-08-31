@@ -2,23 +2,36 @@
 # -*- coding: utf-8 -*-
 import logging, logging.config
 import os,sys
+from automatenausgabe import *
 
-class NoDeltaError(Exception):
+class NotInSigmaException(Exception):
 	def __init__(self, value):
 		self.value = value
 	def __str__(self):
 		return repr(self.value)
 
-class Automat(object):
-	def test():
-		"""
-		doctest (unit testing)
-		"""
-		import doctest
-		failed, total = doctest.testmod()
-		print "doctest: %d/%d tests failed." % (failed, total)
+class NoSuchStateException(Exception):
+	def __init__(self, value):
+		self.value = value
+	def __str__(self):
+		return repr(self.value)
 
-	def __init__(self, S=list(), s0=None, F=list(), Sigma=list(), delta=dict(), name="EinAutomat"):
+class NoAcceptingStateException(Exception):
+	def __init__(self, value):
+		self.value = value
+	def __str__(self):
+		return repr(self.value)
+
+def test():
+	"""
+	doctest (unit testing)
+	"""
+	import doctest
+	failed, total = doctest.testmod()
+	print("doctest: %d/%d tests failed." % (failed, total))
+
+class Automat(OAsciiAutomat, OLaTeXAutomat):
+	def _initLogging(self):
 		self.log = logging.getLogger("x")
 		if len(self.log.handlers) == 0:
 			lhandler = logging.StreamHandler()
@@ -26,7 +39,43 @@ class Automat(object):
 			lhandler.setFormatter(lformatter)
 			self.log.addHandler(lhandler)
 			self.log.setLevel(logging.INFO)
+	
+	def _toList(self, what):
+		if isinstance(what, basestring):
+			return what.split()
+		elif isinstance(what, list):
+			return what
+		else:
+			raise ValueError("Cannot convert '%s' to list()" % str(what))
 
+	def __init__(self, S, s0, F, Sigma, delta, name="EinAutomat", beschreibung=''):
+		"""
+		>>> mini = Automat('z0 z1', 'z0', 'z1', 'a', {'z0' : {'a' : 'z1'}})
+		>>> mini._delta('z0', 'a') == 'z1'
+		True
+		>>> mini._delta('z0', 'b')
+		Traceback (most recent call last):
+		...
+		NotInSigmaException: 'b'
+		>>> mini._delta('zX', 'a')
+		Traceback (most recent call last):
+		...
+		NoSuchStateException: 'zX'
+
+		@param S: Endliche Menge der moeglichen Zustaende
+		@param s0: Anfangszustand
+		@param F: Menge der Endzustaende
+		@param Sigma: Endliche Menge der Eingabezeichen
+		@param delta: Zustands-Ueberfuehrungstabelle/dict()
+		@param name: Bezeichner fuer den Automaten
+		@param beschreibung: Beschreibung fuer den Automaten
+		"""
+		self._initLogging()
+		
+		S = self._toList(S)
+		F = self._toList(F)
+		Sigma = self._toList(Sigma)
+		
 		if len(S) == 0:
 			raise ValueError('Die "endliche Menge der möglichen Zustände" S des Automaten ist leer')
 		if len(F) == 0:
@@ -35,9 +84,6 @@ class Automat(object):
 			raise ValueError('Die "endliche Menge der Eingabezeichen, Alphabet" Σ (Sigma) ist leer')
 		if len(delta) == 0:
 			raise ValueError('Die "(determinierte) Zustands-Überführungsfunktion" δ (delta) ist leer')
-		if s0 == None:
-			s0 = S[0]
-			self.log.debug('setze "Anfangszustand" s0 auf \'%s\'' % s0)
 		
 		self.S = S
 		self.s0 = s0
@@ -47,6 +93,7 @@ class Automat(object):
 		self.deltaVollstaendig = None
 		self.name = name
 		self.ZustandIndex = dict()
+		self.Zustand = self.s0
 		
 		self.reset()
 
@@ -54,68 +101,106 @@ class Automat(object):
 		"""
 		Setzt den Automaten zurueck
 		"""
-		self.Lesekopf = 0
 		self.Zustand = self.s0
-		self.Eingabeband = '#'
-
-	def lies(self):
-		self.Zustand = self._delta(self.Zustand, self.Eingabeband[0])
-		self.Eingabeband = self.Eingabeband[1:]
-
-	def pruefWort(self, Wort):
-		self.reset()
-		Wort = str(Wort)
-		self.Eingabeband = Wort + (not Wort.endswith('#') and '#' or '')
-		while self.Zustand and len(self.Eingabeband) > 0:
-			altZustand = self.Zustand
-			zeichen = self.Eingabeband[0]
-			self.lies()
-			if self.Zustand:
-				self.log.info("[%2s] Lese %2d. Zeichen '%s' => %2s" % (altZustand, self.Lesekopf+1, zeichen, self.Zustand))
-				self.Lesekopf += 1
-
-		self.log.info("Das Wort '%s' gehoert%s zur Sprache des Automaten." % (Wort, (self.Zustand in self.F and '' or ' nicht')))
-		return self.Zustand in self.F
-
-	def check(self, Wort):
-		"""
-		Prüft, ob das gegebene Wort zur akzeptierten Sprache des Automaten gehoert
-		"""
-		self.reset()
-		Wort = str(Wort)
-		for Zeichen in Wort:
-			if Zeichen not in self.Sigma:
-				self.log.error("Zeichen '%s' nicht teil des Alphabets." %  Zeichen)
-				return False
-			neuZustand = self._delta(self.Zustand, Zeichen)
-			if neuZustand == None:
-				self.log.error("Kein Ziel-Zustand für Zeichen '%s' von Zustand '%s' definiert" % (Zeichen, self.Zustand))
-				return False
-			else:
-				self.Zustand = neuZustand
-		if self.Zustand not in self.F:
-			self.log.error("Kein Endzustand erreicht")
-			return False
-		return True
 
 	def _delta(self, Zustand, Zeichen):
-		Zeichen = str(Zeichen)
-		if not self.delta.has_key(Zustand):
-			self.log.warning("Kein Zustand '%s' ?" % Zustand)
-		else:
-			if Zeichen == '#':
-				self.log.warning("Bandzeichen # !")
-				return self.Zustand
+		"""
+		Zustands-Ueberfuehrungsfunktion
 
-			for keyObject in self.delta[Zustand].keys():
-				if isinstance(keyObject, tuple):
-					if Zeichen in keyObject:
-						return self.delta[Zustand][keyObject]
-				elif Zeichen == keyObject:
+		@param Zustand: Quell-Zustand
+		@param Zeichen: einzulesendes Zeichen
+		@return: Erreichter Zustand oder None
+		"""
+		Zeichen = str(Zeichen)
+
+		if not Zeichen in self.Sigma:
+			self.log.debug("'%s' nicht Teil des Alphabets" % Zeichen)
+			raise NotInSigmaException(Zeichen)
+
+		if not self.delta.has_key(Zustand):
+			self.log.debug("Kein Zustand '%s' ?" % Zustand)
+			raise NoSuchStateException(Zustand)
+
+		for keyObject in self.delta[Zustand].keys():
+			if isinstance(keyObject, tuple):
+				if Zeichen in keyObject:
 					return self.delta[Zustand][keyObject]
+			elif Zeichen == keyObject:
+				return self.delta[Zustand][keyObject]
 			
-			self.log.debug("Kein Zustand/Zeichen '%s/%s' ?" % (Zustand, Zeichen))
+		self.log.debug("Kein Folgezustand fuer '%s' von '%s' ?" % (Zeichen, Zustand))
 		return None
+
+	def check(self, Wort, doRaise=False):
+		"""
+		Prüft, ob das gegebene Wort zur akzeptierten Sprache des Automaten gehoert
+		>>> mini = Automat('z0 z1', 'z0', 'z1', 'a', {'z0' : {'a' : 'z1'}, 'z1' : {'a' : 'z1'}})
+		>>> mini.check("a")
+		True
+		>>> mini.check("b")
+		False
+		>>> mini.check("aaaa")
+		True
+		>>> mini.check("aba")
+		False
+		>>> mini.check("aba", True)
+		Traceback (most recent call last):
+		...
+		NotInSigmaException: 'b'
+
+		>>> mini2 = Automat('s0 s1 s2 s3', 's0', 's3', ['0', '1'], { 's0' : { "0" : 's1', "1" : 's0'}, 's1' : { '0' : 's2', '1' : 's0'}, 's2' : { '0' : 's2', '1' : 's3'}, 's3' : { '0' : 's3', '1' : 's3'} })
+		>>> mini2.check("10011")
+		True
+		>>> mini2.check("a")
+		False
+		>>> mini2.check("111111111111")
+		False
+		>>> mini2.check("001")
+		True
+		>>> mini2.check("111111111111", True)
+		Traceback (most recent call last):
+		...
+		NoAcceptingStateException: 'Kein Endzustand erreicht'
+		>>> mini2.check("a", True)
+		Traceback (most recent call last):
+		...
+		NotInSigmaException: 'a'
+
+		>>> mini3 = Automat('z0 z1', 'z0', 'z1', ['a', 'b'], {'z0' : {'a' : 'z1'}, 'z1' : {'a' : 'z1'}})
+		>>> print mini3.Sigma
+		['a', 'b']
+		>>> mini3.check("ab", True)
+		Traceback (most recent call last):
+		...
+		NoAcceptingStateException: 'Kein Endzustand erreicht'
+
+		@param Wort: Das zu pruefende Wort
+		@return: True oder False
+		"""
+		self.reset()
+		self.log.debug("Teste Wort '%s'" % Wort)
+		Wort = str(Wort)
+		for Zeichen in Wort:
+			try:
+				altZustand = self.Zustand
+				self.Zustand = self._delta(self.Zustand, Zeichen)
+				if self.Zustand == None:
+					self.log.debug("Kein Ziel-Zustand fuer Zeichen '%s' von Zustand '%s' definiert" % (Zeichen, altZustand))
+					if doRaise:
+						raise NoAcceptingStateException("Kein Endzustand erreicht")
+					return False
+			except NotInSigmaException, e:
+				self.log.debug("Zeichen '%s' nicht Teil des Alphabets." %  Zeichen)
+				if doRaise:
+					raise
+				return False
+
+		if self.Zustand not in self.F:
+			self.log.debug("Kein Endzustand erreicht.")
+			if doRaise:
+				raise NoAcceptingStateException("Kein Endzustand erreicht")
+			return False
+		return True
 
 	def addFehlerzustand(self, sF = 'sF'):
 		if not self.delta.has_key(sF):
@@ -150,36 +235,6 @@ class Automat(object):
 					self.delta[zustand][zeichen] = sF
 		self.deltaVollstaendig = True
 
-	def _getAsciiArtDeltaTable(self):
-		maxLength = 1
-		
-		for zeichen in self.Sigma:
-			zLength = len(str(zeichen)) 
-			if  zLength > maxLength:
-				maxLength = zLength
-				
-		for zustand in self.S:
-			zLength = len(str(zustand))
-			if  zLength > maxLength:
-				maxLength = zLength
-
-		fmtString = '%' + str(maxLength) + 's'
-		s = ' ' + (fmtString % str(' δ'))
-		pfxLength = len(s)
-
-		for zeichen in self.Sigma:
-			s += ' | ' + (fmtString % zeichen)
-		s += "\n"
-		s += "-" * ((maxLength+2) * len(self.Sigma) + (len(self.Sigma)) + pfxLength)
-		s += "\n"
-		for zustand in self.S:
-			s += ' ' + (fmtString % zustand)
-			for zeichen in self.Sigma:
-				zZustand = self._delta(zustand, zeichen) or '-'
-				s += ' | %s' % (fmtString % zZustand)
-			s += "\n"
-		return s
-
 	def __str__(self):
 		s = "Deterministischer Automat '%s'\n%s\n" % (self.name, "=" * 80)
 		s += "Anfangszustand :\n %s\n" % self.s0
@@ -192,195 +247,5 @@ class Automat(object):
 		s += "%s\n\n" % ("=" * 80)
 		return s
 
-	def _TeXNode(self, Zustand, orientation=''):
-		styles = ['state']
-		description = Zustand
-		name = Zustand
-		#	\node[initial,state]	(A)						{$q_a$};
-		if Zustand == self.s0:
-			styles.append('initial')
-		if Zustand in self.F:
-			styles.append("accepting")
-		return "\\node[%s]\t(%s)\t%s\t{%s};" % (','.join(styles), name, orientation, description)
-
-	def _TeXEdge(self, Zustand):
-		#(A) edge              node {0,1,L} (B)
-		#    edge              node {1,1,R} (C)
-		quelle = Zustand
-		s = "\t(%s)" % Zustand
-		
-		erreichbareZiele = dict()
-		for zeichen in self.Sigma:
-			ziel = self._delta(Zustand, zeichen)
-			if ziel:
-				if not erreichbareZiele.has_key(ziel):
-					erreichbareZiele[ziel] = list()
-				erreichbareZiele[ziel].append(zeichen)
-
-		oMoeglichkeiten = ('', '[bend left]', '[bend right]')
-		omLen = len(oMoeglichkeiten)
-		zustandIndex = self._genZustandIndex()
-		
-		# Quell Index-Nummer
-		qIndex = zustandIndex[Zustand]
-		zielZaehler = 0
-		
-		for ziel in erreichbareZiele:
-			orientation = ''
-			eZieleLen = len(erreichbareZiele[ziel])
-
-			# Ziel Index-Nummer
-			zIndex = zustandIndex[ziel]
-			
-			indexDelta = qIndex - zIndex
-			
-			if indexDelta == 0:
-				orientation = '[loop above]'
-
-			if indexDelta > 1:
-				orientation = '[bend right]'
-			elif indexDelta < -1:
-				orientation = '[bend left]'
-
-			if eZieleLen > 0 and orientation == '':
-				oNum = zielZaehler % omLen
-				orientation = oMoeglichkeiten[oNum]
-				zielZaehler +=1
-
-			if eZieleLen < 5:
-				zeichen = ','.join(erreichbareZiele[ziel])
-			else:
-				zeichen = "%s,..,%s" % (erreichbareZiele[ziel][0], erreichbareZiele[ziel][-1])
-
-			s += "\tedge\t%s\tnode\t{%s}\t(%s)\n\t" % (orientation, zeichen, ziel)
-		return s
-
-	def _TeXSpecification(self):
-		s = "\\begin{itemize}\n"
-		#s = "Deterministischer Automat '%s'\n%s\n" % (self.name, "=" * 80)
-		s += "\\item[] Endliche Menge der möglichen Zustände $S = \\{%s\\}$\n" % ', '.join(self.S)
-		s += "\\item[] %s ist Anfangszustand\n" % self.s0
-		s += "\\item[] Menge der Endzustände $F = \\{%s\\}$\n" % ', '.join(self.F)
-		s += "\\item[] Endliche Menge der Eingabezeichen $\\Sigma = \\{%s\\}$\n" % ', '.join(self.Sigma)
-		return s + "\n\\end{itemize}"
-
-	def _TeXDeltaTable(self):
-		headerLine = ['$\delta$']
-		for zeichen in self.Sigma:
-			headerLine.append(zeichen)
-		s = "\\begin{tabular}{r|%s}\n" % ('c' * (len(headerLine)-1))
-		s += "\t&\t".join(headerLine) + "\\\\\n\\hline\n"
-
-		for zustand in self.S:
-			line = [zustand]
-			for zeichen in self.Sigma:
-				zielZustand = self._delta(zustand, zeichen)
-				line.append(zielZustand != None and zielZustand or '-')
-			s += "\t&\t".join(line) + "\t\\\\\n"
-		return s + "\end{tabular}"
-
-	def _genZustandIndex(self, force=False):
-		if self.ZustandIndex and not force:
-			return self.ZustandIndex
-
-		self.ZustandIndex = dict()
-		i = 0
-		for zustand in self.S:
-			self.ZustandIndex[zustand] = i
-			i += 1
-
-	def _toTeX(self):
-		template = 'texOutput/template.tex'
-		self._genZustandIndex(True)
-		if not os.path.isfile(template):
-			raise IOError("Template '%s' nicht gefunden." % (template))
-		content = open(template).read()
-		s = content
-		tNodes = []
-		tEdges = []
-		orientation = ''
-		for zustand in self.S:
-			tNodes.append(self._TeXNode(zustand, orientation))
-			tEdges.append(self._TeXEdge(zustand))
-			orientation = '[right of=%s]' % zustand
-		s = s.replace("%%__NODES__", "\n".join(tNodes))
-		s = s.replace("%%__PATH__", "\path\n" + "\n".join(tEdges) + ";\n")
-		s = s.replace("%%__SPEC__", self._TeXSpecification())
-		s = s.replace("%%__DELTA__", self._TeXDeltaTable())
-		return s
-
-	def createTeXDocument(self, filename = "texOutput/OUT.tex"):
-		out = open(filename, "w")
-		rawLines = self._toTeX().split("\n")
-		content = list()
-		for line in rawLines:
-			if not line.strip().startswith("%"):
-				content.append(line)
-		out.write("\n".join(content))
-		out.close()
-
 if __name__ == '__main__':
-	S = 's0 s1 s2 s3'.split(' ')
-	s0 = 's0'
-	F = 's3'.split(' ')
-	Sigma = '0 1'.split(' ')
-	delta = {
-				's0' : {
-							"0" : 's1',
-							"1" : 's0',
-						},
-				's1' : {
-							'0' : 's2',
-							'1' : 's0',
-						},
-				's2' : {
-							'0' : 's2',
-							'1' : 's3',
-						},
-				's3' : {
-							'0' : 's3',
-							'1' : 's3',
-						},
-			}
-	A = Automat(S, s0, F, Sigma, delta)
-	A.createTeXDocument("texOutput/A.tex")
-	
-	cS = 's0 s1 s2 s3 s4 s5 s6 s7'.split(' ')
-	cs0 = 's0'
-	cF = 's2 s4 s7'.split(' ')
-	cSigma = '0 1 2 3 4 5 6 7 8 9 + - . e'.split(' ')
-	cdelta = {
-				's0' : {
-							('0', '1', '2', '3', '4', '5', '6', '7', '8', '9') : 's2',
-							("+", '-') : 's1',
-						},
-				's1' : {
-							('0', '1', '2', '3', '4', '5', '6', '7', '8', '9') : 's2',
-						},
-				's2' : {
-							('0', '1', '2', '3', '4', '5', '6', '7', '8', '9') : 's2',
-							"." : "s3",
-							"e" : "s5"
-						},
-				's3' : {
-							('0', '1', '2', '3', '4', '5', '6', '7', '8', '9') : 's4',
-						},
-				's4' : {
-							('0', '1', '2', '3', '4', '5', '6', '7', '8', '9') : 's4',
-							"e" : 's5',
-						},
-				's5' : {
-							('0', '1', '2', '3', '4', '5', '6', '7', '8', '9'): 's7',
-							("+", '-') : "s6",
-						},
-				's6' : {
-							('0', '1', '2', '3', '4', '5', '6', '7', '8', '9'): 's7',
-						},
-				's7' : {
-							('0', '1', '2', '3', '4', '5', '6', '7', '8', '9') : 's7',
-						},
-			}
-	C = Automat(cS, cs0, cF, cSigma, cdelta, name="C Automat")
-
-	#C.pruefWort("-17.0839292738-")
-	C.createTeXDocument("texOutput/C.tex")
+	test()
