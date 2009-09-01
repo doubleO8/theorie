@@ -108,7 +108,10 @@ class OLaTeXAutomat(object):
 		return s
 
 	def _TeXSpecification(self):
-		s = "\\begin{itemize}\n"
+		s = "\\textbf{Automat '%s'}" % self.name
+		if self.beschreibung :
+			s += "\\newline \\emph{%s}" % self.beschreibung
+		s += "\\begin{itemize}\n"
 		#s = "Deterministischer Automat '%s'\n%s\n" % (self.name, "=" * 80)
 		s += "\\item[] Endliche Menge der möglichen Zustände $S = \\{%s\\}$\n" % ', '.join(self.S)
 		s += "\\item[] %s ist Anfangszustand\n" % self.s0
@@ -148,9 +151,20 @@ class OLaTeXAutomat(object):
 		s = s.replace("%%__PATH__", "\path\n" + "\n".join(tEdges) + ";\n")
 		s = s.replace("%%__SPEC__", self._TeXSpecification())
 		s = s.replace("%%__DELTA__", self._TeXDeltaTable())
+		
+		if self.testWords:
+			testResults = ['\\begin{tabular}{lll}']
+			testResults.append('Erfolg & Wort & Ergebnis\\\\ ')
+			testResults.append("\hline")
+			for (word, successful, result) in self.checkWords(self.testWords):
+				testResults.append('%s & %s & \\emph{%s} \\\\ ' % ((successful and "OK" or "\\textbf{KO}"), word, result))
+			testResults.append('\\end{tabular}')
+			print "\n".join(testResults)
+			s = s.replace('%%__RESULTS__', "\n".join(testResults))
+		
 		return s
 
-	def _genFilename(self):
+	def _genFilename(self, tdir=None):
 		import tempfile
 		tempfile.tempdir='texOutput'
 		return tempfile.mktemp("titaTeX")

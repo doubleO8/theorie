@@ -48,7 +48,7 @@ class Automat(OAsciiAutomat, OLaTeXAutomat):
 		else:
 			raise ValueError("Cannot convert '%s' to list()" % str(what))
 
-	def __init__(self, S, s0, F, Sigma, delta, name="EinAutomat", beschreibung=''):
+	def __init__(self, S, s0, F, Sigma, delta, name="EinAutomat", beschreibung='', testWords=None):
 		"""
 		>>> mini = Automat('z0 z1', 'z0', 'z1', 'a', {'z0' : {'a' : 'z1'}})
 		>>> mini._delta('z0', 'a') == 'z1'
@@ -94,7 +94,8 @@ class Automat(OAsciiAutomat, OLaTeXAutomat):
 		self.name = name
 		self.ZustandIndex = dict()
 		self.Zustand = self.s0
-		
+		self.testWords = testWords
+		self.beschreibung = beschreibung
 		self.reset()
 
 	def reset(self):
@@ -201,6 +202,26 @@ class Automat(OAsciiAutomat, OLaTeXAutomat):
 				raise NoAcceptingStateException("Kein Endzustand erreicht")
 			return False
 		return True
+
+	def checkWords(self, wordlist, silence=False):
+		resultset = list()
+		for word in wordlist:
+			result = 'OUCH'
+			successful = False
+			try:
+				self.check(word, True)
+				result = 'Akzeptiert.'
+				successful = True
+			except NotInSigmaException, e:
+				result = "'%s' ist nicht im Alphabet." % e.value
+			except NoSuchStateException, e:
+				result = "Zustand '%s' ist nicht in Sigma." % e.value
+			except NoAcceptingStateException, e:
+				result = "Kein finaler Zustand erreicht."
+			resultset.append((word, successful, result))
+			if not silence:
+				self.log.info("[%6s] %s : %s" % ((successful and "SUCCESS" or "FAILED"), word, result))
+		return resultset
 
 	def addFehlerzustand(self, sF = 'sF'):
 		if not self.delta.has_key(sF):
