@@ -203,9 +203,10 @@ class Automat(OAsciiAutomat, OLaTeXAutomat):
 			return False
 		return True
 
-	def checkWords(self, wordlist, silence=False):
+	def checkWords(self, words, silence=False):
 		resultset = list()
-		for word in wordlist:
+		words = self._toList(words)
+		for word in words:
 			result = 'OUCH'
 			successful = False
 			try:
