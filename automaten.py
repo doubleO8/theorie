@@ -30,7 +30,7 @@ def test():
 	failed, total = doctest.testmod()
 	print("doctest: %d/%d tests failed." % (failed, total))
 
-class Automat(OAsciiAutomat, OLaTeXAutomat):
+class Automat(OAsciiAutomat, OLaTeXAutomat, ODotAutomat):
 	def _initLogging(self):
 		self.log = logging.getLogger("x")
 		if len(self.log.handlers) == 0:
@@ -38,7 +38,7 @@ class Automat(OAsciiAutomat, OLaTeXAutomat):
 			lformatter = logging.Formatter('%(asctime)s %(levelname)s:  %(message)s')
 			lhandler.setFormatter(lformatter)
 			self.log.addHandler(lhandler)
-			self.log.setLevel(logging.INFO)
+			self.log.setLevel(logging.DEBUG)
 	
 	def _toList(self, what):
 		if isinstance(what, basestring):

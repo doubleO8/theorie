@@ -1,6 +1,20 @@
 # -*- coding: utf-8 -*-
-import os,sys
+import os, sys, tempfile
 from subprocess import *
+
+WORKINGDIR = '/Users/wolf/Documents/programming/theorie'
+OUTPUTDIR = WORKINGDIR + os.path.sep + 'texOutput'
+
+def kuerzMenge(items, max=5):
+	if len(items) < max:
+		zeichen = ','.join(items)
+	else:
+		zeichen = "%s,..,%s" % (items[0], items[-1])
+	return zeichen
+
+class AusgebenderAutomat(object):
+	def _genFilename(self, tdir=None):
+		return tempfile.mkstemp(dir=OUTPUTDIR)[1]
 
 class OAsciiAutomat(object):
 	def _getAsciiArtDeltaTable(self):
@@ -33,7 +47,57 @@ class OAsciiAutomat(object):
 			s += "\n"
 		return s
 
-class OLaTeXAutomat(object):
+class ODotAutomat(AusgebenderAutomat):
+	def _DotPath(self, quelle, ziel, zeichenString):
+		return '%s -> %s [ label = "%s" ];' % (quelle, ziel, zeichenString)
+		
+	def _toDot(self, template='template.dot'):
+		self._genZustandIndex(True)
+		if not os.path.isfile(template):
+			raise IOError("Template '%s' nicht gefunden." % (template))
+		content = open(template).read()
+		s = content
+		s = s.replace('//__FINAL_STATES__', ' '.join(self.F) + ";\n")
+		s = s.replace('//__ORIGIN__', "null -> %s;\n" % self.s0)
+		nodes = []
+		for zustand in self.delta:
+			for zeichen in self.delta[zustand].keys():
+				ziel = self.delta[zustand][zeichen]
+				if isinstance(zeichen, tuple):
+					self.log.warning(zeichen)
+					zeichen = kuerzMenge(zeichen)
+				nodes.append(self._DotPath(zustand, ziel, zeichen))
+		s = s.replace('//__PATH__', "\n".join(nodes))
+		return s
+
+	def createDotDocument(self, filename = None):
+		basename = self._genFilename()
+		
+		dot_filename = os.path.basename(basename + '.gv')
+		pdf_filename = os.path.basename(basename + '.pdf')
+
+		basedir = os.path.dirname(basename)
+		cwd = os.getcwd()
+		try:
+			os.chdir(basedir)
+			out = open(dot_filename, "w")
+			rawLines = self._toDot().split("\n")
+			content = list()
+			for line in rawLines:
+				if not line.strip().startswith("//"):
+					content.append(line)
+			out.write("\n".join(content))
+			out.close()
+			command = 'dot -Tpdf -o "%s" "%s"' % (pdf_filename, dot_filename)
+			#print command
+			call(command, shell=True)
+		except Exception, e:
+			self.log.error(e)
+			pdf_filename = False
+		os.chdir(cwd)
+		return pdf_filename
+
+class OLaTeXAutomat(AusgebenderAutomat):
 	def _genZustandIndex(self, force=False):
 		if self.ZustandIndex and not force:
 			return self.ZustandIndex
@@ -99,10 +163,11 @@ class OLaTeXAutomat(object):
 				orientation = oMoeglichkeiten[oNum]
 				zielZaehler +=1
 
-			if eZieleLen < 5:
-				zeichen = ','.join(erreichbareZiele[ziel])
-			else:
-				zeichen = "%s,..,%s" % (erreichbareZiele[ziel][0], erreichbareZiele[ziel][-1])
+			zeichen = kuerzMenge(erreichbareZiele[ziel])
+			#if eZieleLen < 5:
+			#	zeichen = ','.join(erreichbareZiele[ziel])
+			#else:
+			#	zeichen = "%s,..,%s" % (erreichbareZiele[ziel][0], erreichbareZiele[ziel][-1])
 
 			s += "\tedge\t%s\tnode\t{%s}\t(%s)\n\t" % (orientation, zeichen, ziel)
 		return s
@@ -134,6 +199,18 @@ class OLaTeXAutomat(object):
 			s += "\t&\t".join(line) + "\t\\\\\n"
 		return s + "\end{tabular}"
 
+	def _TeXIncludeFigure(self, file, caption=None, label=None):
+		label = label and ("\\label{%s}" % label) or ''
+		caption = caption and ("\\caption{%s}" % caption) or ''
+		return """
+		\\begin{figure}[ht!]
+		\\centering
+		\\includegraphics[width=1.0\linewidth]{%s}
+		%s
+		%s
+		\\end{figure}
+		""" % (file, caption, label)
+
 	def _toTeX(self, template='template.tex'):
 		self._genZustandIndex(True)
 		if not os.path.isfile(template):
@@ -151,7 +228,13 @@ class OLaTeXAutomat(object):
 		s = s.replace("%%__PATH__", "\path\n" + "\n".join(tEdges) + ";\n")
 		s = s.replace("%%__SPEC__", self._TeXSpecification())
 		s = s.replace("%%__DELTA__", self._TeXDeltaTable())
-		
+		if 'createDotDocument' in dir(self):
+			dotgraph = self.createDotDocument()
+			if dotgraph:
+				s = s.replace('%%__DOT_GRAPH__', "\pagebreak[4]\subsection{Gemalt mit dot}" + self._TeXIncludeFigure(dotgraph))
+			else:
+				sys.exit()
+
 		if self.testWords:
 			testResults = ['\\begin{tabular}{lll}']
 			testResults.append('Erfolg & Wort & Ergebnis\\\\ ')
@@ -163,11 +246,6 @@ class OLaTeXAutomat(object):
 			s = s.replace('%%__RESULTS__', "\n".join(testResults))
 		
 		return s
-
-	def _genFilename(self, tdir=None):
-		import tempfile
-		tempfile.tempdir='texOutput'
-		return tempfile.mktemp("titaTeX")
 
 	def createTeXDocument(self, filename = None):
 		basename = self._genFilename()
