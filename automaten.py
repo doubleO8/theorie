@@ -363,6 +363,7 @@ class NichtDeterministischerAutomat(Automat):
 		"""
 		self._initLogging()
 		
+		# Umwandeln von Listen und Stringinhalte (whitespace-getrennt) in frozenset-Mengen
 		S = self._toFrozenSet(S)
 		F = self._toFrozenSet(F)
 		Sigma = self._toFrozenSet(Sigma)
@@ -419,7 +420,7 @@ class NichtDeterministischerAutomat(Automat):
 		"""
 		Zeichen = str(Zeichen)
 		
-		if not Zeichen in self.Sigma:
+		if Zeichen not in self.Sigma:
 			self.log.debug("'%s' nicht Teil des Alphabets (%s)" % (Zeichen, self.Sigma))
 			raise NotInSigmaException(Zeichen)
 
