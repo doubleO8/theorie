@@ -4,23 +4,38 @@ import logging, logging.config
 import os,sys
 from automatenausgabe import *
 
-class NotInSigmaException(Exception):
-	def __init__(self, value):
+class AutomatException(Exception):
+	"""
+	>>> x = AutomatException('ohje', frozenset(['achNein']), 'xXx')
+	>>> x
+	AutomatException()
+	>>> print x
+	'ohje' xXx [achNein]
+	"""
+	def __init__(self, value, validSet=frozenset(), explanation=''):
 		self.value = value
+		self.validSet = validSet
+		self.explanation = explanation
 	def __str__(self):
-		return repr(self.value)
+		# Alte Exception gab nur value zurueck, deswegen: HACK.
+		if len(self.value) > 10:
+			return repr(self.value)
+		validSetText = ''
+		if len(self.validSet):
+			validSetText = '[%s]' % ','.join(sorted(self.validSet))
+		return "%s %s %s" % (repr(self.value), self.explanation, validSetText)
 
-class NoSuchStateException(Exception):
-	def __init__(self, value):
-		self.value = value
-	def __str__(self):
-		return repr(self.value)
+class NotInSigmaException(AutomatException):
+	def __init__(self, value, validSet=frozenset()):
+		AutomatException.__init__(self, value, validSet, 'ist nicht Teil der Menge der Eingabezeichen')
 
-class NoAcceptingStateException(Exception):
-	def __init__(self, value):
-		self.value = value
-	def __str__(self):
-		return repr(self.value)
+class NoSuchStateException(AutomatException):
+	def __init__(self, value, validSet=frozenset()):
+		AutomatException.__init__(self, value, validSet, 'ist nicht Teil der Menge der moeglichen Zustaende')
+
+class NoAcceptingStateException(AutomatException):
+	def __init__(self, value, validSet=frozenset()):
+		AutomatException.__init__(self, value, validSet, 'ist nicht Teil der Menge der moeglichen Endzustaende')
 
 def test():
 	"""
@@ -56,11 +71,11 @@ class Automat(OAsciiAutomat, OLaTeXAutomat, ODotAutomat):
 		>>> mini._delta('z0', 'b')
 		Traceback (most recent call last):
 		...
-		NotInSigmaException: 'b'
+		NotInSigmaException: 'b' ist nicht Teil der Menge der Eingabezeichen 
 		>>> mini._delta('zX', 'a')
 		Traceback (most recent call last):
 		...
-		NoSuchStateException: 'zX'
+		NoSuchStateException: 'zX' ist nicht Teil der Menge der moeglichen Zustaende 
 
 		@param S: Endliche Menge der moeglichen Zustaende
 		@param s0: Anfangszustand
@@ -147,7 +162,7 @@ class Automat(OAsciiAutomat, OLaTeXAutomat, ODotAutomat):
 		>>> mini.check("aba", True)
 		Traceback (most recent call last):
 		...
-		NotInSigmaException: 'b'
+		NotInSigmaException: 'b' ist nicht Teil der Menge der Eingabezeichen 
 
 		>>> mini2 = Automat('s0 s1 s2 s3', 's0', 's3', ['0', '1'], { 's0' : { "0" : 's1', "1" : 's0'}, 's1' : { '0' : 's2', '1' : 's0'}, 's2' : { '0' : 's2', '1' : 's3'}, 's3' : { '0' : 's3', '1' : 's3'} })
 		>>> mini2.check("10011")
@@ -165,7 +180,7 @@ class Automat(OAsciiAutomat, OLaTeXAutomat, ODotAutomat):
 		>>> mini2.check("a", True)
 		Traceback (most recent call last):
 		...
-		NotInSigmaException: 'a'
+		NotInSigmaException: 'a' ist nicht Teil der Menge der Eingabezeichen 
 
 		>>> mini3 = Automat('z0 z1', 'z0', 'z1', ['a', 'b'], {'z0' : {'a' : 'z1'}, 'z1' : {'a' : 'z1'}})
 		>>> print mini3.Sigma
@@ -271,32 +286,21 @@ class Automat(OAsciiAutomat, OLaTeXAutomat, ODotAutomat):
 
 class NichtDeterministischerAutomat(Automat):
 	def _toList(self, what):
+		"""
+		>>> mini = NichtDeterministischerAutomat('s0', 's0', 's0', '0 1', { 's0' : {'0' : 's0'}})
+		>>> mini._toList('')
+		['']
+		>>> mini._toList('a b c d')
+		['a', 'b', 'c', 'd']
+		>>> mini._toList(['a', 'b', 'c', 'd'])
+		['a', 'b', 'c', 'd']
+		"""
 		if isinstance(what, basestring):
-			return what.split()
+			return what.split(' ')
 		elif isinstance(what, list):
 			return what
 		else:
 			raise ValueError("Cannot convert '%s' to list()" % str(what))
-
-	def _toTuple(self, what):
-		"""
-		>>> mini = NichtDeterministischerAutomat('s0', 's0', 's0', '0 1', { 's0' : {'0' : 's0'}})
-		>>> mini._toTuple('a c b')
-		('a', 'b', 'c')
-		>>> mini._toTuple('z1')
-		('z1',)
-		"""
-		return tuple(sorted(self._toList(what)))
-
-	def _toSet(self, what):
-		"""
-		>>> mini = NichtDeterministischerAutomat('s0', 's0', 's0', '0 1', { 's0' : {'0' : 's0'}})
-		>>> mini._toSet('a c b')
-		set(['a', 'c', 'b'])
-		>>> mini._toSet('z1')
-		set(['z1'])
-		"""
-		return set(self._toList(what))
 
 	def _toFrozenSet(self, what):
 		"""
@@ -310,7 +314,7 @@ class NichtDeterministischerAutomat(Automat):
 
 	def _fixDeltaMapping(self, delta):
 		"""
-		Sorgt dafuer, dass das delta dictionary die folgende Struktur hat:
+		Sorgt dafuer, dass das zurueckgegebene dictionary die folgende Struktur hat:
 			{
 				Zustand : {
 							<Zeichen-Set> : <Zustand-Set>
@@ -347,11 +351,11 @@ class NichtDeterministischerAutomat(Automat):
 		>>> mini._delta('s0', 'b')
 		Traceback (most recent call last):
 		...
-		NotInSigmaException: 'b'
+		NotInSigmaException: 'b' ist nicht Teil der Menge der Eingabezeichen [0,1]
 		>>> mini._delta('zX', '0')
 		Traceback (most recent call last):
 		...
-		NoSuchStateException: 'zX'
+		NoSuchStateException: 'zX' ist nicht Teil der Menge der moeglichen Zustaende [s0,s1,s2,s3]
 
 		@param S: Endliche Menge der moeglichen Zustaende
 		@param s0: Anfangszustaende
@@ -414,28 +418,32 @@ class NichtDeterministischerAutomat(Automat):
 		>>> mini._delta('s0', '1')
 		frozenset(['s0'])
 
-		@param Zustand: Quell-Zustand
-		@param Zeichen: einzulesendes Zeichen
+		@param Zustand: Quell-Zustand (falls kein list()-Objekt: wird mittels str() umgewandelt)
+		@param Zeichen: einzulesendes Zeichen (wird mittels str() umgewandelt)
 		@return: Menge der erreichten Zustaende oder leere Menge
 		"""
+		# Sicherstellen, dass Zeichen ein String ist
 		Zeichen = str(Zeichen)
 		
+		# Pruefen, ob das zu lesende Zeichen ueberhaupt Teil der Menge der Eingabezeichen ist
 		if Zeichen not in self.Sigma:
-			self.log.debug("'%s' nicht Teil des Alphabets (%s)" % (Zeichen, self.Sigma))
-			raise NotInSigmaException(Zeichen)
+			self.log.debug("'%s' nicht Teil des Alphabets (%s)" % (Zeichen, ','.join(sorted(self.Sigma))))
+			raise NotInSigmaException(Zeichen, self.Sigma)
 
+		# Sonderbehandlung: Zustand kann auch eine Liste von Zustaenden sein
 		if isinstance(Zustand, list):
-			self.log.debug("Zustand liste")
 			ziele = frozenset()
 			for item in Zustand:
 				ziele = ziele.union(self._delta(item, Zeichen))
 			return ziele
 		else:
+			# Ansonsten: Zustand in String verwandeln
 			Zustand = str(Zustand)
 
+		# Pruefen, ob der zu behandelnde Zustand ueberhaupt Teil der Zustandsmenge
 		if Zustand not in self.S:
-			self.log.debug("Kein Zustand '%s' ?" % str(Zustand))
-			raise NoSuchStateException(Zustand)
+			self.log.debug("Zustand '%s' nicht in der Zustandsmenge '%s' ?" % (Zustand, ','.join(sorted(self.S))))
+			raise NoSuchStateException(Zustand, self.S)
 
 		if Zustand not in self.delta:
 			return frozenset([])
@@ -444,7 +452,7 @@ class NichtDeterministischerAutomat(Automat):
 			if Zeichen in keyObject:
 				return self.delta[Zustand][keyObject]
 			
-		self.log.debug("Kein Folgezustand fuer '%s' von '%s' ?" % (Zeichen, Zustand))
+		self.log.warning("Kein Folgezustand fuer '%s' von '%s'." % (Zeichen, Zustand))
 		return frozenset([])
 
 if __name__ == '__main__':
