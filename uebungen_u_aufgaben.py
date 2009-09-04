@@ -74,7 +74,7 @@ def Script_Beispiel_1_2():
 	A = Automat(S, s0, F, Sigma, delta,
 				name="Beispiel1.2",
 				beschreibung="Ein endlicher deterministischer Automat für die Sprache L, die alle Wörter mit Teilwort 001 enthält",
-				testWords='001 01 1 100 1001 0011 1000 1001 10001')
+				testWords=testWorte(['0', '1']))
 	return A
 
 def Script_Beispiel_1_3():
@@ -500,19 +500,7 @@ def mergeAndOpenPDF(files, output="/Users/wolf/Desktop/automaten.pdf"):
 	command = baseCmd + ' '.join(files) + '&& open "%s"' % output
 	call(command, shell=True)
 
-def Uebungsblatt1():
-	automaten = list()
-	#automaten.append(Aufgabe_1b())
-	#automaten.append(Aufgabe_1c())
-	#automaten.append(Aufgabe_2a())
-	#automaten.append(Aufgabe_2b())
-	automaten.append(Aufgabe_2c())
-	automaten.append(Aufgabe_2d())
-	automaten.append(Aufgabe_2d1())
-	#automaten.append(Aufgabe_2e())
-	#automaten.append(Aufgabe_3a())
-	#automaten.append(Aufgabe_3b())
-
+def erstelleAutomatenPDFs(automaten):
 	opFiles = list()
 	for automat in automaten:
 		outputFile = automat.createTeXDocument()
@@ -520,14 +508,40 @@ def Uebungsblatt1():
 			opFiles.append(outputFile)
 		else:
 			print("Fehler: %s" % automat.name)
-	mergeAndOpenPDF(opFiles)
+	return opFiles
+
+def Uebungsblatt1():
+	automaten = list()
+	automaten.append(Aufgabe_1b())
+	automaten.append(Aufgabe_1c())
+	automaten.append(Aufgabe_2a())
+	automaten.append(Aufgabe_2b())
+	automaten.append(Aufgabe_2c())
+	automaten.append(Aufgabe_2d())
+	automaten.append(Aufgabe_2d1())
+	automaten.append(Aufgabe_2e())
+	automaten.append(Aufgabe_3a())
+	automaten.append(Aufgabe_3b())
+	return erstelleAutomatenPDFs(automaten)
+
+def ScriptBeispiele():
+	automaten = list()
+	automaten.append(Script_Beispiel_1_2())
+	automaten.append(Script_Beispiel_1_3())
+	return erstelleAutomatenPDFs(automaten)
+
+def Sonstige():
+	automaten = list()
+	automaten.append(Aufgabe_3x1())
+	automaten.append(Aufgabe_3x2())
+	automaten.append(Aufgabe_3x3())
+	return erstelleAutomatenPDFs(automaten)
 
 if __name__ == '__main__':
-	#Script_Beispiel_1_2()
-	#Script_Beispiel_1_3()
-	#Aufgabe_3x1()
-	#Aufgabe_3x2()
-	#Aufgabe_3x3()
 	#binaere_zahlen(100, 3, True)
-	Uebungsblatt1()
-	#print len(testWorte(['a', 'b']))
+
+	mergeAndOpenPDF(Uebungsblatt1(), "/Users/wolf/Desktop/Automaten Übungsblatt1.pdf")
+
+	mergeAndOpenPDF(ScriptBeispiele(), "/Users/wolf/Desktop/Automaten Script Beispiele.pdf")
+
+	mergeAndOpenPDF(Sonstige(), "/Users/wolf/Desktop/Automaten Sonstige.pdf")
