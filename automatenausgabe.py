@@ -210,6 +210,22 @@ class OLaTeXAutomat(AusgebenderAutomat):
 		%s
 		\\end{figure}
 		""" % (file, caption, label)
+	
+	def _TeXResults(self):
+		s = ''
+		if self.testWords:
+			testResults = [ r'\begin{tabular}{lll}' ]
+			testResults.append(r'Erfolg & Wort & Ergebnis\\')
+			testResults.append(r'\hline')
+			for (word, successful, result) in self.checkWords(self.testWords):
+				t = list()
+				t.append(r'{\small %s}' % (successful and "OK" or r'\textbf{KO}'))
+				t.append(r'{\small %s}' % word)
+				t.append(r'{\small \emph{%s}}' % result)
+				testResults.append(' & '.join(t) + r'\\')
+			testResults.append(r'\end{tabular}')
+			s = "\n".join(testResults)
+		return s
 
 	def _toTeX(self, template='template.tex'):
 		self._genZustandIndex(True)
@@ -228,32 +244,24 @@ class OLaTeXAutomat(AusgebenderAutomat):
 		s = s.replace("%%__PATH__", "\path\n" + "\n".join(tEdges) + ";\n")
 		s = s.replace("%%__SPEC__", self._TeXSpecification())
 		s = s.replace("%%__DELTA__", self._TeXDeltaTable())
+		s = s.replace('%%__RESULTS__', self._TeXResults())
 		if 'createDotDocument' in dir(self):
 			dotgraph = self.createDotDocument()
 			if dotgraph:
-				s = s.replace('%%__DOT_GRAPH__', "\pagebreak[4]\subsection{Gemalt mit dot}" + self._TeXIncludeFigure(dotgraph))
+				s = s.replace('%%__DOT_GRAPH__', r'\subsection{Gemalt mit dot}' + self._TeXIncludeFigure(dotgraph))
 			else:
-				sys.exit()
-
-		if self.testWords:
-			testResults = ['\\begin{tabular}{lll}']
-			testResults.append('Erfolg & Wort & Ergebnis\\\\ ')
-			testResults.append("\hline")
-			for (word, successful, result) in self.checkWords(self.testWords):
-				testResults.append('%s & %s & \\emph{%s} \\\\ ' % ((successful and "OK" or "\\textbf{KO}"), word, result))
-			testResults.append('\\end{tabular}')
-			print "\n".join(testResults)
-			s = s.replace('%%__RESULTS__', "\n".join(testResults))
-		
+				self.log.error("Kein dotgraph")
 		return s
 
 	def createTeXDocument(self, filename = None):
 		basename = self._genFilename()
-		
 		tex_filename = os.path.basename(basename + '.tex')
 		pdf_filename = os.path.basename(basename + '.pdf')
 		basedir = os.path.dirname(basename)
+
 		cwd = os.getcwd()
+		returnValue = os.path.abspath(basedir + os.path.sep + pdf_filename)
+		
 		try:
 			os.chdir(basedir)
 			out = open(tex_filename, "w")
@@ -264,9 +272,10 @@ class OLaTeXAutomat(AusgebenderAutomat):
 					content.append(line)
 			out.write("\n".join(content))
 			out.close()
-			command = 'cd "%s"; pdflatex "%s" && open "%s"' % (basedir, tex_filename, pdf_filename)
-			#print(command)
+			command = 'pdflatex "%s"' % tex_filename
 			call(command, shell=True)
 		except Exception, e:
 			self.log.error(e)
+			returnValue = False
 		os.chdir(cwd)
+		return returnValue
