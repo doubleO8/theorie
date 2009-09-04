@@ -119,6 +119,96 @@ def Script_Beispiel_1_3():
 				testWords='0 1 2 00.1 0.1 0.101. . 101 001 1.001.02')
 	return C
 
+def Script_Beispiel_1_4intuitiv():
+	S = '111 110 100 101 010 011 001 000'
+	s0 = '111'
+	F = '011 001 010 000'
+	Sigma = '0 1'
+	delta = {
+				'111' : {
+							"0" : '110',
+							"1" : '111',
+						},
+				'110' : {
+							"0" : '100',
+							"1" : '101',
+						},
+				'100' : {
+							"0" : '000',
+							"1" : '001',
+						},
+				'101' : {
+							"0" : '010',
+							"1" : '011',
+						},
+				'010' : {
+							"0" : '100',
+							"1" : '101',
+						},
+				'011' : {
+							"0" : '110',
+							"1" : '111',
+						},
+				'001' : {
+							"0" : '010',
+							"1" : '011',
+						},
+				'000' : {
+							"0" : '000',
+							"1" : '001',
+						},
+			}
+	A = Automat(S, s0, F, Sigma, delta,
+				name="Beispiel1.4 (intuitiv)",
+				beschreibung="Ein endlicher deterministischer Automat für die Menge aller Bitfolgen, deren drittletzte Ziffer eine 0 ist",
+				testWords=testWorte(['0', '1']))
+	return A
+
+def Script_Beispiel_1_5_DEA():
+	S = '0 A B C D E F G'
+	s0 = '0'
+	F = 'D E F G'
+	Sigma = '0 1'
+	delta = {
+				'0' : {
+							"0" : 'A',
+							"1" : '0',
+						},
+				'A' : {
+							"0" : 'C',
+							"1" : 'B',
+						},
+				'B' : {
+							"0" : 'F',
+							"1" : 'G',
+						},
+				'C' : {
+							"0" : 'D',
+							"1" : 'E',
+						},
+				'D' : {
+							"0" : 'D',
+							"1" : 'E',
+						},
+				'E' : {
+							"0" : 'F',
+							"1" : 'G',
+						},
+				'F' : {
+							"0" : 'C',
+							"1" : 'B',
+						},
+				'G' : {
+							"0" : 'A',
+							"1" : '0',
+						},
+			}
+	A = Automat(S, s0, F, Sigma, delta,
+				name="Beispiel1.5 (DEA)",
+				beschreibung="Ein endlicher deterministischer Automat für die Menge aller Bitfolgen, deren drittletzte Ziffer eine 0 ist",
+				testWords=testWorte(['0', '1']))
+	return A
+
 def Aufgabe_1b():
 	S = 'z0 z1 z2 z3 z4'.split()
 	s0 = 'z0'
@@ -495,6 +585,87 @@ def Aufgabe_3x3():
 				testWords=tw)
 	return A
 
+def Aufgabe_5b():
+	delta = {
+				'1' : {
+							'a' : '2',
+						},
+				'2' : {
+							'a' : '2',
+							'b' : 'A',
+						},
+				'A' : {
+							'a' : 'B',
+							'b' : 'C',
+						},
+				'B' : {
+							'a' : '2',
+							'b' : 'A',
+						},
+				'C' : {
+							'a' : 'B',
+							'b' : 'C',
+						},
+			}
+	A = Automat('1 2 A B C', '1', 'B C', 'a b', delta,
+				name="U1A5b",
+				beschreibung="Akzeptiert alle Worte, die mit a beginnen und als zweitletztes Zeichen ein b besitzen",
+				testWords=U1A2_Testworte)
+	return A
+
+
+def Aufgabe_EidTI_U6():
+	"""
+	boese: schlecht erarbeitet und hingewuergt.
+	"""
+	delta = {
+				'A' : {
+							('a', 'e', 'g', 'X') : 'A',
+							'b' : 'AB',
+						},
+				'AB' : {
+							'a' : 'AC',
+							'b' : 'AB',
+							('e', 'g', 'X') : 'A',
+						},
+				'AC' : {
+							('a', 'e', 'g', 'X') : 'A',
+							'b' : 'ABD',
+						},
+				'ABD' : {
+							'a' : 'ACE',
+							'b' : 'ABC',
+							('e', 'g', 'X') : 'A',
+						},
+				'ACE' : {
+							'a' : 'A',
+							'b' : 'ABD',
+							('e', 'X') : 'A',
+							'g' : 'AG',
+						},
+				'ABC' : {
+							'a' : 'ACE',
+							'b' : 'ABD',
+							('e', 'g', 'X') : 'A',
+						},
+				'AG' : {
+							'a' : 'A',
+							'b' : 'AB',
+							('g', 'X') : 'A',
+							'e' : 'AH',
+						},
+				'AH' : {
+							'a' : 'A',
+							'b' : 'AB',
+							('e', 'g', 'X') : 'A',
+						},
+			}
+	A = Automat('A AB AC ABD ACE ABC AG AH', 'A', 'AH', 'a b e g X', delta,
+				name="EidTIU6",
+				beschreibung="Akzeptiert alle Worte, die mit babbage aufhoeren",
+				testWords=testWorte(['a', 'b', 'babbage']))
+	return A
+
 def mergeAndOpenPDF(files, output="/Users/wolf/Desktop/automaten.pdf"):
 	baseCmd = 'gs -q -dNOPAUSE -dBATCH -sDEVICE=pdfwrite -sOutputFile="%s" ' % output
 	command = baseCmd + ' '.join(files) + '&& open "%s"' % output
@@ -528,6 +699,8 @@ def ScriptBeispiele():
 	automaten = list()
 	automaten.append(Script_Beispiel_1_2())
 	automaten.append(Script_Beispiel_1_3())
+	automaten.append(Script_Beispiel_1_4intuitiv())
+	automaten.append(Script_Beispiel_1_5_DEA())
 	return erstelleAutomatenPDFs(automaten)
 
 def Sonstige():
@@ -537,11 +710,19 @@ def Sonstige():
 	automaten.append(Aufgabe_3x3())
 	return erstelleAutomatenPDFs(automaten)
 
+def Aktuell():
+	automaten = list()
+	automaten.append(Aufgabe_5b())
+	automaten.append(Aufgabe_EidTI_U6())
+	return erstelleAutomatenPDFs(automaten)
+	
 if __name__ == '__main__':
 	#binaere_zahlen(100, 3, True)
 
-	mergeAndOpenPDF(Uebungsblatt1(), "/Users/wolf/Desktop/Automaten Übungsblatt1.pdf")
+	#mergeAndOpenPDF(Uebungsblatt1(), "/Users/wolf/Desktop/Automaten Übungsblatt1.pdf")
 
-	mergeAndOpenPDF(ScriptBeispiele(), "/Users/wolf/Desktop/Automaten Script Beispiele.pdf")
+	#mergeAndOpenPDF(ScriptBeispiele(), "/Users/wolf/Desktop/Automaten Script Beispiele.pdf")
 
-	mergeAndOpenPDF(Sonstige(), "/Users/wolf/Desktop/Automaten Sonstige.pdf")
+	#mergeAndOpenPDF(Sonstige(), "/Users/wolf/Desktop/Automaten Sonstige.pdf")
+	
+	mergeAndOpenPDF(Aktuell(), "/Users/wolf/Desktop/Aktuell.pdf")
