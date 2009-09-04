@@ -269,5 +269,147 @@ class Automat(OAsciiAutomat, OLaTeXAutomat, ODotAutomat):
 		s += "%s\n\n" % ("=" * 80)
 		return s
 
+class NichtDeterministischerAutomat(Automat):
+	def _toList(self, what):
+		if isinstance(what, basestring):
+			return what.split()
+		elif isinstance(what, list):
+			return what
+		else:
+			raise ValueError("Cannot convert '%s' to list()" % str(what))
+
+	def _toTuple(self, what):
+		"""
+		>>> mini = NichtDeterministischerAutomat('s0', 's0', 's0', '0 1', { 's0' : {'0' : 's0'}})
+		>>> mini._toTuple('a c b')
+		('a', 'b', 'c')
+		>>> mini._toTuple('z1')
+		('z1',)
+		"""
+		return tuple(sorted(self._toList(what)))
+
+	def _toSet(self, what):
+		"""
+		>>> mini = NichtDeterministischerAutomat('s0', 's0', 's0', '0 1', { 's0' : {'0' : 's0'}})
+		>>> mini._toSet('a c b')
+		set(['a', 'c', 'b'])
+		>>> mini._toSet('z1')
+		set(['z1'])
+		"""
+		return set(self._toList(what))
+
+	def _fixDeltaMapping(self, delta):
+		"""
+		Sorgt dafuer, dass das delta dictionary die folgende Struktur hat:
+			{
+				<Zustand-Set> : {
+									<Zeichen-Set> : <Zustand-Set>
+									}
+			}
+		
+		>>> delta = { 's0' : {'0' : 's0'} }
+		>>> delta
+		{'s0': {'0': 's0'}}
+		>>> mini = NichtDeterministischerAutomat('s0', 's0', 's0', '0 1', delta)
+		>>> deltaNeu = mini._fixDeltaMapping(delta)
+		>>> deltaNeu
+		{('s0',): {('0',): set(['s0'])}}
+		"""
+		deltaNeu = dict()
+		for zustand in delta:
+			tZustand = self._toTuple(zustand)
+			deltaNeu[tZustand] = dict()
+			for zeichen in delta[zustand]:
+				ziel = delta[zustand][zeichen]
+				tZeichen = self._toTuple(str(zeichen))
+				#print("tZustand : >%s< tZeichen : >%s< ziel : >%s<" % (tZustand, tZeichen, ziel))
+				deltaNeu[tZustand][tZeichen] = self._toSet(ziel)
+		return deltaNeu
+		
+	def __init__(self, S, s0, F, Sigma, delta, name="EinAutomat", beschreibung='', testWords=None):
+		"""
+		>>> mini = NichtDeterministischerAutomat('s0 s1 s2 s3', 's0', 's3', '0 1', {'s0' : {'0' : ['s0', 's1'], '1' : 's0'}, 's1' : {'0' : 's2', '1' : 's2'}, 's2' : { '0' : 's3', '1' : 's3'}})
+		>>> mini._delta('s0', '0') == ['s0', 's1']
+		True
+		>>> mini._delta('s0', 'b')
+		Traceback (most recent call last):
+		...
+		NotInSigmaException: 'b'
+		>>> mini._delta('zX', '0')
+		Traceback (most recent call last):
+		...
+		NoSuchStateException: ('zX',)
+		>>> mini._delta(['s0', 's1'], 1) == ['s0', 's1']
+		True
+		>>> mini._delta(['s0', 's1'], 1) == ['s0', 's1', 's3']
+		True
+		>>> mini._delta(['s0', 's1', 's3'], 1) == ['s0', 's2']
+		True
+
+		@param S: Endliche Menge der moeglichen Zustaende
+		@param s0: Anfangszustaende
+		@param F: Menge der Endzustaende
+		@param Sigma: Endliche Menge der Eingabezeichen
+		@param delta: Zustands-Ueberfuehrungstabelle/dict()
+		@param name: Bezeichner fuer den Automaten
+		@param beschreibung: Beschreibung fuer den Automaten
+		"""
+		self._initLogging()
+		
+		S = self._toSet(S)
+		F = self._toSet(F)
+		Sigma = self._toSet(Sigma)
+		s0 = self._toList(s0)
+		
+		if len(S) == 0:
+			raise ValueError('Die "endliche Menge der möglichen Zustände" S des Automaten ist leer')
+		if len(s0) == 0:
+			raise ValueError('Die "Menge der Anfangszustände" des Automaten ist leer')
+		if len(F) == 0:
+			raise ValueError('Die "Menge der Endzustände" F ist leer')
+		if len(Sigma) == 0:
+			raise ValueError('Die "endliche Menge der Eingabezeichen, Alphabet" Σ (Sigma) ist leer')
+		if len(delta) == 0:
+			raise ValueError('Die "(determinierte) Zustands-Überführungsfunktion" δ (delta) ist leer')
+		
+		self.S = S
+		self.s0 = s0
+		self.F = F
+		self.Sigma = Sigma
+		self.delta = delta
+		self.deltaVollstaendig = None
+		self.name = name
+		self.ZustandIndex = dict()
+		self.Zustand = self.s0
+		self.testWords = testWords
+		self.beschreibung = beschreibung
+		self.reset()
+
+	def _delta(self, Zustand, Zeichen):
+		"""
+		Zustands-Ueberfuehrungsfunktion
+
+		@param Zustand: Quell-Zustand
+		@param Zeichen: einzulesendes Zeichen
+		@return: Erreichter Zustand oder None
+		"""
+		tZustand = self._toTuple(Zustand)
+		Zeichen = str(Zeichen)
+
+		if not Zeichen in self.Sigma:
+			self.log.debug("'%s' nicht Teil des Alphabets" % Zeichen)
+			raise NotInSigmaException(Zeichen)
+
+		if len(tZustand) == 1 and not self.delta.has_key(Zustand):
+			self.log.debug("Kein Zustand '%s' ?" % str(Zustand))
+			raise NoSuchStateException(Zustand)
+
+		for keyObject in self.delta[Zustand].keys():
+			if Zeichen in keyObject:
+				return self.delta[Zustand][keyObject]
+			
+		self.log.debug("Kein Folgezustand fuer '%s' von '%s' ?" % (Zeichen, Zustand))
+		return None
+
 if __name__ == '__main__':
 	test()
