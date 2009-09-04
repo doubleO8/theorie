@@ -2,6 +2,52 @@
 # -*- coding: utf-8 -*-
 from automaten import *
 
+def int2bin(value, fill=0):
+	result = list()
+	while value:
+		result.append(str(value & 1))
+		value >>= 1
+	result.reverse()
+	return ''.join(result).zfill(fill) 
+
+def quersumme(value):
+	result = 0
+	value=str(value)
+	for z in value:
+		result += int(z)
+	return result
+
+def binaere_zahlen(end=20, modulo=3, showOnlyModulo=False):
+	for i in xrange(end):
+		hit = (i % modulo == 0) and '*' or ''
+		
+		# i binaer
+		binaer = int2bin(i)
+		
+		# letzte zwei ziffern
+		lpCount = 1 + modulo % 2
+		lastPortion = binaer[-2:]
+		
+		if hit or not showOnlyModulo:
+			s = ["%3d : %-8s" % (i, binaer)]
+			#s.append("%1s" % hit)
+			s.append("%-8s" % int2bin(quersumme(i)))
+			s.append(binaer.replace('0', ''))
+			print ' '.join(s)
+			#print("%3d : %-8s %1s %2s %-5s" % (i, binaer, hit, lastPortion, binaer.replace('0', '')))
+
+def testWorte(Sigma, length=3):
+	worte = list(Sigma)
+	SigmaTmp = Sigma
+	#[a + b for a in eins for b in eins]
+	for i in xrange(length):
+		SigmaTmp = [ a + b for b in Sigma for a in SigmaTmp]
+		#print SigmaTmp
+		worte += SigmaTmp
+	return worte
+
+U1A2_Testworte = testWorte(['a', 'b'])
+
 def Script_Beispiel_1_2():
 	S = 's0 s1 s2 s3'.split()
 	s0 = 's0'
@@ -29,7 +75,7 @@ def Script_Beispiel_1_2():
 				name="Beispiel1.2",
 				beschreibung="Ein endlicher deterministischer Automat für die Sprache L, die alle Wörter mit Teilwort 001 enthält",
 				testWords='001 01 1 100 1001 0011 1000 1001 10001')
-	A.createTeXDocument()
+	return A
 
 def Script_Beispiel_1_3():
 	cS = 's0 s1 s2 s3 s4 s5 s6 s7'.split()
@@ -71,7 +117,7 @@ def Script_Beispiel_1_3():
 				name="Beispiel1.3",
 				beschreibung="Endlicher deterministischer Automat für die normierte Darstellung reeler Zahlen",
 				testWords='0 1 2 00.1 0.1 0.101. . 101 001 1.001.02')
-	C.createTeXDocument()
+	return C
 
 def Aufgabe_1b():
 	S = 'z0 z1 z2 z3 z4'.split()
@@ -97,11 +143,11 @@ def Aufgabe_1b():
 							('0', '1') : 'z4',
 						},
 			}
-	A1b = Automat(S, s0, F, Sigma, delta, 
+	A = Automat(S, s0, F, Sigma, delta, 
 					name="U1A1b",
 					beschreibung="DEA, der Dezimalzahlen akzeptiert",
 					testWords='0 1 -1 +1 2 -0 00.1 101 111 000 010 0.11.')
-	A1b.createTeXDocument()
+	return A
 
 def Aufgabe_1c():
 	S = 'z0 z1 z2 z3 z4 z5'.split()
@@ -138,7 +184,7 @@ def Aufgabe_1c():
 				name="U1A1c", 
 				beschreibung="Veränderter Automat U1A1, der keine führenden Nullen mehr akzeptiert",
 				testWords = '0 1 -1 +1 0.1 00.01 0000 101 +1.010 001')
-	A.createTeXDocument()
+	return A
 
 def Aufgabe_2a():
 	delta = {
@@ -155,8 +201,8 @@ def Aufgabe_2a():
 	A = Automat('z0 z1 z2', 'z0', 'z2', 'a b', delta,
 				name="U1A2a",
 				beschreibung="Akzeptiert alle Worte, die als zweites Zeichen ein b besitzen",
-				testWords="a b c ab ba bb aa bba bab bbb aaa")
-	A.createTeXDocument()
+				testWords=U1A2_Testworte)
+	return A
 
 def Aufgabe_2b():
 	delta = {
@@ -182,8 +228,8 @@ def Aufgabe_2b():
 	A = Automat('z0 z1 z2 z3 z4 z5 z6', 'z0', 'z2 z3 z6', 'a b', delta,
 				name="U1A2b",
 				beschreibung="Akzeptiert die drei Worte baa ab abb",
-				testWords="baa ab abb aaa baab bab aa aab")
-	A.createTeXDocument()
+				testWords=U1A2_Testworte)
+	return A
 
 def Aufgabe_2c():
 	delta = {
@@ -196,14 +242,15 @@ def Aufgabe_2c():
 							'b' : 'z1',
 						},
 				'z2' : {
-							('a', 'b') : 'z0',
+							'a' : 'z0',
+							'b' : 'z1',
 						},
 			}
 	A = Automat('z0 z1 z2', 'z0', 'z0 z1', 'a b', delta,
 				name="U1A2c",
 				beschreibung="Akzeptiert alle Worte, die nicht mit ba enden",
-				testWords="ab ba aba abaa bbbb aaaa aaaaaaaaaaaaaaaaaaaaaaaaba bbbbbbbbba")
-	A.createTeXDocument()
+				testWords=U1A2_Testworte)
+	return A
 
 def Aufgabe_2d():
 	delta = {
@@ -212,28 +259,81 @@ def Aufgabe_2d():
 							'b' : 'z4'
 						},
 				'z1' : {
-							'a' : 'z2',
-							'b' : 'z0',
+							'a' : 'z6',
+							'b' : 'z2',
 						},
 				'z2' : {
-							('a', 'b') : 'z3',
+							'a' : 'z5',
+							'b' : 'z3',
+						},
+				'z3' : {
+							'a' : 'z5', 
+							'b' : 'z3',
+						},
+				'z4' : {
+							'a' : 'z5',
+							'b' : 'z6',
+						},
+				'z5' : {
+							'a' : 'z7',
+							'b' : 'z2',
+						},
+				'z6' : {
+							('a', 'b') : 'z6',
+						},
+				'z7' : {
+							'a' : 'z7',
+							'b' : 'z2',
+						},
+			}
+	A = Automat('z0 z1 z2 z3 z4 z5 z6 z7', 'z0', 'z3 z6 z7', 'a b', delta,
+				name="U1A2d",
+				beschreibung="Akzeptiert alle Worte, die mit zwei gleichen Zeichen enden oder beginnen",
+				testWords=U1A2_Testworte)
+	return A
+
+def Aufgabe_2d1():
+	delta = {
+				'z1' : {
+							'a' : 'z2',
+							'b' : 'z4',
+						},
+				'z2' : {
+							'a' : 'z3',
+							'b' : 'z9',
 						},
 				'z3' : {
 							('a', 'b') : 'z3',
 						},
 				'z4' : {
+							'a' : 'z7',
 							'b' : 'z5',
-							'a' : 'z0'
 						},
 				'z5' : {
-							('a', 'b') : 'z3',
+							('a', 'b') : 'z5',
+						},
+				'z7' : {
+							'a' : 'z8',
+							'b' : 'z9',
+						},
+				'z8' : {
+							'a' : 'z8',
+							'b' : 'z9',
+						},
+				'z9' : {
+							'a' : 'z7',
+							'b' : 'z10',
+						},
+				'z10' : {
+							'a' : 'z7',
+							'b' : 'z10',
 						},
 			}
-	A = Automat('z0 z1 z2 z3 z4 z5', 'z0', 'z2 z3 z5', 'a b', delta,
-				name="U1A2d",
-				beschreibung="Akzeptiert alle Worte, die mit zei gleichen Zeichen enden oder beginnen",
-				testWords="ab ba aba abaa bbbb aaaa aaaaaaaaaaaaaaaaaaaaaaaaba bbbbbbbbba")
-	A.createTeXDocument()
+	A = Automat('z1 z2 z3 z4 z5 z7 z8 z9 z10', 'z1', 'z3 z5 z8 z10', 'a b', delta,
+				name="U1A2d (alternativ)",
+				beschreibung="Akzeptiert alle Worte, die mit zwei gleichen Zeichen enden oder beginnen",
+				testWords=U1A2_Testworte)
+	return A
 
 def Aufgabe_2e():
 	delta = {
@@ -249,8 +349,8 @@ def Aufgabe_2e():
 	A = Automat('z0 z1', 'z0', 'z1', 'a b', delta,
 				name="U1A2e",
 				beschreibung="Akzeptiert alle Worte, die eine ungerade Anzahl von a's enthalten",
-				testWords="ab ba aba abaa bbbb aaaa aaaaaaaaaaaaaaaaaaaaaaaaba bbbbbbbbba")
-	A.createTeXDocument()
+				testWords=U1A2_Testworte)
+	return A
 
 def Aufgabe_3a():
 	delta = {
@@ -271,7 +371,7 @@ def Aufgabe_3a():
 				name="U1A3a",
 				beschreibung="DEA, der für eine ganze Zahl in Binärdarstellung entscheidet, ob die Zahl durch 2 ohne Rest teilbar ist",
 				testWords=tw)
-	A.createTeXDocument()
+	return A
 
 def Aufgabe_3b():
 	delta = {
@@ -303,7 +403,7 @@ def Aufgabe_3b():
 				name="U1A3b",
 				beschreibung="DEA, der für eine ganze Zahl in Binärdarstellung entscheidet, ob die Zahl durch 3 ohne Rest teilbar ist",
 				testWords=tw)
-	A.createTeXDocument()
+	return A
 
 def Aufgabe_3x1():
 	delta = {
@@ -328,7 +428,7 @@ def Aufgabe_3x1():
 				name="U1A3x1",
 				beschreibung="DEA, der für eine ganze Zahl in Binärdarstellung entscheidet, ob die Zahl durch 4 ohne Rest teilbar ist",
 				testWords=tw)
-	A.createTeXDocument()
+	return A
 
 def Aufgabe_3x2():
 	delta = {
@@ -357,7 +457,7 @@ def Aufgabe_3x2():
 				name="U1A3x2",
 				beschreibung="DEA, der für eine ganze Zahl in Binärdarstellung entscheidet, ob die Zahl durch 8 ohne Rest teilbar ist",
 				testWords=tw)
-	A.createTeXDocument()
+	return A
 
 def Aufgabe_3x3():
 	delta = {
@@ -393,56 +493,41 @@ def Aufgabe_3x3():
 				name="U1A3x2",
 				beschreibung="DEA, der für eine ganze Zahl in Binärdarstellung entscheidet, ob die Zahl durch 6 ohne Rest teilbar ist",
 				testWords=tw)
-	A.createTeXDocument()
-	#A.createDotDocument()
+	return A
 
-def int2bin(value, fill=0):
-	result = list()
-	while value:
-		result.append(str(value & 1))
-		value >>= 1
-	result.reverse()
-	return ''.join(result).zfill(fill) 
+def mergeAndOpenPDF(files, output="/Users/wolf/Desktop/automaten.pdf"):
+	baseCmd = 'gs -q -dNOPAUSE -dBATCH -sDEVICE=pdfwrite -sOutputFile="%s" ' % output
+	command = baseCmd + ' '.join(files) + '&& open "%s"' % output
+	call(command, shell=True)
 
-def quersumme(value):
-	result = 0
-	value=str(value)
-	for z in value:
-		result += int(z)
-	return result
+def Uebungsblatt1():
+	automaten = list()
+	#automaten.append(Aufgabe_1b())
+	#automaten.append(Aufgabe_1c())
+	#automaten.append(Aufgabe_2a())
+	#automaten.append(Aufgabe_2b())
+	automaten.append(Aufgabe_2c())
+	automaten.append(Aufgabe_2d())
+	automaten.append(Aufgabe_2d1())
+	#automaten.append(Aufgabe_2e())
+	#automaten.append(Aufgabe_3a())
+	#automaten.append(Aufgabe_3b())
 
-def binaere_zahlen(end=20, modulo=3, showOnlyModulo=False):
-	for i in xrange(end):
-		hit = (i % modulo == 0) and '*' or ''
-		
-		# i binaer
-		binaer = int2bin(i)
-		
-		# letzte zwei ziffern
-		lpCount = 1 + modulo % 2
-		lastPortion = binaer[-2:]
-		
-		if hit or not showOnlyModulo:
-			s = ["%3d : %-8s" % (i, binaer)]
-			#s.append("%1s" % hit)
-			s.append("%-8s" % int2bin(quersumme(i)))
-			s.append(binaer.replace('0', ''))
-			print ' '.join(s)
-			#print("%3d : %-8s %1s %2s %-5s" % (i, binaer, hit, lastPortion, binaer.replace('0', '')))
+	opFiles = list()
+	for automat in automaten:
+		outputFile = automat.createTeXDocument()
+		if outputFile:
+			opFiles.append(outputFile)
+		else:
+			print("Fehler: %s" % automat.name)
+	mergeAndOpenPDF(opFiles)
 
 if __name__ == '__main__':
 	#Script_Beispiel_1_2()
 	#Script_Beispiel_1_3()
-	#Aufgabe_1b()
-	#Aufgabe_1c()
-	#Aufgabe_2a()
-	#Aufgabe_2b()
-	#Aufgabe_2c()
-	#Aufgabe_2d()
-	#Aufgabe_2e()
-	#Aufgabe_3a()
-	#Aufgabe_3b()
 	#Aufgabe_3x1()
 	#Aufgabe_3x2()
 	#Aufgabe_3x3()
 	#binaere_zahlen(100, 3, True)
+	Uebungsblatt1()
+	#print len(testWorte(['a', 'b']))
