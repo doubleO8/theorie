@@ -298,13 +298,23 @@ class NichtDeterministischerAutomat(Automat):
 		"""
 		return set(self._toList(what))
 
+	def _toFrozenSet(self, what):
+		"""
+		>>> mini = NichtDeterministischerAutomat('s0', 's0', 's0', '0 1', { 's0' : {'0' : 's0'}})
+		>>> mini._toFrozenSet('a c b')
+		frozenset(['a', 'c', 'b'])
+		>>> mini._toFrozenSet('z1')
+		frozenset(['z1'])
+		"""
+		return frozenset(self._toList(what))
+
 	def _fixDeltaMapping(self, delta):
 		"""
 		Sorgt dafuer, dass das delta dictionary die folgende Struktur hat:
 			{
-				<Zustand-Set> : {
-									<Zeichen-Set> : <Zustand-Set>
-									}
+				Zustand : {
+							<Zeichen-Set> : <Zustand-Set>
+							}
 			}
 		
 		>>> delta = { 's0' : {'0' : 's0'} }
@@ -313,24 +323,27 @@ class NichtDeterministischerAutomat(Automat):
 		>>> mini = NichtDeterministischerAutomat('s0', 's0', 's0', '0 1', delta)
 		>>> deltaNeu = mini._fixDeltaMapping(delta)
 		>>> deltaNeu
-		{('s0',): {('0',): set(['s0'])}}
+		{'s0': {frozenset(['0']): frozenset(['s0'])}}
+		>>> oDelta = { 'a' : {'a b c' : 'd e f'} }
+		>>> nDelta = mini._fixDeltaMapping(oDelta)
+		>>> nDelta
+		{'a': {frozenset(['a', 'c', 'b']): frozenset(['e', 'd', 'f'])}}
 		"""
 		deltaNeu = dict()
-		for zustand in delta:
-			tZustand = self._toTuple(zustand)
-			deltaNeu[tZustand] = dict()
+		for zustand in delta.keys():
+			deltaNeu[zustand] = dict()
 			for zeichen in delta[zustand]:
 				ziel = delta[zustand][zeichen]
-				tZeichen = self._toTuple(str(zeichen))
-				#print("tZustand : >%s< tZeichen : >%s< ziel : >%s<" % (tZustand, tZeichen, ziel))
-				deltaNeu[tZustand][tZeichen] = self._toSet(ziel)
+				sZeichen = self._toFrozenSet(zeichen)
+				sZiel = self._toFrozenSet(ziel)
+				deltaNeu[zustand][sZeichen] = sZiel
 		return deltaNeu
 		
 	def __init__(self, S, s0, F, Sigma, delta, name="EinAutomat", beschreibung='', testWords=None):
 		"""
 		>>> mini = NichtDeterministischerAutomat('s0 s1 s2 s3', 's0', 's3', '0 1', {'s0' : {'0' : ['s0', 's1'], '1' : 's0'}, 's1' : {'0' : 's2', '1' : 's2'}, 's2' : { '0' : 's3', '1' : 's3'}})
-		>>> mini._delta('s0', '0') == ['s0', 's1']
-		True
+		>>> mini._delta('s0', '0')
+		frozenset(['s1', 's0'])
 		>>> mini._delta('s0', 'b')
 		Traceback (most recent call last):
 		...
@@ -338,13 +351,7 @@ class NichtDeterministischerAutomat(Automat):
 		>>> mini._delta('zX', '0')
 		Traceback (most recent call last):
 		...
-		NoSuchStateException: ('zX',)
-		>>> mini._delta(['s0', 's1'], 1) == ['s0', 's1']
-		True
-		>>> mini._delta(['s0', 's1'], 1) == ['s0', 's1', 's3']
-		True
-		>>> mini._delta(['s0', 's1', 's3'], 1) == ['s0', 's2']
-		True
+		NoSuchStateException: 'zX'
 
 		@param S: Endliche Menge der moeglichen Zustaende
 		@param s0: Anfangszustaende
@@ -356,10 +363,10 @@ class NichtDeterministischerAutomat(Automat):
 		"""
 		self._initLogging()
 		
-		S = self._toSet(S)
-		F = self._toSet(F)
-		Sigma = self._toSet(Sigma)
-		s0 = self._toList(s0)
+		S = self._toFrozenSet(S)
+		F = self._toFrozenSet(F)
+		Sigma = self._toFrozenSet(Sigma)
+		s0 = self._toFrozenSet(s0)
 		
 		if len(S) == 0:
 			raise ValueError('Die "endliche Menge der möglichen Zustände" S des Automaten ist leer')
@@ -376,7 +383,8 @@ class NichtDeterministischerAutomat(Automat):
 		self.s0 = s0
 		self.F = F
 		self.Sigma = Sigma
-		self.delta = delta
+		self.delta = self._fixDeltaMapping(delta)
+
 		self.deltaVollstaendig = None
 		self.name = name
 		self.ZustandIndex = dict()
@@ -389,27 +397,54 @@ class NichtDeterministischerAutomat(Automat):
 		"""
 		Zustands-Ueberfuehrungsfunktion
 
+		>>> mini = NichtDeterministischerAutomat('s0 s1 s2 s3', 's0', 's3', '0 1', {'s0' : {'0' : 's0 s1', '1' : 's0'}, 's1' : {'0' : 's2', '1' : 's2'}, 's2' : { '0' : 's3', '1' : 's3'}})
+		>>> mini.S
+		frozenset(['s3', 's2', 's1', 's0'])
+		>>> mini.F
+		frozenset(['s3'])
+		>>> mini.Sigma
+		frozenset(['1', '0'])
+		>>> mini._delta(['s0', 's1'], 1)
+		frozenset(['s2', 's0'])
+		>>> mini._delta(['s0', 's1'], 1)
+		frozenset(['s2', 's0'])
+		>>> mini._delta(['s0', 's1', 's3'], 1)
+		frozenset(['s2', 's0'])
+		>>> mini._delta('s0', '1')
+		frozenset(['s0'])
+
 		@param Zustand: Quell-Zustand
 		@param Zeichen: einzulesendes Zeichen
-		@return: Erreichter Zustand oder None
+		@return: Menge der erreichten Zustaende oder leere Menge
 		"""
-		tZustand = self._toTuple(Zustand)
 		Zeichen = str(Zeichen)
-
+		
 		if not Zeichen in self.Sigma:
-			self.log.debug("'%s' nicht Teil des Alphabets" % Zeichen)
+			self.log.debug("'%s' nicht Teil des Alphabets (%s)" % (Zeichen, self.Sigma))
 			raise NotInSigmaException(Zeichen)
 
-		if len(tZustand) == 1 and not self.delta.has_key(Zustand):
+		if isinstance(Zustand, list):
+			self.log.debug("Zustand liste")
+			ziele = frozenset()
+			for item in Zustand:
+				ziele = ziele.union(self._delta(item, Zeichen))
+			return ziele
+		else:
+			Zustand = str(Zustand)
+
+		if Zustand not in self.S:
 			self.log.debug("Kein Zustand '%s' ?" % str(Zustand))
 			raise NoSuchStateException(Zustand)
+
+		if Zustand not in self.delta:
+			return frozenset([])
 
 		for keyObject in self.delta[Zustand].keys():
 			if Zeichen in keyObject:
 				return self.delta[Zustand][keyObject]
 			
 		self.log.debug("Kein Folgezustand fuer '%s' von '%s' ?" % (Zeichen, Zustand))
-		return None
+		return frozenset([])
 
 if __name__ == '__main__':
 	test()
