@@ -316,6 +316,27 @@ class NichtDeterministischerAutomat(Automat):
 		"""
 		return frozenset(self._toList(what))
 
+	def _int2bin(self, value, fill=0):
+		"""
+		>>> A = NichtDeterministischerAutomat('z0 z1', 'z0', 'z0', '0 1', {'z0' : {'0' : 'z0', '1' : 'z1'}, 'z1' : {'0' : 'z0', '1' : 'z1'}})
+		>>> b2 = A._int2bin(2)
+		>>> b2
+		'10'
+		>>> A.check(b2)
+		True
+		>>> b1 = A._int2bin(1)
+		>>> b1
+		'1'
+		>>> A.check(b1)
+		False
+		"""
+		result = list()
+		while value:
+			result.append(str(value & 1))
+			value >>= 1
+		result.reverse()
+		return ''.join(result).zfill(fill) 
+
 	def _fixDeltaMapping(self, delta):
 		"""
 		Sorgt dafuer, dass das zurueckgegebene dictionary die folgende Struktur hat:
