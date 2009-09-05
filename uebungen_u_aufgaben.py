@@ -48,6 +48,26 @@ def testWorte(Sigma, length=3):
 
 U1A2_Testworte = testWorte(['a', 'b'])
 
+def Script_Beispiel_1_1():
+	S = 'aus an'
+	s0 = 'aus'
+	F = 'an'
+	Sigma = '0 1'
+	delta = {
+				'aus' : {
+							"0" : 'aus',
+							"1" : 'an',
+						},
+				'an' : {
+							'0' : 'aus',
+							'1' : 'an',
+						},
+			}
+	return Automat(S, s0, F, Sigma, delta,
+				name="Beispiel1.1",
+				beschreibung="Ein Schalter",
+				testWords=testWorte(['0', '1']))
+
 def Script_Beispiel_1_2():
 	S = 's0 s1 s2 s3'.split()
 	s0 = 's0'
@@ -743,11 +763,12 @@ def Aktuell():
 
 def Tester():
 	automaten = list()
-	automaten.append(Aufgabe_3x1())
-	automaten.append(Aufgabe_3x2())
-	automaten.append(Script_Beispiel_1_3())
-	automaten.append(Script_Beispiel_1_4())
-	automaten.append(Script_Beispiel_1_4intuitiv())
+	#automaten.append(Aufgabe_3x1())
+	#automaten.append(Aufgabe_3x2())
+	automaten.append(Script_Beispiel_1_1())
+	#automaten.append(Script_Beispiel_1_3())
+	#automaten.append(Script_Beispiel_1_4())
+	#automaten.append(Script_Beispiel_1_4intuitiv())
 	
 	for automat in automaten:
 		print automat
