@@ -37,6 +37,10 @@ class NoAcceptingStateException(AutomatException):
 	def __init__(self, value, validSet=frozenset()):
 		AutomatException.__init__(self, value, validSet, 'ist nicht Teil der Menge der moeglichen Endzustaende')
 
+class NoRuleForStateException(AutomatException):
+	def __init__(self, value, statesWithRules=list()):
+		AutomatException.__init__(self, value, frozenset(statesWithRules), 'hat keine definierten Regeln.')
+
 def test():
 	"""
 	doctest (unit testing)
@@ -390,13 +394,69 @@ class NichtDeterministischerAutomat(Automat):
 		self.Sigma = Sigma
 		self.delta = self._fixDeltaMapping(delta)
 
-		self.deltaVollstaendig = None
 		self.name = name
 		self.ZustandIndex = dict()
 		self.Zustand = self.s0
 		self.testWords = testWords
 		self.beschreibung = beschreibung
 		self.reset()
+
+	def istDEA(self):
+		"""
+		Ein DEA zeichnet sich dadurch aus, dass
+			* s0 ein einzelner Anfangszustand und
+			* jedem Paar(s, a) aus [S kreuz Sigma] ein einzelner Funktionswert (Zustand) 
+		zugeordnet ist.
+		
+		>>> mini = NichtDeterministischerAutomat('s0 s1 s2 s3', 's0', 's3', '0 1', {'s0' : {'0' : 's0 s1', '1' : 's0'}, 's1' : {'0' : 's2', '1' : 's2'}, 's2' : { '0' : 's3', '1' : 's3'}})
+		>>> mini.istDEA()
+		False
+		>>> m2 = NichtDeterministischerAutomat('s0 s1 s2 s3', 's0', 's3', '0 1', {'s0' : {'0' : 's0', '1' : 's0'}, 's1' : {'0' : 's2', '1' : 's2'}, 's2' : { '0' : 's3', '1' : 's3'}})
+		>>> m2.istDEA()
+		True
+		"""
+		if (len(self.s0) != 1):
+			return False
+		for zustand in self.delta:
+			for zeichen in self.delta[zustand]:
+				if len(self.delta[zustand][zeichen]) != 1:
+					return False
+		return True
+	
+	def istDeltaVollstaendig(self):
+		"""
+		>>> mini = NichtDeterministischerAutomat('s0 s1 s2 s3', 's0', 's3', '0 1', {'s0' : {'0' : 's0 s1', '1' : 's0'}, 's1' : {'0' : 's2', '1' : 's2'}, 's2' : { '0' : 's3', '1' : 's3'}})
+		>>> mini.istDeltaVollstaendig()
+		False
+		>>> m2 = NichtDeterministischerAutomat('s0 s1 s2 s3', 's0', 's3', '0 1', {'s0' : {'0' : 's0 s1', '1' : 's0'}, 's1' : {'0' : 's2', '1' : 's2'}, 's2' : { '0' : 's3', '1' : 's3'}, 's3' : {}})
+		>>> m2.istDeltaVollstaendig()
+		True
+		"""
+		return len(self.F.difference(self.delta.keys())) == 0
+
+	def testWorteGenerator(self, length=3, Sigma=None):
+		"""
+		Generiert Testworte der gewuenschten Laenge bestehend aus dem Alphabet des Automaten.
+		Optional kann Sigma angegeben werden
+		
+		>>> mini = NichtDeterministischerAutomat('s0 s1 s2 s3', 's0', 's3', '0 1', {'s0' : {'0' : 's0 s1', '1' : 's0'}, 's1' : {'0' : 's2', '1' : 's2'}, 's2' : { '0' : 's3', '1' : 's3'}})
+		>>> mini.testWorteGenerator(length=1)
+		['1', '0', '11', '01', '10', '00']
+		>>> mini.testWorteGenerator(Sigma=['a', 'b'], length=1)
+		['a', 'b', 'aa', 'ba', 'ab', 'bb']
+
+		@param length: Maximal-Laenge der generierten Worte
+		@param Sigma: (optional) Alternativ-Alphabet
+		@return: Liste mit Testworten
+		"""
+		if Sigma == None:
+			Sigma = self.Sigma
+		worte = list(Sigma)
+		SigmaTmp = Sigma
+		for i in xrange(length):
+			SigmaTmp = [ a + b for b in Sigma for a in SigmaTmp]
+			worte += SigmaTmp
+		return worte
 
 	def _delta(self, Zustand, Zeichen):
 		"""
@@ -414,7 +474,9 @@ class NichtDeterministischerAutomat(Automat):
 		>>> mini._delta(['s0', 's1'], 1)
 		frozenset(['s2', 's0'])
 		>>> mini._delta(['s0', 's1', 's3'], 1)
-		frozenset(['s2', 's0'])
+		Traceback (most recent call last):
+		...
+		NoRuleForStateException: 's3' hat keine definierten Regeln. [s0,s1,s2]
 		>>> mini._delta('s0', '1')
 		frozenset(['s0'])
 
@@ -436,24 +498,112 @@ class NichtDeterministischerAutomat(Automat):
 			for item in Zustand:
 				ziele = ziele.union(self._delta(item, Zeichen))
 			return ziele
+		elif isinstance(Zustand, basestring):
+			# Ansonsten: Zustand in frozenset verwandeln
+			Zustand = frozenset([str(Zustand)])
+		elif isinstance(Zustand, frozenset):
+			#self.log.warning("Zustand: schon frozenset %s" % repr(Zustand))
+			pass
 		else:
-			# Ansonsten: Zustand in String verwandeln
-			Zustand = str(Zustand)
+			self.log.warning("Zustand: nicht unterstuetzter Datentyp %s" % repr(Zustand))
+			import sys
+			sys.exit(99)
+
+		# Da Namen der Zustaende Strings sind, brauchen wir den Zustand auch als String
+		stringZustand = list(Zustand)[0]
 
 		# Pruefen, ob der zu behandelnde Zustand ueberhaupt Teil der Zustandsmenge
-		if Zustand not in self.S:
-			self.log.debug("Zustand '%s' nicht in der Zustandsmenge '%s' ?" % (Zustand, ','.join(sorted(self.S))))
-			raise NoSuchStateException(Zustand, self.S)
+		if not Zustand.issubset(self.S):
+			#self.log.debug("Zustand '%s' nicht in der Zustandsmenge '%s' ?" % (Zustand, ','.join(sorted(self.S))))
+			raise NoSuchStateException(stringZustand, self.S)
 
-		if Zustand not in self.delta:
-			return frozenset([])
+		# Keine Regeln fuer Zustand definiert
+		if not Zustand.issubset(self.delta):
+			raise NoRuleForStateException(stringZustand, self.delta.keys())
 
-		for keyObject in self.delta[Zustand].keys():
+		for keyObject in self.delta[stringZustand].keys():
 			if Zeichen in keyObject:
-				return self.delta[Zustand][keyObject]
+				return self.delta[stringZustand][keyObject]
 			
 		self.log.warning("Kein Folgezustand fuer '%s' von '%s'." % (Zeichen, Zustand))
 		return frozenset([])
+
+	def check(self, Wort, doRaise=False):
+		"""
+		Prüft, ob das gegebene Wort zur akzeptierten Sprache des Automaten gehoert
+		>>> mini = NichtDeterministischerAutomat('z0 z1', 'z0', 'z1', 'a', {'z0' : {'a' : 'z1'}, 'z1' : {'a' : 'z1'}})
+		>>> mini.check("a")
+		True
+		>>> mini.check("b")
+		False
+		>>> mini.check("aaaa")
+		True
+		>>> mini.check("aba")
+		False
+		>>> mini.check("aba", True)
+		Traceback (most recent call last):
+		...
+		NotInSigmaException: 'b' ist nicht Teil der Menge der Eingabezeichen [a]
+
+		>>> mini2 = NichtDeterministischerAutomat('s0 s1 s2 s3', 's0', 's3', ['0', '1'], { 's0' : { "0" : 's1', "1" : 's0'}, 's1' : { '0' : 's2', '1' : 's0'}, 's2' : { '0' : 's2', '1' : 's3'}, 's3' : { '0' : 's3', '1' : 's3'} })
+		>>> mini2.check("10011")
+		True
+		>>> mini2.check("a")
+		False
+		>>> mini2.check("111111111111")
+		False
+		>>> mini2.check("001")
+		True
+		>>> mini2.check("111111111111", True)
+		Traceback (most recent call last):
+		...
+		NoAcceptingStateException: frozenset(['s0']) ist nicht Teil der Menge der moeglichen Endzustaende [s3]
+		>>> mini2.check("a", True)
+		Traceback (most recent call last):
+		...
+		NotInSigmaException: 'a' ist nicht Teil der Menge der Eingabezeichen [0,1]
+
+		>>> mini3 = NichtDeterministischerAutomat('z0 z1', 'z0', 'z1', ['a', 'b'], {'z0' : {'a' : 'z1'}, 'z1' : {'a' : 'z1'}})
+		>>> print mini3.Sigma
+		frozenset(['a', 'b'])
+		>>> mini3.check("ab", True)
+		Traceback (most recent call last):
+		...
+		NoAcceptingStateException: frozenset([]) ist nicht Teil der Menge der moeglichen Endzustaende [z0,z1]
+
+		@param Wort: Das zu pruefende Wort
+		@return: True oder False
+		"""
+		self.reset()
+		self.log.debug("Teste Wort '%s'" % Wort)
+		Wort = str(Wort)
+
+		for Zeichen in Wort:
+			try:
+				altZustand = self.Zustand
+				self.Zustand = self._delta(self.Zustand, Zeichen)
+				if len(self.Zustand) == 0:
+					self.log.debug("Kein Ziel-Zustand fuer Zeichen '%s' von Zustand '%s' definiert" % (Zeichen, altZustand))
+					if doRaise:
+						raise NoAcceptingStateException(self.Zustand, self.S)
+					return False
+			except NotInSigmaException, e:
+				self.log.debug("Zeichen '%s' nicht Teil des Alphabets." %  Zeichen)
+				if doRaise:
+					raise
+				return False
+			except NoRuleForStateException, e:
+				self.log.debug("Zeichen '%s' nicht Teil des Alphabets." %  Zeichen)
+				if doRaise:
+					raise
+				return False
+
+		if not self.Zustand.issubset(self.F):
+			self.log.debug("Kein Endzustand erreicht.")
+			if doRaise:
+				raise NoAcceptingStateException(self.Zustand, self.F)
+			return False
+		return True
 
 if __name__ == '__main__':
 	test()
