@@ -12,26 +12,30 @@ class AutomatException(Exception):
 	>>> print x
 	'ohje' xXx [achNein]
 	"""
-	def __init__(self, value, validSet=frozenset(), explanation=''):
+	def __init__(self, value, validSet=frozenset(), explanation='', hint=None):
 		self.value = value
 		self.validSet = validSet
 		self.explanation = explanation
+		self.hint = hint
 	def __str__(self):
 		# Alte Exception gab nur value zurueck, deswegen: HACK.
 		if len(self.value) > 10:
 			return repr(self.value)
 		validSetText = ''
+		hint = ''
 		if len(self.validSet):
 			validSetText = '[%s]' % ','.join(sorted(self.validSet))
-		return "%s %s %s" % (repr(self.value), self.explanation, validSetText)
+		if self.hint:
+			hint = '*%s* ' % self.hint.upper()
+		return "%s%s %s %s" % (hint, repr(self.value), self.explanation, validSetText)
 
 class NotInSigmaException(AutomatException):
-	def __init__(self, value, validSet=frozenset()):
-		AutomatException.__init__(self, value, validSet, 'ist nicht Teil der Menge der Eingabezeichen')
+	def __init__(self, value, validSet=frozenset(), hint=None):
+		AutomatException.__init__(self, value, validSet, 'ist nicht Teil der Menge der Eingabezeichen', hint)
 
 class NoSuchStateException(AutomatException):
-	def __init__(self, value, validSet=frozenset()):
-		AutomatException.__init__(self, value, validSet, 'ist nicht Teil der Menge der moeglichen Zustaende')
+	def __init__(self, value, validSet=frozenset(), hint=None):
+		AutomatException.__init__(self, value, validSet, 'ist nicht Teil der Menge der moeglichen Zustaende', hint)
 
 class NoAcceptingStateException(AutomatException):
 	def __init__(self, value, validSet=frozenset()):
@@ -305,7 +309,6 @@ class NichtDeterministischerAutomat(Automat):
 			return what
 		else:
 			raise ValueError("Cannot convert '%s' to list()" % str(what))
-
 	def _toFrozenSet(self, what):
 		"""
 		>>> mini = NichtDeterministischerAutomat('s0', 's0', 's0', '0 1', { 's0' : {'0' : 's0'}})
@@ -315,6 +318,19 @@ class NichtDeterministischerAutomat(Automat):
 		frozenset(['z1'])
 		"""
 		return frozenset(self._toList(what))
+
+	def _fzString(self, what):
+		"""
+		String-Representation einer Menge (frozenset).
+		
+		>>> mini = NichtDeterministischerAutomat('s0', 's0', 's0', '0 1', { 's0' : {'0' : 's0'}})
+		>>> mini._fzString(frozenset([]))
+		'{}'
+		>>> mini._fzString(frozenset(['a', 'c', 'b']))
+		'{a,b,c}'
+		
+		"""
+		return '{%s}' % ','.join(sorted(what))
 
 	def _int2bin(self, value, fill=0):
 		"""
@@ -381,7 +397,19 @@ class NichtDeterministischerAutomat(Automat):
 		Traceback (most recent call last):
 		...
 		NoSuchStateException: 'zX' ist nicht Teil der Menge der moeglichen Zustaende [s0,s1,s2,s3]
-
+		>>> mini = NichtDeterministischerAutomat('s0 s1 s2 s3', 'zY', 's3', '0 1', {'s0' : {'0' : ['s0', 's1'], '1' : 's0'}, 's1' : {'0' : 's2', '1' : 's2'}, 's2' : { '0' : 's3', '1' : 's3'}})
+		Traceback (most recent call last):
+		...
+		NoSuchStateException: *STARTZUSTAND* frozenset(['zY']) ist nicht Teil der Menge der moeglichen Zustaende [s0,s1,s2,s3]
+		>>> mini = NichtDeterministischerAutomat('s0 s1 s2 s3', 's0', 'zZ', '0 1', {'s0' : {'0' : ['s0', 's1'], '1' : 's0'}, 's1' : {'0' : 's2', '1' : 's2'}, 's2' : { '0' : 's3', '1' : 's3'}})
+		Traceback (most recent call last):
+		...
+		NoSuchStateException: *ENDZUSTAENDE* frozenset(['zZ']) ist nicht Teil der Menge der moeglichen Zustaende [s0,s1,s2,s3]
+		>>> mini = NichtDeterministischerAutomat('s0 s1 s2 s3', 's0', 's3', '0 1', {'NotInAlphabet' : {'0' : ['s0', 's1'], '1' : 's0'}, 's1' : {'0' : 's2', '1' : 's2'}, 's2' : { '0' : 's3', '1' : 's3'}})
+		Traceback (most recent call last):
+		...
+		NoSuchStateException: *UEBERFUEHRUNGSFUNKTION* frozenset(['NotInAlphabet']) ist nicht Teil der Menge der moeglichen Zustaende [s0,s1,s2,s3]
+		
 		@param S: Endliche Menge der moeglichen Zustaende
 		@param s0: Anfangszustaende
 		@param F: Menge der Endzustaende
@@ -398,6 +426,7 @@ class NichtDeterministischerAutomat(Automat):
 		Sigma = self._toFrozenSet(Sigma)
 		s0 = self._toFrozenSet(s0)
 		
+		# Ueberpruefen I - S, s0, F, Sigma sowie delta duerfen nicht leer sein.
 		if len(S) == 0:
 			raise ValueError('Die "endliche Menge der möglichen Zustände" S des Automaten ist leer')
 		if len(s0) == 0:
@@ -409,18 +438,38 @@ class NichtDeterministischerAutomat(Automat):
 		if len(delta) == 0:
 			raise ValueError('Die "(determinierte) Zustands-Überführungsfunktion" δ (delta) ist leer')
 		
+		# Ueberpruefen II - s0 und F muessen Untermengen von S sein
+		if not s0.issubset(S):
+			raise NoSuchStateException(s0, S, hint="Startzustand")
+		if not F.issubset(S):
+			raise NoSuchStateException(F, S, hint="Endzustaende")
+
 		self.S = S
 		self.s0 = s0
 		self.F = F
 		self.Sigma = Sigma
 		self.delta = self._fixDeltaMapping(delta)
 
+		# Ueberpruefen III - das delta Ueberfuehrungsregelwerk soll keine Uebergaenge fuer Zustaende
+		#                    definieren, die nicht eine Untermenge von S sind
+		fzDeltaKeys = frozenset(self.delta.keys()) 
+		if not fzDeltaKeys.issubset(self.S):
+			raise NoSuchStateException(fzDeltaKeys.difference(self.S), self.S, "Ueberfuehrungsfunktion")
+
+		# Ein paar meta Daten ..
 		self.name = name
 		self.ZustandIndex = dict()
-		self.Zustand = self.s0
 		self.testWords = testWords
 		self.beschreibung = beschreibung
+
+		# Automat zuruecksetzen (aktuellen Zustand auf s0 setzen)
 		self.reset()
+
+	def reset(self):
+		"""
+		Setzt den Automaten zurueck
+		"""
+		self.Zustand = self.s0
 
 	def istDEA(self):
 		"""
@@ -604,12 +653,14 @@ class NichtDeterministischerAutomat(Automat):
 				altZustand = self.Zustand
 				self.Zustand = self._delta(self.Zustand, Zeichen)
 				if len(self.Zustand) == 0:
-					self.log.debug("Kein Ziel-Zustand fuer Zeichen '%s' von Zustand '%s' definiert" % (Zeichen, altZustand))
+					msg = "Kein Ziel-Zustand fuer Zeichen '%s' (Alphabet: %s)" % (Zeichen, self._fzString(self.Sigma))
+					msg += " von Zustand %s definiert." % (self._fzString(altZustand))
+					self.log.debug(msg)
 					if doRaise:
 						raise NoAcceptingStateException(self.Zustand, self.S)
 					return False
 			except NotInSigmaException, e:
-				self.log.debug("Zeichen '%s' nicht Teil des Alphabets." %  Zeichen)
+				self.log.debug("Zeichen '%s' nicht Teil des Alphabet %s." %  (Zeichen,  self._fzString(self.Sigma)))
 				if doRaise:
 					raise
 				return False
