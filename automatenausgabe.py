@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 import os, sys, tempfile
 from subprocess import *
+from automaten import *
 
 WORKINGDIR = '/Users/wolf/Documents/programming/theorie'
 OUTPUTDIR = WORKINGDIR + os.path.sep + 'texOutput'
@@ -17,11 +18,29 @@ class AusgebenderAutomat(object):
 		return tempfile.mkstemp(dir=OUTPUTDIR)[1]
 
 class OAsciiAutomat(object):
+	def _fzAscii(self, what):
+		"""
+		String-Representation einer Menge (frozenset).
+		
+		>>> mini = NichtDeterministischerAutomat('s0', 's0', 's0', '0 1', { 's0' : {'0' : 's0'}})
+		>>> mini._fzString(frozenset([]))
+		'{}'
+		>>> mini._fzString(frozenset(['a', 'c', 'b']))
+		'{a,b,c}'
+		
+		"""
+		if len(what) == 1:
+			return list(what)[0]
+		if len(what) == 0:
+			return '-'
+		return '{%s}' % ','.join(sorted(what))
+
 	def _getAsciiArtDeltaTable(self):
+		s = " Überführungsfunktion:\n"
 		maxLength = 1
 		
 		for zeichen in self.Sigma:
-			zLength = len(str(zeichen)) 
+			zLength = len(self._fzString(zeichen)) 
 			if  zLength > maxLength:
 				maxLength = zLength
 				
@@ -31,7 +50,7 @@ class OAsciiAutomat(object):
 				maxLength = zLength
 
 		fmtString = '%' + str(maxLength) + 's'
-		s = ' ' + (fmtString % str(' δ'))
+		s += '  ' + (fmtString % str(' δ'))
 		pfxLength = len(s)
 
 		for zeichen in self.Sigma:
@@ -39,11 +58,17 @@ class OAsciiAutomat(object):
 		s += "\n"
 		s += "-" * ((maxLength+2) * len(self.Sigma) + (len(self.Sigma)) + pfxLength)
 		s += "\n"
-		for zustand in self.S:
+		for zustand in sorted(self.S):
 			s += ' ' + (fmtString % zustand)
-			for zeichen in self.Sigma:
-				zZustand = self._delta(zustand, zeichen) or '-'
-				s += ' | %s' % (fmtString % zZustand)
+			for zeichen in sorted(self.Sigma):
+				sZustand = '!'
+				try:
+					zielZustand = self._delta(zustand, zeichen)
+					sZustand = self._fzAscii(zielZustand)
+				except Exception, e:
+					print e
+					sZustand = '/'
+				s += ' | %s' % (fmtString % sZustand)
 			s += "\n"
 		return s
 

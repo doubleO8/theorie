@@ -115,9 +115,34 @@ def Script_Beispiel_1_3():
 			}
 	C = Automat(cS, cs0, cF, cSigma, cdelta, 
 				name="Beispiel1.3",
-				beschreibung="Endlicher deterministischer Automat für die normierte Darstellung reeler Zahlen",
+				beschreibung="Endlicher deterministischer Automat für die normierte Darstellung reeller Zahlen",
 				testWords='0 1 2 00.1 0.1 0.101. . 101 001 1.001.02')
 	return C
+
+def Script_Beispiel_1_4():
+	S = 's0 s1 s2 s3'
+	s0 = 's0'
+	F = 's3'
+	Sigma = '0 1'
+	delta = {
+				's0' : {
+						'0' : 's0 s1',
+						'1' : 's0',
+						},
+				's1' : {
+						'0' : 's2',
+						'1' : 's2',
+						},
+				's2' : {
+						'0' : 's3',
+						'1' : 's3',
+						},
+			}
+	A = NichtDeterministischerAutomat(S, s0, F, Sigma, delta,
+				name="Beispiel1.4",
+				beschreibung="Ein endlicher nichtdeterministischer Automat für die Menge aller Bitfolgen, deren drittletzte Ziffer eine 0 ist",
+				testWords=testWorte(['0', '1']))
+	return A
 
 def Script_Beispiel_1_4intuitiv():
 	S = '111 110 100 101 010 011 001 000'
@@ -715,7 +740,23 @@ def Aktuell():
 	automaten.append(Aufgabe_5b())
 	automaten.append(Aufgabe_EidTI_U6())
 	return erstelleAutomatenPDFs(automaten)
+
+def Tester():
+	automaten = list()
+	automaten.append(Aufgabe_3x1())
+	automaten.append(Aufgabe_3x2())
+	automaten.append(Script_Beispiel_1_3())
+	automaten.append(Script_Beispiel_1_4())
+	automaten.append(Script_Beispiel_1_4intuitiv())
 	
+	for automat in automaten:
+		print automat
+		if automat.testWords:
+			print "\nTEST:\n%s" % ('-' * 80)
+			for (word, successful, result) in automat.checkWords(automat.testWords):
+				print "[%2s] %-10s : %s" % ((successful and 'ok' or 'KO'), word, result)
+			print "\n"
+
 if __name__ == '__main__':
 	#binaere_zahlen(100, 3, True)
 
@@ -725,4 +766,5 @@ if __name__ == '__main__':
 
 	#mergeAndOpenPDF(Sonstige(), "/Users/wolf/Desktop/Automaten Sonstige.pdf")
 	
-	mergeAndOpenPDF(Aktuell(), "/Users/wolf/Desktop/Aktuell.pdf")
+	#mergeAndOpenPDF(Aktuell(), "/Users/wolf/Desktop/Aktuell.pdf")
+	Tester()
