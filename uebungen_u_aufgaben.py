@@ -254,7 +254,7 @@ def Script_Beispiel_1_5_DEA():
 				testWords=testWorte(['0', '1']))
 	return A
 
-testZahlen1='0 1 2 +99 -99 9- a -'
+testZahlen1='0 1 2 +99 -99 9- a - +- -+ -+99 0019292'
 
 def Script_Beispiel_1_6_NDA():
 	S = 's0 s1 s2'

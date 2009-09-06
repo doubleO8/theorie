@@ -5,7 +5,7 @@ import os,sys
 import automatenausgabe
 from automatenausgabe import *
 
-USED_LOGLEVEL = logging.INFO
+USED_LOGLEVEL = logging.DEBUG
 
 class AutomatException(Exception):
 	"""
@@ -598,6 +598,12 @@ class EpsilonAutomat(NichtDeterministischerAutomat):
 					self.log.debug(inter)
 					return True
 				epsilonMenge = NichtDeterministischerAutomat._delta(self, epsilonMenge, EpsilonAutomat.EPSILON)
+			if doRaise:
+				raise
+		except Exception, e:
+			if doRaise:
+				raise
+		self.log.debug("FAAAAAAAAAAALSE")
 		return False
 
 if __name__ == '__main__':
