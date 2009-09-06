@@ -254,7 +254,46 @@ def Script_Beispiel_1_5_DEA():
 				testWords=testWorte(['0', '1']))
 	return A
 
-def Aufgabe_1b():
+testZahlen1='0 1 2 +99 -99 9- a -'
+
+def Script_Beispiel_1_6_NDA():
+	S = 's0 s1 s2'
+	s0 = 's0'
+	F = 's2'
+	Sigma = '0 1 2 3 4 5 6 7 8 9 + -'
+	delta = {
+				's0' : {
+						('+', '-', EpsilonAutomat.EPSILON) : 's1',
+						},
+				's1' : {
+						('0', '1', '2', '3', '4', '5', '6', '7', '8', '9') : 's2',
+						},
+				's2' : {
+						('0', '1', '2', '3', '4', '5', '6', '7', '8', '9') : 's2',
+						},
+			}
+	return EpsilonAutomat(S, s0, F, Sigma, delta, testWords=testZahlen1)
+
+def Script_Beispiel_1_6_DEA():
+	S = 's0 s1 s2'
+	s0 = 's0'
+	F = 's2'
+	Sigma = '0 1 2 3 4 5 6 7 8 9 + -'
+	delta = {
+				's0' : {
+						'+ -' : 's1',
+						('0', '1', '2', '3', '4', '5', '6', '7', '8', '9') : 's2',
+						},
+				's1' : {
+						('0', '1', '2', '3', '4', '5', '6', '7', '8', '9') : 's2',
+						},
+				's2' : {
+						('0', '1', '2', '3', '4', '5', '6', '7', '8', '9') : 's2',
+						},
+			}
+	return Automat(S, s0, F, Sigma, delta, testWords=testZahlen1)
+	
+def Uebungsblatt1_Aufgabe_1b():
 	S = 'z0 z1 z2 z3 z4'.split()
 	s0 = 'z0'
 	F = 'z2 z4'.split()
@@ -284,7 +323,7 @@ def Aufgabe_1b():
 					testWords='0 1 -1 +1 2 -0 00.1 101 111 000 010 0.11.')
 	return A
 
-def Aufgabe_1c():
+def Uebungsblatt1_Aufgabe_1c():
 	S = 'z0 z1 z2 z3 z4 z5'.split()
 	s0 = 'z0'
 	F = 'z2 z4 z5'.split()
@@ -321,7 +360,7 @@ def Aufgabe_1c():
 				testWords = '0 1 -1 +1 0.1 00.01 0000 101 +1.010 001')
 	return A
 
-def Aufgabe_2a():
+def Uebungsblatt1_Aufgabe_2a():
 	delta = {
 				'z0' : {
 							('a', 'b') : 'z1',
@@ -339,7 +378,7 @@ def Aufgabe_2a():
 				testWords=U1A2_Testworte)
 	return A
 
-def Aufgabe_2b():
+def Uebungsblatt1_Aufgabe_2b():
 	delta = {
 				'z0' : {
 							'a' : 'z1',
@@ -366,7 +405,7 @@ def Aufgabe_2b():
 				testWords=U1A2_Testworte)
 	return A
 
-def Aufgabe_2c():
+def Uebungsblatt1_Aufgabe_2c():
 	delta = {
 				'z0' : {
 							'a' : 'z0',
@@ -387,7 +426,7 @@ def Aufgabe_2c():
 				testWords=U1A2_Testworte)
 	return A
 
-def Aufgabe_2d():
+def Uebungsblatt1_Aufgabe_2d():
 	delta = {
 				'z0' : {
 							'a' : 'z1',
@@ -427,7 +466,7 @@ def Aufgabe_2d():
 				testWords=U1A2_Testworte)
 	return A
 
-def Aufgabe_2d1():
+def Uebungsblatt1_Aufgabe_2d1():
 	delta = {
 				'z1' : {
 							'a' : 'z2',
@@ -470,7 +509,7 @@ def Aufgabe_2d1():
 				testWords=U1A2_Testworte)
 	return A
 
-def Aufgabe_2e():
+def Uebungsblatt1_Aufgabe_2e():
 	delta = {
 				'z0' : {
 							'a' : 'z1',
@@ -487,7 +526,7 @@ def Aufgabe_2e():
 				testWords=U1A2_Testworte)
 	return A
 
-def Aufgabe_3a():
+def Uebungsblatt1_Aufgabe_3a():
 	delta = {
 				'z0' : {
 							'0' : 'z0',
@@ -508,7 +547,7 @@ def Aufgabe_3a():
 				testWords=tw)
 	return A
 
-def Aufgabe_3b():
+def Uebungsblatt1_Aufgabe_3b():
 	delta = {
 				'z0' : {
 							'0' : 'z1',
@@ -540,7 +579,7 @@ def Aufgabe_3b():
 				testWords=tw)
 	return A
 
-def Aufgabe_3x1():
+def Sonstige_Aufgabe_3x1():
 	delta = {
 				'z0' : {
 							'0' : 'z1',
@@ -565,7 +604,7 @@ def Aufgabe_3x1():
 				testWords=tw)
 	return A
 
-def Aufgabe_3x2():
+def Sonstige_Aufgabe_3x2():
 	delta = {
 				'z0' : {
 							'0' : 'z1',
@@ -594,7 +633,7 @@ def Aufgabe_3x2():
 				testWords=tw)
 	return A
 
-def Aufgabe_3x3():
+def Sonstige_Aufgabe_3x3():
 	delta = {
 				'z0' : {
 							'0' : 'z1',
@@ -630,7 +669,7 @@ def Aufgabe_3x3():
 				testWords=tw)
 	return A
 
-def Aufgabe_5b():
+def Uebungsblatt1_Aufgabe_5b():
 	delta = {
 				'1' : {
 							'a' : '2',
@@ -658,8 +697,40 @@ def Aufgabe_5b():
 				testWords=U1A2_Testworte)
 	return A
 
+def Uebungsblatt2_Aufgabe1():
+	delta = {
+				'z0' : { 
+							('+', '-', EpsilonAutomat.EPSILON) : 'z1',
+						},
+				'z1' : {
+						'0 1' : 'z2'
+						},
+				'z2' : {
+						'.' : 'z3',
+						EpsilonAutomat.EPSILON : 'z1 z4',
+						},
+				'z3' : {
+						'0 1' : 'z4',
+						},
+				'z4' :{
+						'e' : 'z5',
+						EpsilonAutomat.EPSILON : 'z3 z7',
+						},
+				'z5' :{
+						('+', '-', EpsilonAutomat.EPSILON) : 'z6',
+						},
+				'z6' :{
+						'0 1' : 'z7',
+						},
+				'z7' :{
+						EpsilonAutomat.EPSILON : 'z6',
+						},
+			}
 
-def Aufgabe_EidTI_U6():
+	return EpsilonAutomat('z0 z1 z2 z3 z4 z5 z6 z7', 'z0', 'z7', '0 1 + - . e', delta, 
+						testWords="0 1 0.1 0.1e-1")
+
+def Sonstige_Aufgabe_EidTI_U6():
 	"""
 	boese: schlecht erarbeitet und hingewuergt.
 	"""
@@ -712,6 +783,9 @@ def Aufgabe_EidTI_U6():
 	return A
 
 def mergeAndOpenPDF(files, output="/Users/wolf/Desktop/automaten.pdf"):
+	if len(files) == 0:
+		print "merge WHAT exactly ?"
+		return
 	baseCmd = 'gs -q -dNOPAUSE -dBATCH -sDEVICE=pdfwrite -sOutputFile="%s" ' % output
 	command = baseCmd + ' '.join(files) + '&& open "%s"' % output
 	call(command, shell=True)
@@ -726,50 +800,54 @@ def erstelleAutomatenPDFs(automaten):
 			print("Fehler: %s" % automat.name)
 	return opFiles
 
-def Uebungsblatt1():
+def erstelleAutomatenFuer(prefix):
 	automaten = list()
-	automaten.append(Aufgabe_1b())
-	automaten.append(Aufgabe_1c())
-	automaten.append(Aufgabe_2a())
-	automaten.append(Aufgabe_2b())
-	automaten.append(Aufgabe_2c())
-	automaten.append(Aufgabe_2d())
-	automaten.append(Aufgabe_2d1())
-	automaten.append(Aufgabe_2e())
-	automaten.append(Aufgabe_3a())
-	automaten.append(Aufgabe_3b())
+	fNames = list()
+	for item in globals().keys():
+		if item.startswith(prefix + '_'):
+			#print "%s : %s" % (repr(item), globals()[item])
+			fNames.append(item)
+	
+	for item in sorted(fNames):
+		automaten.append(eval(item + '()'))
+	return automaten
+
+def Uebungsblatt1():
+	automaten = erstelleAutomatenFuer('Uebungsblatt1')
+	for automat in automaten:
+		print automat
+		if automat.testWords:
+			print "TEST:\n%s" % ('-' * 80)
+			for (word, successful, result) in automat.checkWords(automat.testWords):
+				print "[%2s] %-10s : %s" % ((successful and 'ok' or 'KO'), word, result)
+			print "\n"
 	return erstelleAutomatenPDFs(automaten)
 
 def ScriptBeispiele():
-	automaten = list()
-	automaten.append(Script_Beispiel_1_2())
-	automaten.append(Script_Beispiel_1_3())
-	automaten.append(Script_Beispiel_1_4intuitiv())
-	automaten.append(Script_Beispiel_1_5_DEA())
+	automaten = erstelleAutomatenFuer('Script')
+	for automat in automaten:
+		print automat
+		if automat.testWords:
+			print "TEST:\n%s" % ('-' * 80)
+			for (word, successful, result) in automat.checkWords(automat.testWords):
+				print "[%2s] %-10s : %s" % ((successful and 'ok' or 'KO'), word, result)
+			print "\n"
 	return erstelleAutomatenPDFs(automaten)
 
 def Sonstige():
-	automaten = list()
-	automaten.append(Aufgabe_3x1())
-	automaten.append(Aufgabe_3x2())
-	automaten.append(Aufgabe_3x3())
-	return erstelleAutomatenPDFs(automaten)
-
-def Aktuell():
-	automaten = list()
-	automaten.append(Aufgabe_5b())
-	automaten.append(Aufgabe_EidTI_U6())
+	automaten = erstelleAutomatenFuer('Sonstige')
+# 	for automat in automaten:
+# 		print automat
+# 		if automat.testWords:
+# 			print "TEST:\n%s" % ('-' * 80)
+# 			for (word, successful, result) in automat.checkWords(automat.testWords):
+# 				print "[%2s] %-10s : %s" % ((successful and 'ok' or 'KO'), word, result)
+# 			print "\n"
 	return erstelleAutomatenPDFs(automaten)
 
 def Tester():
-	automaten = list()
-	#automaten.append(Aufgabe_3x1())
-	#automaten.append(Aufgabe_3x2())
-	automaten.append(Script_Beispiel_1_1())
-	#automaten.append(Script_Beispiel_1_3())
-	#automaten.append(Script_Beispiel_1_4())
-	#automaten.append(Script_Beispiel_1_4intuitiv())
-	
+	automaten = [Script_Beispiel_1_6_NDA(), Script_Beispiel_1_6_DEA(), Uebungsblatt2_Aufgabe1()]
+	#erstelleAutomatenFuer('Script')
 	for automat in automaten:
 		print automat
 		if automat.testWords:
@@ -789,3 +867,4 @@ if __name__ == '__main__':
 	
 	#mergeAndOpenPDF(Aktuell(), "/Users/wolf/Desktop/Aktuell.pdf")
 	Tester()
+	

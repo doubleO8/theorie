@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 import os, sys, tempfile
 from subprocess import *
-from automaten import *
 
 WORKINGDIR = '/Users/wolf/Documents/programming/theorie'
 OUTPUTDIR = WORKINGDIR + os.path.sep + 'texOutput'
@@ -14,19 +13,12 @@ def kuerzMenge(items, max=5):
 	return zeichen
 
 class AusgebenderAutomat(object):
-	def _genFilename(self, tdir=None):
-		return tempfile.mkstemp(dir=OUTPUTDIR)[1]
-
-class OAsciiAutomat(object):
 	def _fzAscii(self, what):
 		"""
 		String-Representation einer Menge (frozenset).
-		
-		>>> mini = NichtDeterministischerAutomat('s0', 's0', 's0', '0 1', { 's0' : {'0' : 's0'}})
-		>>> mini._fzString(frozenset([]))
-		'{}'
-		>>> mini._fzString(frozenset(['a', 'c', 'b']))
-		'{a,b,c}'
+			*	Falls Menge aus nur einem Element besteht, wird dieses als String zurueckgegeben,
+			*	falls Menge leer, wird '-' zurueckgegeben, 
+			*	andernfalls ein String der Form {a,b,c,d,e,f}
 		
 		"""
 		if len(what) == 1:
@@ -35,31 +27,45 @@ class OAsciiAutomat(object):
 			return '-'
 		return '{%s}' % ','.join(sorted(what))
 
-	def _getAsciiArtDeltaTable(self):
-		s = " Überführungsfunktion:\n"
+	def _genFilename(self, tdir=None):
+		return tempfile.mkstemp(dir=OUTPUTDIR)[1]
+
+class OAsciiAutomat(AusgebenderAutomat):
+	def _getAsciiArtDeltaTable(self, prefix=' '):
+		pfxLen = len(prefix)
+		rows = list([prefix + "Überführungsfunktion:"])
 		maxLength = 1
-		
+
 		for zeichen in self.Sigma:
 			zLength = len(self._fzString(zeichen)) 
 			if  zLength > maxLength:
 				maxLength = zLength
-				
+
 		for zustand in self.S:
 			zLength = len(str(zustand))
 			if  zLength > maxLength:
 				maxLength = zLength
+			try:
+				zielLength = len(self._fzString(self._delta(zustand, zeichen)))
+				if  zielLength > maxLength:
+					maxLength = zielLength
+			except Exception,e:
+				pass
 
 		fmtString = '%' + str(maxLength) + 's'
-		s += '  ' + (fmtString % str(' δ'))
-		pfxLength = len(s)
-
+		deltaString = ' ' * (maxLength-1) + 'δ'
+		
+		headParts = [deltaString]
 		for zeichen in self.Sigma:
-			s += ' | ' + (fmtString % zeichen)
-		s += "\n"
-		s += "-" * ((maxLength+2) * len(self.Sigma) + (len(self.Sigma)) + pfxLength)
-		s += "\n"
+			headParts.append(fmtString % zeichen)
+
+		rows.append(prefix + ' | '.join(headParts))
+		strich = '-' * maxLength
+		strichParts = list([(fmtString % strich)] * len(headParts))
+		rows.append(prefix + "-+-".join(strichParts) + '-')
+
 		for zustand in sorted(self.S):
-			s += ' ' + (fmtString % zustand)
+			rowParts = [(fmtString % zustand)]
 			for zeichen in sorted(self.Sigma):
 				sZustand = '!'
 				try:
@@ -68,9 +74,10 @@ class OAsciiAutomat(object):
 				except Exception, e:
 					print e
 					sZustand = '/'
-				s += ' | %s' % (fmtString % sZustand)
-			s += "\n"
-		return s
+				rowParts.append(fmtString % sZustand)
+			rows.append(prefix + ' | '.join(rowParts))
+
+		return "\n".join(rows) + "\n"
 
 class ODotAutomat(AusgebenderAutomat):
 	def _DotPath(self, quelle, ziel, zeichenString):
@@ -85,6 +92,7 @@ class ODotAutomat(AusgebenderAutomat):
 		s = s.replace('//__FINAL_STATES__', ' '.join(self.F) + ";\n")
 		s = s.replace('//__ORIGIN__', "null -> %s;\n" % self.s0)
 		nodes = []
+		
 		for zustand in self.delta:
 			for zeichen in self.delta[zustand].keys():
 				ziel = self.delta[zustand][zeichen]
@@ -132,23 +140,27 @@ class OLaTeXAutomat(AusgebenderAutomat):
 		for zustand in self.S:
 			self.ZustandIndex[zustand] = i
 			i += 1
+		#self.log.debug(self.ZustandIndex)
 
 	def _TeXNode(self, Zustand, orientation=''):
 		styles = ['state']
 		description = Zustand
 		name = Zustand
 		#	\node[initial,state]	(A)						{$q_a$};
-		if Zustand == self.s0:
+		if Zustand in self.s0:
 			styles.append('initial')
 		if Zustand in self.F:
-			styles.append("accepting")
-		return "\\node[%s]\t(%s)\t%s\t{%s};" % (','.join(styles), name, orientation, description)
+			styles.append('accepting')
+		node = r'\node[%s]\t(%s)\t%s\t{%s};' % (','.join(styles), name, orientation, description)
+		#self.log.debug(node)
+		return node
+		#return "\\node[%s]\t(%s)\t%s\t{%s};" % (','.join(styles), name, orientation, description)
 
 	def _TeXEdge(self, Zustand):
 		#(A) edge              node {0,1,L} (B)
 		#    edge              node {1,1,R} (C)
 		quelle = Zustand
-		s = "\t(%s)" % Zustand
+		s = r'\t(%s)' % Zustand
 		
 		erreichbareZiele = dict()
 		for zeichen in self.Sigma:
@@ -157,10 +169,12 @@ class OLaTeXAutomat(AusgebenderAutomat):
 				if not erreichbareZiele.has_key(ziel):
 					erreichbareZiele[ziel] = list()
 				erreichbareZiele[ziel].append(zeichen)
+		self.log.warning(erreichbareZiele)
 
 		oMoeglichkeiten = ('', '[bend left]', '[bend right]')
 		omLen = len(oMoeglichkeiten)
 		zustandIndex = self._genZustandIndex()
+		self.log.warning(zustandIndex)
 		
 		# Quell Index-Nummer
 		qIndex = zustandIndex[Zustand]
@@ -170,8 +184,12 @@ class OLaTeXAutomat(AusgebenderAutomat):
 			orientation = ''
 			eZieleLen = len(erreichbareZiele[ziel])
 
+			ziel = list(ziel)[0]
+			self.log.debug(repr(ziel))
+			
 			# Ziel Index-Nummer
 			zIndex = zustandIndex[ziel]
+			self.log.warning('zIndex> ' + str(zIndex))
 			
 			indexDelta = qIndex - zIndex
 			
@@ -261,21 +279,25 @@ class OLaTeXAutomat(AusgebenderAutomat):
 		tNodes = []
 		tEdges = []
 		orientation = ''
+		
 		for zustand in self.S:
 			tNodes.append(self._TeXNode(zustand, orientation))
 			tEdges.append(self._TeXEdge(zustand))
 			orientation = '[right of=%s]' % zustand
+
 		s = s.replace("%%__NODES__", "\n".join(tNodes))
 		s = s.replace("%%__PATH__", "\path\n" + "\n".join(tEdges) + ";\n")
 		s = s.replace("%%__SPEC__", self._TeXSpecification())
 		s = s.replace("%%__DELTA__", self._TeXDeltaTable())
 		s = s.replace('%%__RESULTS__', self._TeXResults())
+
 		if 'createDotDocument' in dir(self):
 			dotgraph = self.createDotDocument()
 			if dotgraph:
 				s = s.replace('%%__DOT_GRAPH__', r'\subsection{Gemalt mit dot}' + self._TeXIncludeFigure(dotgraph))
 			else:
 				self.log.error("Kein dotgraph")
+
 		return s
 
 	def createTeXDocument(self, filename = None):

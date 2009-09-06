@@ -2,7 +2,10 @@
 # -*- coding: utf-8 -*-
 import logging, logging.config
 import os,sys
+import automatenausgabe
 from automatenausgabe import *
+
+USED_LOGLEVEL = logging.INFO
 
 class AutomatException(Exception):
 	"""
@@ -51,10 +54,12 @@ def test():
 	doctest (unit testing)
 	"""
 	import doctest
+	global USED_LOGLEVEL
+	USED_LOGLEVEL = logging.DEBUG
 	failed, total = doctest.testmod()
 	print("doctest: %d/%d tests failed." % (failed, total))
 
-class NichtDeterministischerAutomat(OAsciiAutomat):
+class NichtDeterministischerAutomat(OAsciiAutomat, OLaTeXAutomat):
 	def _toList(self, what):
 		"""
 		>>> mini = NichtDeterministischerAutomat('s0', 's0', 's0', '0 1', { 's0' : {'0' : 's0'}})
@@ -156,9 +161,9 @@ class NichtDeterministischerAutomat(OAsciiAutomat):
 			lformatter = logging.Formatter('%(asctime)s %(levelname)s:  %(message)s')
 			lhandler.setFormatter(lformatter)
 			self.log.addHandler(lhandler)
-			self.log.setLevel(logging.WARNING)
+			self.log.setLevel(USED_LOGLEVEL)
 
-	def __init__(self, S, s0, F, Sigma, delta, name="EinAutomat", beschreibung='', testWords=None):
+	def __init__(self, S, s0, F, Sigma, delta, name="EinNDA", beschreibung='', testWords=None):
 		"""
 		>>> mini = NichtDeterministischerAutomat('s0 s1 s2 s3', 's0', 's3', '0 1', {'s0' : {'0' : ['s0', 's1'], '1' : 's0'}, 's1' : {'0' : 's2', '1' : 's2'}, 's2' : { '0' : 's3', '1' : 's3'}})
 		>>> mini._delta('s0', '0')
@@ -250,7 +255,7 @@ class NichtDeterministischerAutomat(OAsciiAutomat):
 		if '_getAsciiArtDeltaTable' in dir(self):
 			s += self._getAsciiArtDeltaTable()
 		s += " (%se Überführungsfunktion)\n" % (self.istDeltaVollstaendig() and 'vollständig' or 'partiell')
-		return s + "\n"
+		return s
 
 	def reset(self):
 		"""
@@ -363,13 +368,12 @@ class NichtDeterministischerAutomat(OAsciiAutomat):
 			pass
 		else:
 			self.log.warning("Zustand: nicht unterstuetzter Datentyp %s" % repr(Zustand))
-			import sys
-			sys.exit(99)
+			raise ValueError()
 
 		# Da Namen der Zustaende Strings sind, brauchen wir den Zustand auch als String
 		stringZustand = list(Zustand)[0]
 
-		# Pruefen, ob der zu behandelnde Zustand ueberhaupt Teil der Zustandsmenge
+		# Pruefen, ob der zu behandelnde Zustand ueberhaupt Teil der Zustandsmenge ist
 		if not Zustand.issubset(self.S):
 			#self.log.debug("Zustand '%s' nicht in der Zustandsmenge '%s' ?" % (Zustand, ','.join(sorted(self.S))))
 			raise NoSuchStateException(stringZustand, self.S)
@@ -381,7 +385,7 @@ class NichtDeterministischerAutomat(OAsciiAutomat):
 		for keyObject in self.delta[stringZustand].keys():
 			if Zeichen in keyObject:
 				return self.delta[stringZustand][keyObject]
-			
+
 		#self.log.debug("Kein Folgezustand fuer '%s' von '%s'." % (Zeichen, Zustand))
 		return frozenset([])
 
@@ -488,7 +492,7 @@ class NichtDeterministischerAutomat(OAsciiAutomat):
 		return resultset
 
 class Automat(NichtDeterministischerAutomat):
-	def __init__(self, S, s0, F, Sigma, delta, name="EinAutomat", beschreibung='', testWords=None):
+	def __init__(self, S, s0, F, Sigma, delta, name="EinDEA", beschreibung='', testWords=None):
 		"""
 		>>> mini = Automat('s0 s1 s2 s3', 's0', 's3', '0 1', {'s0' : {'0' : 's0 s1', '1' : 's0'}, 's1' : {'0' : 's2', '1' : 's2'}, 's2' : { '0' : 's3', '1' : 's3'}})
 		Traceback (most recent call last):
@@ -539,6 +543,62 @@ class Automat(NichtDeterministischerAutomat):
 		NichtDeterministischerAutomat.__init__(self, S, s0, F, Sigma, delta, name, beschreibung, testWords)
 		if not self.istDEA():
 			raise Exception("Ich fuehle mich so nichtdeterministisch.")
+
+class EpsilonAutomat(NichtDeterministischerAutomat):
+	EPSILON='EPSILON'
+	
+	def __init__(self, S, s0, F, Sigma, delta, name="EinNDAe", beschreibung='', testWords=None):
+		"""
+
+		"""
+		Sigma = self._toList(Sigma)
+		Sigma.append(EpsilonAutomat.EPSILON)
+		NichtDeterministischerAutomat.__init__(self, S, s0, F, Sigma, delta, name, beschreibung, testWords)
+
+	def _delta(self, Zustand, Zeichen):
+		"""
+		"""
+		leereMenge = frozenset([])
+		zielMenge = NichtDeterministischerAutomat._delta(self, Zustand, Zeichen)
+		self.log.debug("%s(%s) : zM: %s." % (Zustand, Zeichen, zielMenge))
+		if zielMenge == leereMenge:
+			epsilonMenge = NichtDeterministischerAutomat._delta(self, Zustand, EpsilonAutomat.EPSILON)
+			self.log.debug("%s : zM: %s; eM: %s" % (Zeichen, zielMenge, epsilonMenge))
+			
+			while epsilonMenge != leereMenge:
+				self.log.debug("Mit Epsilon gehts weiter .. -> %s" % epsilonMenge)
+				zielMenge = NichtDeterministischerAutomat._delta(self, epsilonMenge, Zeichen)
+				if zielMenge != leereMenge:
+					self.log.debug("==>> %s" % zielMenge)
+					return zielMenge
+				epsilonMenge = NichtDeterministischerAutomat._delta(self, epsilonMenge, EpsilonAutomat.EPSILON)
+			self.log.debug("auch epsilon menge war nix")
+		return zielMenge
+
+	def check(self, Wort, doRaise=False):
+		try:
+			result = NichtDeterministischerAutomat.check(self, Wort, doRaise=True)
+			return result
+		except NoAcceptingStateException, e:
+			leereMenge = frozenset([])
+			self.log.debug("Ende des Wortes, kein Endzustand erreicht, wir sind bei %s" % e.value)
+			if e.value == leereMenge:
+				self.log.debug("Wir sind bei leerer Menge, das wird also nichts mehr")
+				if doRaise:
+					raise
+				return False
+
+			epsilonMenge = NichtDeterministischerAutomat._delta(self, e.value, EpsilonAutomat.EPSILON)
+			self.log.debug("Mit epsilon gehts hierhin %s" % epsilonMenge)
+			
+			while epsilonMenge != leereMenge:
+				inter = epsilonMenge.intersection(self.F)
+				if inter != leereMenge:
+					self.log.debug("aber mit dem epsilon ..")
+					self.log.debug(inter)
+					return True
+				epsilonMenge = NichtDeterministischerAutomat._delta(self, epsilonMenge, EpsilonAutomat.EPSILON)
+		return False
 
 if __name__ == '__main__':
 	test()
