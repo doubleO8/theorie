@@ -266,13 +266,13 @@ def Script_Beispiel_1_6_NDA():
 						('+', '-', EpsilonAutomat.EPSILON) : 's1',
 						},
 				's1' : {
-						('0', '1', '2', '3', '4', '5', '6', '7', '8', '9') : 's2',
+						'0 1 2 3 4 5 6 7 8 9' : 's2',
 						},
 				's2' : {
-						('0', '1', '2', '3', '4', '5', '6', '7', '8', '9') : 's2',
+						'0 1 2 3 4 5 6 7 8 9' : 's2',
 						},
 			}
-	return EpsilonAutomat(S, s0, F, Sigma, delta, testWords=testZahlen1)
+	return EpsilonAutomat(S, s0, F, Sigma, delta, name="SBeispiel 1.6.", beschreibung="NEA, der Dezimalzahlen akzeptiert", testWords=testZahlen1)
 
 def Script_Beispiel_1_6_DEA():
 	S = 's0 s1 s2'
@@ -291,7 +291,68 @@ def Script_Beispiel_1_6_DEA():
 						('0', '1', '2', '3', '4', '5', '6', '7', '8', '9') : 's2',
 						},
 			}
-	return Automat(S, s0, F, Sigma, delta, testWords=testZahlen1)
+	return Automat(S, s0, F, Sigma, delta, beschreibung="DEA, der Dezimalzahlen akzeptiert", testWords=testZahlen1)
+
+def Script_Beispiel_1_7():
+	S = 's1 s2 s3 s4 s5 s6'
+	s0 = 's1'
+	F = 's3 s4 s5 s6'
+	Sigma = '0 1'
+	delta = {
+				's1' : {
+						'0' : 's2',
+						'1' : 's3',
+						},
+				's2' : {
+						'0' : 's2',
+						'1' : 's4',
+						},
+				's3' : {
+						'0' : 's1',
+						'1' : 's5',
+						},
+				's4' : {
+						'0' : 's2',
+						'1' : 's5',
+						},
+				's5' : {
+						'0' : 's2',
+						'1' : 's6',
+						},
+				's6' : {
+						'0' : 's2',
+						'1' : 's1',
+						},
+			}
+	A = Automat(S, s0, F, Sigma, delta, name="Beispiel 1.7.")
+	A.testWords = A.testWorteGenerator()
+	return A
+
+def Script_Beispiel_1_7reduziert():
+	S = 's12 s34 s5 s6'
+	s0 = 's12'
+	F = 's34 s5 s6'
+	Sigma = '0 1'
+	delta = {
+				's12' : {
+						'0' : 's12',
+						'1' : 's34',
+						},
+				's34' : {
+						'0' : 's12',
+						'1' : 's5',
+						},
+				's5' : {
+						'0' : 's12',
+						'1' : 's6',
+						},
+				's6' : {
+						'0 1' : 's12',
+						},
+			}
+	A = Automat(S, s0, F, Sigma, delta, name="Beispiel 1.7. reduziert")
+	A.testWords = A.testWorteGenerator()
+	return A
 	
 def Uebungsblatt1_Aufgabe_1b():
 	S = 'z0 z1 z2 z3 z4'.split()
@@ -846,7 +907,7 @@ def Sonstige():
 	return erstelleAutomatenPDFs(automaten)
 
 def Tester():
-	automaten = [Script_Beispiel_1_6_NDA(), Script_Beispiel_1_6_DEA(), Uebungsblatt2_Aufgabe1()]
+	automaten = [Script_Beispiel_1_6_NDA(), Script_Beispiel_1_6_DEA(), Uebungsblatt2_Aufgabe1(), Script_Beispiel_1_7(), Script_Beispiel_1_7reduziert()]
 	#erstelleAutomatenFuer('Script')
 	for automat in automaten:
 		print automat

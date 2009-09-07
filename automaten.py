@@ -5,7 +5,7 @@ import os,sys
 import automatenausgabe
 from automatenausgabe import *
 
-USED_LOGLEVEL = logging.DEBUG
+USED_LOGLEVEL = logging.INFO
 
 class AutomatException(Exception):
 	"""
@@ -245,7 +245,10 @@ class NichtDeterministischerAutomat(OAsciiAutomat, OLaTeXAutomat):
 		self.reset()
 
 	def __str__(self):
-		s = "%seterministischer Automat '%s'\n" % ((self.istDEA() and 'D' or 'Nichtd'), self.name)
+		s = "%seterministischer Automat '%s'" % ((self.istDEA() and 'D' or 'Nichtd'), self.name)
+		if EpsilonAutomat.EPSILON in self.Sigma:
+			s += " (ε-Übergänge möglich)"
+		s += "\n"
 		if self.beschreibung:
 			s += " %s\n" % self.beschreibung
 		s += " Anfangszustand                          : %s\n" % self._fzString(self.s0)
@@ -320,6 +323,12 @@ class NichtDeterministischerAutomat(OAsciiAutomat, OLaTeXAutomat):
 			worte += SigmaTmp
 		return worte
 
+	def _delta__str__(self, Zustand, Zeichen):
+		"""
+		Delta Funktion, fuer Aufrufe innerhalb von __str__() Aufrufen verwendet werden kann.
+		"""
+		return self._delta(Zustand, Zeichen)
+
 	def _delta(self, Zustand, Zeichen):
 		"""
 		Zustands-Ueberfuehrungsfunktion
@@ -332,6 +341,8 @@ class NichtDeterministischerAutomat(OAsciiAutomat, OLaTeXAutomat):
 		>>> mini.Sigma
 		frozenset(['1', '0'])
 		>>> mini._delta(['s0', 's1'], 1)
+		frozenset(['s2', 's0'])
+		>>> mini._delta(frozenset(['s0', 's1']), 1)
 		frozenset(['s2', 's0'])
 		>>> mini._delta(['s0', 's1'], 1)
 		frozenset(['s2', 's0'])
@@ -351,7 +362,7 @@ class NichtDeterministischerAutomat(OAsciiAutomat, OLaTeXAutomat):
 		
 		# Pruefen, ob das zu lesende Zeichen ueberhaupt Teil der Menge der Eingabezeichen ist
 		if Zeichen not in self.Sigma:
-			self.log.debug("'%s' nicht Teil des Alphabets (%s)" % (Zeichen, ','.join(sorted(self.Sigma))))
+			self.log.debug(" '%s' nicht Teil des Alphabets (%s)" % (Zeichen, self._fzString(self.Sigma)))
 			raise NotInSigmaException(Zeichen, self.Sigma)
 
 		# Sonderbehandlung: Zustand kann auch eine Liste von Zustaenden sein
@@ -364,8 +375,13 @@ class NichtDeterministischerAutomat(OAsciiAutomat, OLaTeXAutomat):
 			# Ansonsten: Zustand in frozenset verwandeln
 			Zustand = frozenset([str(Zustand)])
 		elif isinstance(Zustand, frozenset):
-			#self.log.warning("Zustand: schon frozenset %s" % repr(Zustand))
-			pass
+			if len(Zustand) > 1:
+				#self.log.warning("!! Zustand: schon frozenset: %s %d" % (repr(Zustand), len(Zustand)))
+				ziele = frozenset()
+				for item in Zustand:
+					ziele = ziele.union(self._delta(item, Zeichen))
+				return ziele
+			##pass
 		else:
 			self.log.warning("Zustand: nicht unterstuetzter Datentyp %s" % repr(Zustand))
 			raise ValueError()
@@ -545,7 +561,7 @@ class Automat(NichtDeterministischerAutomat):
 			raise Exception("Ich fuehle mich so nichtdeterministisch.")
 
 class EpsilonAutomat(NichtDeterministischerAutomat):
-	EPSILON='EPSILON'
+	EPSILON='ε'#PSILON'
 	
 	def __init__(self, S, s0, F, Sigma, delta, name="EinNDAe", beschreibung='', testWords=None):
 		"""
@@ -554,6 +570,7 @@ class EpsilonAutomat(NichtDeterministischerAutomat):
 		Sigma = self._toList(Sigma)
 		Sigma.append(EpsilonAutomat.EPSILON)
 		NichtDeterministischerAutomat.__init__(self, S, s0, F, Sigma, delta, name, beschreibung, testWords)
+		#self.log.warning(delta)
 
 	def _delta(self, Zustand, Zeichen):
 		"""
@@ -574,6 +591,13 @@ class EpsilonAutomat(NichtDeterministischerAutomat):
 				epsilonMenge = NichtDeterministischerAutomat._delta(self, epsilonMenge, EpsilonAutomat.EPSILON)
 			self.log.debug("auch epsilon menge war nix")
 		return zielMenge
+
+	def _delta__str__(self, Zustand, Zeichen):
+		"""
+		Delta Funktion, fuer Aufrufe innerhalb von __str__() Aufrufen verwendet werden kann.
+		In diesem Fall werden Epsilon-Uebergaenge _nicht aufgeloest.
+		"""
+		return NichtDeterministischerAutomat._delta(self, Zustand, Zeichen)
 
 	def check(self, Wort, doRaise=False):
 		try:

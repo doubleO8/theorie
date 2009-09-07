@@ -27,6 +27,22 @@ class AusgebenderAutomat(object):
 			return '-'
 		return '{%s}' % ','.join(sorted(what))
 
+	def _genZustandIndex(self, force=False):
+		if self.ZustandIndex and not force:
+			return self.ZustandIndex
+
+		self.ZustandIndex = dict()
+		i = 0
+		for zustand in self.S:
+			self.ZustandIndex[zustand] = i
+			i += 1
+		#self.log.debug(self.ZustandIndex)
+
+	def _readTemplate(self, template):
+		if not os.path.isfile(template):
+			raise IOError("Template '%s' nicht gefunden." % (template))
+		return open(template).read()
+
 	def _genFilename(self, tdir=None):
 		return tempfile.mkstemp(dir=OUTPUTDIR)[1]
 
@@ -46,7 +62,7 @@ class OAsciiAutomat(AusgebenderAutomat):
 			if  zLength > maxLength:
 				maxLength = zLength
 			try:
-				zielLength = len(self._fzString(self._delta(zustand, zeichen)))
+				zielLength = len(self._fzString(self._delta__str__(zustand, zeichen)))
 				if  zielLength > maxLength:
 					maxLength = zielLength
 			except Exception,e:
@@ -56,7 +72,7 @@ class OAsciiAutomat(AusgebenderAutomat):
 		deltaString = ' ' * (maxLength-1) + 'δ'
 		
 		headParts = [deltaString]
-		for zeichen in self.Sigma:
+		for zeichen in sorted(self.Sigma):
 			headParts.append(fmtString % zeichen)
 
 		rows.append(prefix + ' | '.join(headParts))
@@ -66,16 +82,17 @@ class OAsciiAutomat(AusgebenderAutomat):
 
 		for zustand in sorted(self.S):
 			rowParts = [(fmtString % zustand)]
+			rowPrefix = (zustand in self.F and '*' * len(prefix) or prefix)
 			for zeichen in sorted(self.Sigma):
 				sZustand = '!'
 				try:
-					zielZustand = self._delta(zustand, zeichen)
+					zielZustand = self._delta__str__(zustand, zeichen)
 					sZustand = self._fzAscii(zielZustand)
 				except Exception, e:
 					print e
 					sZustand = '/'
 				rowParts.append(fmtString % sZustand)
-			rows.append(prefix + ' | '.join(rowParts))
+			rows.append(rowPrefix + ' | '.join(rowParts))
 
 		return "\n".join(rows) + "\n"
 
@@ -85,10 +102,7 @@ class ODotAutomat(AusgebenderAutomat):
 		
 	def _toDot(self, template='template.dot'):
 		self._genZustandIndex(True)
-		if not os.path.isfile(template):
-			raise IOError("Template '%s' nicht gefunden." % (template))
-		content = open(template).read()
-		s = content
+		s = self._readTemplate(template)
 		s = s.replace('//__FINAL_STATES__', ' '.join(self.F) + ";\n")
 		s = s.replace('//__ORIGIN__', "null -> %s;\n" % self.s0)
 		nodes = []
@@ -131,17 +145,6 @@ class ODotAutomat(AusgebenderAutomat):
 		return pdf_filename
 
 class OLaTeXAutomat(AusgebenderAutomat):
-	def _genZustandIndex(self, force=False):
-		if self.ZustandIndex and not force:
-			return self.ZustandIndex
-
-		self.ZustandIndex = dict()
-		i = 0
-		for zustand in self.S:
-			self.ZustandIndex[zustand] = i
-			i += 1
-		#self.log.debug(self.ZustandIndex)
-
 	def _TeXNode(self, Zustand, orientation=''):
 		styles = ['state']
 		description = Zustand
@@ -207,10 +210,6 @@ class OLaTeXAutomat(AusgebenderAutomat):
 				zielZaehler +=1
 
 			zeichen = kuerzMenge(erreichbareZiele[ziel])
-			#if eZieleLen < 5:
-			#	zeichen = ','.join(erreichbareZiele[ziel])
-			#else:
-			#	zeichen = "%s,..,%s" % (erreichbareZiele[ziel][0], erreichbareZiele[ziel][-1])
 
 			s += "\tedge\t%s\tnode\t{%s}\t(%s)\n\t" % (orientation, zeichen, ziel)
 		return s
@@ -272,10 +271,7 @@ class OLaTeXAutomat(AusgebenderAutomat):
 
 	def _toTeX(self, template='template.tex'):
 		self._genZustandIndex(True)
-		if not os.path.isfile(template):
-			raise IOError("Template '%s' nicht gefunden." % (template))
-		content = open(template).read()
-		s = content
+		s = self._readTemplate(template)
 		tNodes = []
 		tEdges = []
 		orientation = ''
