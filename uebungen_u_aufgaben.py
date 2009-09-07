@@ -758,6 +758,7 @@ def Uebungsblatt1_Aufgabe_5b():
 				testWords=U1A2_Testworte)
 	return A
 
+U2A1testWords = "0 1 +0 -0.001 0.1 0.1e-1 1.00e1 -0.0e0 - . ++ 0- 00. 001.0ee"
 def Uebungsblatt2_Aufgabe1():
 	delta = {
 				'z0' : { 
@@ -789,7 +790,42 @@ def Uebungsblatt2_Aufgabe1():
 			}
 
 	return EpsilonAutomat('z0 z1 z2 z3 z4 z5 z6 z7', 'z0', 'z7', '0 1 + - . e', delta, 
-						testWords="0 1 0.1 0.1e-1")
+						testWords=U2A1testWords)
+
+def Uebungsblatt2_Aufgabe1_eliminiert():
+	delta = {
+				'z0' : { 
+							'+ -' : 'z1',
+							'0 1' : 'z2',
+						},
+				'z1' : {
+						'0 1' : 'z2',
+						},
+				'z2' : {
+						'.' : 'z3',
+						'0 1' : 'z4',
+						},
+				'z3' : {
+						'0 1' : 'z4',
+						},
+				'z4' :{
+						'0 1' : 'z4 z7',
+						'e' : 'z5',
+						},
+				'z5' :{
+						'0 1' : 'z7',
+						'+ -' : 'z6',
+						},
+				'z6' :{
+						'0 1' : 'z7',
+						},
+				'z7' :{
+						'0 1' : 'z7'
+						},
+			}
+
+	return NichtDeterministischerAutomat('z0 z1 z2 z3 z4 z5 z6 z7', 'z0', 'z2 z4 z7', '0 1 + - . e', delta, 
+						testWords=U2A1testWords)
 
 def Sonstige_Aufgabe_EidTI_U6():
 	"""
@@ -875,35 +911,18 @@ def erstelleAutomatenFuer(prefix):
 
 def Uebungsblatt1():
 	automaten = erstelleAutomatenFuer('Uebungsblatt1')
-	for automat in automaten:
-		print automat
-		if automat.testWords:
-			print "TEST:\n%s" % ('-' * 80)
-			for (word, successful, result) in automat.checkWords(automat.testWords):
-				print "[%2s] %-10s : %s" % ((successful and 'ok' or 'KO'), word, result)
-			print "\n"
+	return erstelleAutomatenPDFs(automaten)
+
+def Uebungsblatt2():
+	automaten = erstelleAutomatenFuer('Uebungsblatt2')
 	return erstelleAutomatenPDFs(automaten)
 
 def ScriptBeispiele():
 	automaten = erstelleAutomatenFuer('Script')
-	for automat in automaten:
-		print automat
-		if automat.testWords:
-			print "TEST:\n%s" % ('-' * 80)
-			for (word, successful, result) in automat.checkWords(automat.testWords):
-				print "[%2s] %-10s : %s" % ((successful and 'ok' or 'KO'), word, result)
-			print "\n"
 	return erstelleAutomatenPDFs(automaten)
 
 def Sonstige():
 	automaten = erstelleAutomatenFuer('Sonstige')
-# 	for automat in automaten:
-# 		print automat
-# 		if automat.testWords:
-# 			print "TEST:\n%s" % ('-' * 80)
-# 			for (word, successful, result) in automat.checkWords(automat.testWords):
-# 				print "[%2s] %-10s : %s" % ((successful and 'ok' or 'KO'), word, result)
-# 			print "\n"
 	return erstelleAutomatenPDFs(automaten)
 
 def Tester():
@@ -918,14 +937,10 @@ def Tester():
 			print "\n"
 
 if __name__ == '__main__':
-	#binaere_zahlen(100, 3, True)
-
-	#mergeAndOpenPDF(Uebungsblatt1(), "/Users/wolf/Desktop/Automaten Übungsblatt1.pdf")
-
+	#mergeAndOpenPDF(Uebungsblatt1(), "/Users/wolf/Desktop/Automaten Übungsblatt 1.pdf")
+	mergeAndOpenPDF(Uebungsblatt2(), "/Users/wolf/Desktop/Automaten Übungsblatt 2.pdf")
 	#mergeAndOpenPDF(ScriptBeispiele(), "/Users/wolf/Desktop/Automaten Script Beispiele.pdf")
-
 	#mergeAndOpenPDF(Sonstige(), "/Users/wolf/Desktop/Automaten Sonstige.pdf")
-	
-	#mergeAndOpenPDF(Aktuell(), "/Users/wolf/Desktop/Aktuell.pdf")
-	Tester()
+
+	#Tester()
 	

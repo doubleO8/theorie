@@ -1,9 +1,46 @@
 # -*- coding: utf-8 -*-
 import os, sys, tempfile
 from subprocess import *
+import automaten
+import logging
 
 WORKINGDIR = '/Users/wolf/Documents/programming/theorie'
-OUTPUTDIR = WORKINGDIR + os.path.sep + 'texOutput'
+OUTPUTDIR = os.path.join(WORKINGDIR, 'texOutput')
+
+def runCommand(command, parameter, logger=None, workDir=os.getcwd()):
+	if logger == None:
+		logging.basicConfig(level=logging.DEBUG)
+		logger = logging.getLogger('runCommand')
+
+	cwd = os.getcwd()
+	cmd = command + ' ' + parameter
+	buffer=512
+	retcode = -1
+	stdout = PIPE
+	stderr = PIPE
+
+	logger.debug("Ausfuehren : %s" % cmd)
+	try:
+		os.chdir(workDir)
+		p = Popen(cmd, shell=True, bufsize=buffer, stdout=stdout, stderr=stderr, close_fds=True)
+		p.wait()
+		retcode = p.returncode
+		if retcode == 0:
+			pass
+		else:
+			if retcode < 0:
+				logger.error("Ausfuehrung schlug fehl : %d" % -retcode)
+			elif retcode > 0:
+				logger.warning("Ausfuehrung Returncode : %d" % retcode)
+			logger.debug("STDERR Output:")
+			logger.debug(stderr)
+			logger.debug("STDOUT Output:")
+			logger.debug(stdout)
+	except OSError, e:
+		logger.critical("Ausfuehrung schlug fehl: %s" %  e)
+	logger.debug("Exit code : '%s'" % retcode)
+	os.chdir(cwd)
+	return (retcode, stdout, stderr)
 
 def kuerzMenge(items, max=5):
 	if len(items) < max:
@@ -13,6 +50,14 @@ def kuerzMenge(items, max=5):
 	return zeichen
 
 class AusgebenderAutomat(object):
+	def kuerzMenge(self, items, max=5):
+		self.log.debug("kuerzmenge(%s, %s)" % (items, max))
+		if len(items) < max:
+			zeichen = ','.join(items)
+		else:
+			zeichen = "%s,..,%s" % (items[0], items[-1])
+		return zeichen
+
 	def _fzAscii(self, what):
 		"""
 		String-Representation einer Menge (frozenset).
@@ -27,13 +72,26 @@ class AusgebenderAutomat(object):
 			return '-'
 		return '{%s}' % ','.join(sorted(what))
 
+	def _fzTex(self, what):
+		"""
+		String-Representation einer Menge (frozenset).
+			*	Falls Menge aus nur einem Element besteht, wird dieses als String zurueckgegeben,
+			*	falls Menge leer, wird '' zurueckgegeben, 
+			*	andernfalls ein String der Form a, b, c, d, e, f
+		"""
+		if len(what) == 1:
+			return list(what)[0]
+		if len(what) == 0:
+			return '-'
+		return ', '.join(sorted(what))
+
 	def _genZustandIndex(self, force=False):
 		if self.ZustandIndex and not force:
 			return self.ZustandIndex
 
 		self.ZustandIndex = dict()
 		i = 0
-		for zustand in self.S:
+		for zustand in sorted(self.S):
 			self.ZustandIndex[zustand] = i
 			i += 1
 		#self.log.debug(self.ZustandIndex)
@@ -98,13 +156,16 @@ class OAsciiAutomat(AusgebenderAutomat):
 
 class ODotAutomat(AusgebenderAutomat):
 	def _DotPath(self, quelle, ziel, zeichenString):
-		return '%s -> %s [ label = "%s" ];' % (quelle, ziel, zeichenString)
+		# ziel muss frozenset sein .. strings werden zerhackt
+		p = '%s -> %s [ label = "%s" ];' % (quelle, self._fzAscii(ziel), self._fzAscii(zeichenString))
+		#self.log.debug(p)
+		return p
 		
-	def _toDot(self, template='template.dot'):
+	def _toDot(self, template):
 		self._genZustandIndex(True)
 		s = self._readTemplate(template)
 		s = s.replace('//__FINAL_STATES__', ' '.join(self.F) + ";\n")
-		s = s.replace('//__ORIGIN__', "null -> %s;\n" % self.s0)
+		s = s.replace('//__ORIGIN__', "null -> %s;\n" % self._fzAscii(self.s0))
 		nodes = []
 		
 		for zustand in self.delta:
@@ -113,36 +174,44 @@ class ODotAutomat(AusgebenderAutomat):
 				if isinstance(zeichen, tuple):
 					self.log.warning(zeichen)
 					zeichen = kuerzMenge(zeichen)
-				nodes.append(self._DotPath(zustand, ziel, zeichen))
+				if isinstance(ziel, frozenset) and len(ziel) > 1:
+					for item in ziel:
+						nodes.append(self._DotPath(zustand, frozenset([item]), zeichen))
+				else:
+					nodes.append(self._DotPath(zustand, ziel, zeichen))
 		s = s.replace('//__PATH__', "\n".join(nodes))
 		return s
 
 	def createDotDocument(self, filename = None):
 		basename = self._genFilename()
-		
-		dot_filename = os.path.basename(basename + '.gv')
-		pdf_filename = os.path.basename(basename + '.pdf')
-
 		basedir = os.path.dirname(basename)
-		cwd = os.getcwd()
+		dot_filename = os.path.join(basedir, os.path.basename(basename + '.gv'))
+		pdf_filename = os.path.basename(basename + '.pdf')
+		template = os.path.join(basedir, 'template.dot')
+		returnValue = os.path.join(basedir, pdf_filename)
+
 		try:
-			os.chdir(basedir)
 			out = open(dot_filename, "w")
-			rawLines = self._toDot().split("\n")
+			rawLines = self._toDot(template).split("\n")
 			content = list()
 			for line in rawLines:
 				if not line.strip().startswith("//"):
 					content.append(line)
 			out.write("\n".join(content))
 			out.close()
-			command = 'dot -Tpdf -o "%s" "%s"' % (pdf_filename, dot_filename)
-			#print command
-			call(command, shell=True)
 		except Exception, e:
 			self.log.error(e)
-			pdf_filename = False
-		os.chdir(cwd)
-		return pdf_filename
+			returnValue = False
+		
+		param = '-Tpdf -o "%s" "%s"' % (pdf_filename, dot_filename)
+		(rc, out, err) = runCommand('dot', param, logger=self.log, workDir=basedir)
+		if rc != 0:
+			print err
+			print "----------------------"
+			print out
+			returnValue = False
+		
+		return returnValue
 
 class OLaTeXAutomat(AusgebenderAutomat):
 	def _TeXNode(self, Zustand, orientation=''):
@@ -154,16 +223,15 @@ class OLaTeXAutomat(AusgebenderAutomat):
 			styles.append('initial')
 		if Zustand in self.F:
 			styles.append('accepting')
-		node = r'\node[%s]\t(%s)\t%s\t{%s};' % (','.join(styles), name, orientation, description)
-		#self.log.debug(node)
+		node = r'\node[%s] (%s) %s {%s};' % (','.join(styles), name, orientation, description)
+		self.log.debug(node)
 		return node
-		#return "\\node[%s]\t(%s)\t%s\t{%s};" % (','.join(styles), name, orientation, description)
 
 	def _TeXEdge(self, Zustand):
 		#(A) edge              node {0,1,L} (B)
 		#    edge              node {1,1,R} (C)
 		quelle = Zustand
-		s = r'\t(%s)' % Zustand
+		s = r'(%s)' % Zustand
 		
 		erreichbareZiele = dict()
 		for zeichen in self.Sigma:
@@ -172,33 +240,32 @@ class OLaTeXAutomat(AusgebenderAutomat):
 				if not erreichbareZiele.has_key(ziel):
 					erreichbareZiele[ziel] = list()
 				erreichbareZiele[ziel].append(zeichen)
-		self.log.warning(erreichbareZiele)
+		#self.log.debug("Erreichbare Ziele Index : %s" % erreichbareZiele)
 
 		oMoeglichkeiten = ('', '[bend left]', '[bend right]')
 		omLen = len(oMoeglichkeiten)
 		zustandIndex = self._genZustandIndex()
-		self.log.warning(zustandIndex)
+		#self.log.debug("Zustand-Index : %s" % zustandIndex)
 		
 		# Quell Index-Nummer
 		qIndex = zustandIndex[Zustand]
 		zielZaehler = 0
 		
 		for ziel in erreichbareZiele:
+			stringZiel = list(ziel)[0]
 			orientation = ''
 			eZieleLen = len(erreichbareZiele[ziel])
 
-			ziel = list(ziel)[0]
-			self.log.debug(repr(ziel))
+			self.log.debug("ZIEL: %s (%s)" % (stringZiel, repr(ziel)))
 			
 			# Ziel Index-Nummer
-			zIndex = zustandIndex[ziel]
-			self.log.warning('zIndex> ' + str(zIndex))
+			zIndex = zustandIndex[stringZiel]
+			self.log.debug('zIndex> ' + str(zIndex))
 			
 			indexDelta = qIndex - zIndex
 			
 			if indexDelta == 0:
 				orientation = '[loop above]'
-
 			if indexDelta > 1:
 				orientation = '[bend right]'
 			elif indexDelta < -1:
@@ -208,38 +275,52 @@ class OLaTeXAutomat(AusgebenderAutomat):
 				oNum = zielZaehler % omLen
 				orientation = oMoeglichkeiten[oNum]
 				zielZaehler +=1
+			
+			self.log.debug("kuerzmenge PRE")
+			zeichen = self.kuerzMenge(erreichbareZiele[ziel])
+			self.log.debug("kuerzmenge POST")
 
-			zeichen = kuerzMenge(erreichbareZiele[ziel])
-
-			s += "\tedge\t%s\tnode\t{%s}\t(%s)\n\t" % (orientation, zeichen, ziel)
+			s += " edge %s node {%s} (%s)\n " % (orientation, zeichen, stringZiel)
 		return s
 
 	def _TeXSpecification(self):
-		s = "\\textbf{Automat '%s'}" % self.name
+		s = list()
+		aTyp = "%seterministischer Automat" % ((self.istDEA() and 'D' or 'Nichtd'))
+
+		s.append(r'\textbf{%s \emph{%s}}' % (aTyp, self.name))
+		if automaten.EpsilonAutomat.EPSILON in self.Sigma:
+			s.append(r" ($\epsilon$-Übergänge möglich)")
+
 		if self.beschreibung :
-			s += "\\newline \\emph{%s}" % self.beschreibung
-		s += "\\begin{itemize}\n"
-		#s = "Deterministischer Automat '%s'\n%s\n" % (self.name, "=" * 80)
-		s += "\\item[] Endliche Menge der möglichen Zustände $S = \\{%s\\}$\n" % ', '.join(self.S)
-		s += "\\item[] %s ist Anfangszustand\n" % self.s0
-		s += "\\item[] Menge der Endzustände $F = \\{%s\\}$\n" % ', '.join(self.F)
-		s += "\\item[] Endliche Menge der Eingabezeichen $\\Sigma = \\{%s\\}$\n" % ', '.join(self.Sigma)
-		return s + "\n\\end{itemize}"
+			s.append(r"\newline \emph{%s}" % self.beschreibung)
+		s.append(r"\begin{itemize}")
+		s.append(r'\item[] Endliche Menge der möglichen Zustände $S = \{%s\}$' % self._fzTex(self.S))
+		s.append(r"\item[] \{%s\} ist Anfangszustand" % self._fzTex(self.s0))
+		s.append(r"\item[] Menge der Endzustände $F = \{%s\}$" % self._fzTex(self.F))
+		s.append(r"\item[] Endliche Menge der Eingabezeichen $\Sigma = \{%s\}$" % self._fzTex(self.Sigma))
+		s.append(r'\end{itemize}')
+		return "\n".join(s)
 
 	def _TeXDeltaTable(self):
-		headerLine = ['$\delta$']
+		s = list()
+		headerLine = [r'$\delta$']
 		for zeichen in self.Sigma:
 			headerLine.append(zeichen)
-		s = "\\begin{tabular}{r|%s}\n" % ('c' * (len(headerLine)-1))
-		s += "\t&\t".join(headerLine) + "\\\\\n\\hline\n"
+		s.append(r'\begin{tabular}{r|%s}' % ('c' * (len(headerLine)-1)))
+		s.append(r' & '.join(headerLine) + r' \\')
+		s.append(r'\hline')
 
 		for zustand in self.S:
 			line = [zustand]
 			for zeichen in self.Sigma:
 				zielZustand = self._delta(zustand, zeichen)
-				line.append(zielZustand != None and zielZustand or '-')
-			s += "\t&\t".join(line) + "\t\\\\\n"
-		return s + "\end{tabular}"
+				line.append(self._fzTex(zielZustand))
+			s.append(r' & '.join(line))
+			s.append(r' \\')
+		
+		s.append(r'\end{tabular}')
+
+		return "\n".join(s)
 
 	def _TeXIncludeFigure(self, file, caption=None, label=None):
 		label = label and ("\\label{%s}" % label) or ''
@@ -269,7 +350,7 @@ class OLaTeXAutomat(AusgebenderAutomat):
 			s = "\n".join(testResults)
 		return s
 
-	def _toTeX(self, template='template.tex'):
+	def _toTeX(self, template):
 		self._genZustandIndex(True)
 		s = self._readTemplate(template)
 		tNodes = []
@@ -283,6 +364,7 @@ class OLaTeXAutomat(AusgebenderAutomat):
 
 		s = s.replace("%%__NODES__", "\n".join(tNodes))
 		s = s.replace("%%__PATH__", "\path\n" + "\n".join(tEdges) + ";\n")
+
 		s = s.replace("%%__SPEC__", self._TeXSpecification())
 		s = s.replace("%%__DELTA__", self._TeXDeltaTable())
 		s = s.replace('%%__RESULTS__', self._TeXResults())
@@ -298,27 +380,30 @@ class OLaTeXAutomat(AusgebenderAutomat):
 
 	def createTeXDocument(self, filename = None):
 		basename = self._genFilename()
+		basedir = os.path.dirname(basename)
 		tex_filename = os.path.basename(basename + '.tex')
 		pdf_filename = os.path.basename(basename + '.pdf')
-		basedir = os.path.dirname(basename)
-
-		cwd = os.getcwd()
-		returnValue = os.path.abspath(basedir + os.path.sep + pdf_filename)
+		template = os.path.join(basedir, 'template.tex')
+		returnValue = os.path.join(basedir, pdf_filename)
 		
 		try:
-			os.chdir(basedir)
-			out = open(tex_filename, "w")
-			rawLines = self._toTeX().split("\n")
+			out = open(os.path.join(basedir, tex_filename), "w")
+			rawLines = self._toTeX(template).split("\n")
 			content = list()
 			for line in rawLines:
 				if not line.strip().startswith("%"):
 					content.append(line)
 			out.write("\n".join(content))
 			out.close()
-			command = 'pdflatex "%s"' % tex_filename
-			call(command, shell=True)
 		except Exception, e:
 			self.log.error(e)
 			returnValue = False
-		os.chdir(cwd)
+		
+		(rc, out, err) = runCommand('pdflatex', '"%s"' % tex_filename, logger=self.log, workDir=basedir)
+		if rc != 0:
+			print err
+			print "----------------------"
+			print out
+			returnValue = False
+		
 		return returnValue

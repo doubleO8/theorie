@@ -59,7 +59,7 @@ def test():
 	failed, total = doctest.testmod()
 	print("doctest: %d/%d tests failed." % (failed, total))
 
-class NichtDeterministischerAutomat(OAsciiAutomat, OLaTeXAutomat):
+class NichtDeterministischerAutomat(OAsciiAutomat, OLaTeXAutomat, ODotAutomat):
 	def _toList(self, what):
 		"""
 		>>> mini = NichtDeterministischerAutomat('s0', 's0', 's0', '0 1', { 's0' : {'0' : 's0'}})
@@ -561,7 +561,7 @@ class Automat(NichtDeterministischerAutomat):
 			raise Exception("Ich fuehle mich so nichtdeterministisch.")
 
 class EpsilonAutomat(NichtDeterministischerAutomat):
-	EPSILON='ε'#PSILON'
+	EPSILON='EPSILON'
 	
 	def __init__(self, S, s0, F, Sigma, delta, name="EinNDAe", beschreibung='', testWords=None):
 		"""
