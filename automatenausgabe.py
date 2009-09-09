@@ -310,8 +310,8 @@ class OLaTeXAutomat(AusgebenderAutomat):
 		s.append(r' & '.join(headerLine) + r' \\')
 		s.append(r'\hline')
 
-		for zustand in self.S:
-			line = [zustand]
+		for zustand in sorted(self.S):
+			line = [ (zustand in self.F and '{*}' or '') + zustand ]
 			for zeichen in self.Sigma:
 				zielZustand = self._delta(zustand, zeichen)
 				line.append(self._fzTex(zielZustand))
@@ -337,7 +337,7 @@ class OLaTeXAutomat(AusgebenderAutomat):
 	def _TeXResults(self):
 		s = ''
 		if self.testWords:
-			testResults = [ r'\begin{tabular}{lll}' ]
+			testResults = [ r'\begin{longtable}{lll}' ]
 			testResults.append(r'Erfolg & Wort & Ergebnis\\')
 			testResults.append(r'\hline')
 			for (word, successful, result) in self.checkWords(self.testWords):
@@ -346,22 +346,25 @@ class OLaTeXAutomat(AusgebenderAutomat):
 				t.append(r'{\small %s}' % word)
 				t.append(r'{\small \emph{%s}}' % result)
 				testResults.append(' & '.join(t) + r'\\')
-			testResults.append(r'\end{tabular}')
+			testResults.append(r'\end{longtable}')
 			s = "\n".join(testResults)
 		return s
 
-	def _toTeX(self, template):
+	def _tikzGraph(self):
 		self._genZustandIndex(True)
-		s = self._readTemplate(template)
 		tNodes = []
 		tEdges = []
 		orientation = ''
-		
 		for zustand in self.S:
 			tNodes.append(self._TeXNode(zustand, orientation))
 			tEdges.append(self._TeXEdge(zustand))
 			orientation = '[right of=%s]' % zustand
+		return (tNodes, tEdges)
 
+	def _toTeX(self, template):
+		s = self._readTemplate(template)
+
+		(tNodes, tEdges) = self._tikzGraph()
 		s = s.replace("%%__NODES__", "\n".join(tNodes))
 		s = s.replace("%%__PATH__", "\path\n" + "\n".join(tEdges) + ";\n")
 

@@ -63,16 +63,18 @@ def Script_Beispiel_1_1():
 							'1' : 'an',
 						},
 			}
+	verifyWords = {'1' : True, '0' : False, '00' : False}
 	return Automat(S, s0, F, Sigma, delta,
 				name="Beispiel1.1",
 				beschreibung="Ein Schalter",
-				testWords=testWorte(['0', '1']))
+				testWords=testWorte(['0', '1']),
+				verifyWords=verifyWords)
 
 def Script_Beispiel_1_2():
-	S = 's0 s1 s2 s3'.split()
+	S = 's0 s1 s2 s3'
 	s0 = 's0'
-	F = 's3'.split()
-	Sigma = '0 1'.split()
+	F = 's3'
+	Sigma = '0 1'
 	delta = {
 				's0' : {
 							"0" : 's1',
@@ -91,17 +93,19 @@ def Script_Beispiel_1_2():
 							'1' : 's3',
 						},
 			}
-	A = Automat(S, s0, F, Sigma, delta,
+	verifyWords = {'001' : True, '010' : False, '0001' : True, '1001' : True}
+	return Automat(S, s0, F, Sigma, delta,
 				name="Beispiel1.2",
 				beschreibung="Ein endlicher deterministischer Automat für die Sprache L, die alle Wörter mit Teilwort 001 enthält",
-				testWords=testWorte(['0', '1']))
-	return A
+				testWords=testWorte(['0', '1']),
+				verifyWords=verifyWords
+				)
 
 def Script_Beispiel_1_3():
-	cS = 's0 s1 s2 s3 s4 s5 s6 s7'.split()
+	cS = 's0 s1 s2 s3 s4 s5 s6 s7'
 	cs0 = 's0'
-	cF = 's2 s4 s7'.split()
-	cSigma = '0 1 2 3 4 5 6 7 8 9 + - . e'.split()
+	cF = 's2 s4 s7'
+	cSigma = '0 1 2 3 4 5 6 7 8 9 + - . e'
 	cdelta = {
 				's0' : {
 							('0', '1', '2', '3', '4', '5', '6', '7', '8', '9') : 's2',
@@ -133,11 +137,13 @@ def Script_Beispiel_1_3():
 							('0', '1', '2', '3', '4', '5', '6', '7', '8', '9') : 's7',
 						},
 			}
-	C = Automat(cS, cs0, cF, cSigma, cdelta, 
+	verifyWords = { '1' : True, '-' : False, '0.1' : True}
+	return Automat(cS, cs0, cF, cSigma, cdelta, 
 				name="Beispiel1.3",
 				beschreibung="Endlicher deterministischer Automat für die normierte Darstellung reeller Zahlen",
-				testWords='0 1 2 00.1 0.1 0.101. . 101 001 1.001.02')
-	return C
+				testWords='0 1 2 00.1 0.1 0.101. . 101 001 1.001.02',
+				verifyWords = verifyWords
+				)
 
 def Script_Beispiel_1_4():
 	S = 's0 s1 s2 s3'
@@ -150,18 +156,20 @@ def Script_Beispiel_1_4():
 						'1' : 's0',
 						},
 				's1' : {
-						'0' : 's2',
-						'1' : 's2',
+						'0 1' : 's2',
 						},
 				's2' : {
-						'0' : 's3',
-						'1' : 's3',
+						'0 1' : 's3',
 						},
+				's3' : {},
 			}
+	verifyWords = { '111' : False, '000' : True, '011' : True, '0' : False}
 	A = NichtDeterministischerAutomat(S, s0, F, Sigma, delta,
 				name="Beispiel1.4",
 				beschreibung="Ein endlicher nichtdeterministischer Automat für die Menge aller Bitfolgen, deren drittletzte Ziffer eine 0 ist",
-				testWords=testWorte(['0', '1']))
+				testWords=testWorte(['0', '1']),
+				verifyWords = verifyWords
+				)
 	return A
 
 def Script_Beispiel_1_4intuitiv():
@@ -203,11 +211,13 @@ def Script_Beispiel_1_4intuitiv():
 							"1" : '001',
 						},
 			}
-	A = Automat(S, s0, F, Sigma, delta,
+	verifyWords = { '111' : False, '000' : True, '011' : True, '0' : False}
+	return Automat(S, s0, F, Sigma, delta,
 				name="Beispiel1.4 (intuitiv)",
 				beschreibung="Ein endlicher deterministischer Automat für die Menge aller Bitfolgen, deren drittletzte Ziffer eine 0 ist",
-				testWords=testWorte(['0', '1']))
-	return A
+				testWords=testWorte(['0', '1']),
+				verifyWords = verifyWords
+				)
 
 def Script_Beispiel_1_5_DEA():
 	S = '0 A B C D E F G'
@@ -248,11 +258,13 @@ def Script_Beispiel_1_5_DEA():
 							"1" : '0',
 						},
 			}
-	A = Automat(S, s0, F, Sigma, delta,
+	verifyWords = { '111' : False, '000' : True, '011' : True, '0' : False}
+	return Automat(S, s0, F, Sigma, delta,
 				name="Beispiel1.5 (DEA)",
 				beschreibung="Ein endlicher deterministischer Automat für die Menge aller Bitfolgen, deren drittletzte Ziffer eine 0 ist",
-				testWords=testWorte(['0', '1']))
-	return A
+				testWords=testWorte(['0', '1']),
+				verifyWords = verifyWords
+				)
 
 testZahlen1='0 1 2 +99 -99 9- a - +- -+ -+99 0019292'
 
@@ -272,7 +284,13 @@ def Script_Beispiel_1_6_NDA():
 						'0 1 2 3 4 5 6 7 8 9' : 's2',
 						},
 			}
-	return EpsilonAutomat(S, s0, F, Sigma, delta, name="SBeispiel 1.6.", beschreibung="NEA, der Dezimalzahlen akzeptiert", testWords=testZahlen1)
+	verifyWords = { 'a' : False, '000' : True, '011' : True, '+0' : True}
+	return EpsilonAutomat(S, s0, F, Sigma, delta, 
+							name="Beispiel 1.6.", 
+							beschreibung="NEA, der Dezimalzahlen akzeptiert", 
+							testWords=testZahlen1,
+							verifyWords = verifyWords
+							)
 
 def Script_Beispiel_1_6_DEA():
 	S = 's0 s1 s2'
@@ -291,7 +309,13 @@ def Script_Beispiel_1_6_DEA():
 						('0', '1', '2', '3', '4', '5', '6', '7', '8', '9') : 's2',
 						},
 			}
-	return Automat(S, s0, F, Sigma, delta, beschreibung="DEA, der Dezimalzahlen akzeptiert", testWords=testZahlen1)
+	verifyWords = { 'a' : False, '000' : True, '011' : True, '+0' : True}
+	return Automat(S, s0, F, Sigma, delta,
+					name="Beispiel 1.6. (DEA)",
+					beschreibung="DEA, der Dezimalzahlen akzeptiert", 
+					testWords=testZahlen1,
+					verifyWords = verifyWords
+					)
 
 def Script_Beispiel_1_7():
 	S = 's1 s2 s3 s4 s5 s6'
@@ -324,7 +348,9 @@ def Script_Beispiel_1_7():
 						'1' : 's1',
 						},
 			}
-	A = Automat(S, s0, F, Sigma, delta, name="Beispiel 1.7.")
+	verifyWords = {'0' : False, '1' : True}
+	A = Automat(S, s0, F, Sigma, delta, name="Beispiel 1.7.", 
+				verifyWords=verifyWords)
 	A.testWords = A.testWorteGenerator()
 	return A
 
@@ -350,7 +376,9 @@ def Script_Beispiel_1_7reduziert():
 						'0 1' : 's12',
 						},
 			}
-	A = Automat(S, s0, F, Sigma, delta, name="Beispiel 1.7. reduziert")
+	verifyWords = {'0' : False, '1' : True}
+	A = Automat(S, s0, F, Sigma, delta, name="Beispiel 1.7. reduziert",
+				verifyWords=verifyWords)
 	A.testWords = A.testWorteGenerator()
 	return A
 	
@@ -759,7 +787,7 @@ def Uebungsblatt1_Aufgabe_5b():
 	return A
 
 U2A1testWords = "0 1 +0 -0.001 0.1 0.1e-1 1.00e1 -0.0e0 - . ++ 0- 00. 001.0ee"
-def Uebungsblatt2_Aufgabe1():
+def Uebungsblatt2_Aufgabe_1():
 	delta = {
 				'z0' : { 
 							('+', '-', EpsilonAutomat.EPSILON) : 'z1',
@@ -789,10 +817,12 @@ def Uebungsblatt2_Aufgabe1():
 						},
 			}
 
-	return EpsilonAutomat('z0 z1 z2 z3 z4 z5 z6 z7', 'z0', 'z7', '0 1 + - . e', delta, 
+	return EpsilonAutomat('z0 z1 z2 z3 z4 z5 z6 z7', 'z0', 'z7', '0 1 + - . e', delta,
+						name="U2A1",
+						beschreibung="NEA bei dem die epsilon-Übergänge zu eliminieren sind",
 						testWords=U2A1testWords)
 
-def Uebungsblatt2_Aufgabe1_eliminiert():
+def Uebungsblatt2_Aufgabe_1_eliminiert():
 	delta = {
 				'z0' : { 
 							'+ -' : 'z1',
@@ -825,7 +855,129 @@ def Uebungsblatt2_Aufgabe1_eliminiert():
 			}
 
 	return NichtDeterministischerAutomat('z0 z1 z2 z3 z4 z5 z6 z7', 'z0', 'z2 z4 z7', '0 1 + - . e', delta, 
+						name="U2A1eliminiert",
+						beschreibung="NEA Aufgabe 1 mit eliminierten epsilon-Übergänge",
 						testWords=U2A1testWords)
+
+def Uebungsblatt2_Aufgabe_2a():
+	S = '1 2 3'
+	s0 = '1'
+	F = S
+	Sigma = 'a b c'
+	delta = {
+				'1' : { 
+							'a' : '1', 
+							EpsilonAutomat.EPSILON : '2',
+						},
+				'2' : { 
+							'b' : '2', 
+							EpsilonAutomat.EPSILON : '3',
+						},
+				'3' : { 
+							'c' : '3', 
+						},
+			}
+
+	e = EpsilonAutomat(S, s0, F, Sigma, delta,
+						name="U2A2a",
+						beschreibung="eNEA zur Erkennung aller Zeichenketten, die aus beliebig vielen as, gefolgt von beliebig vielen bs, gefolgt von beliebig vielen cs bestehen")
+	e.testWords = e.testWorteGenerator(Sigma=['a', 'b', 'c'])
+	return e
+
+def Uebungsblatt2_Aufgabe_2b():
+	S = '1 2 3 4 5 6 7 8'
+	s0 = '1'
+	F = '4 8'
+	Sigma = '0 1'
+	delta = {
+				'1' : { 
+							EpsilonAutomat.EPSILON : '2',
+							EpsilonAutomat.EPSILON : '5',
+						},
+				'2' : { 
+							'0' : '3', 
+						},
+				'3' : { 
+							'1' : '4', 
+						},
+				'4' : { 
+							EpsilonAutomat.EPSILON : '2',
+						},
+				'5' : { 
+							'0' : '6', 
+						},
+				'6' : { 
+							'1' : '7', 
+						},
+				'7' : {
+							'0' : '8',
+						},
+				'8' : { 
+							EpsilonAutomat.EPSILON : '5',
+						},
+			}
+
+	e = EpsilonAutomat(S, s0, F, Sigma, delta,
+						name="U2A2b",
+						beschreibung="eNEA zur Erkennung aller Zeichenketten, die aus der ein- oder mehrmaligen Wiederholung von 01 oder 010 bestehen")
+	e.testWords = e.testWorteGenerator(2, Sigma=['01', '010'])
+	return e
+
+def Uebungsblatt2_Aufgabe_2c():
+	S = '0 1 2 3 4 5 6 7 8 9 10'
+	s0 = '0'
+	F = '10'
+	Sigma = '0 1'
+	delta = {
+				'0' : { 
+							'0' : '6',
+							'1' : '1',
+							EpsilonAutomat.EPSILON : '10',
+						},
+				'1' : {
+							'0' : '6',
+							'1' : '2',
+						},
+				'2' : { 
+							EpsilonAutomat.EPSILON : '7',
+							'1' : '3', 
+						},
+				'3' : { 
+							EpsilonAutomat.EPSILON : '8',
+							'1' : '4',
+						},
+				'4' : { 
+							'0' : '10',
+							'1' : '5',
+						},
+				'5' : {
+							'0' : '6',
+							'1' : '1',
+						},
+				'6' : {
+							'0' : '7',
+							EpsilonAutomat.EPSILON : '10',
+						},
+				'7' : { 
+							'0' : '8',
+							EpsilonAutomat.EPSILON : '10',
+						},
+				'8' : { 
+							EpsilonAutomat.EPSILON : '10',
+						},
+				'9' : { 
+							'0' : '10',
+						},
+				'10' : {
+							'0' : '10',
+							'1' : '6',
+							EpsilonAutomat.EPSILON : '6',
+						}
+				}
+	e = EpsilonAutomat(S, s0, F, Sigma, delta,
+						beschreibung="eNEA zur Erkennung aller Zeichenketten, bei denen mindestns eines der letzten fünf Zeichen eine 0 ist")
+	e.testWords = e.testWorteGenerator(5, Sigma=['0', '1'])
+	return e
 
 def Sonstige_Aufgabe_EidTI_U6():
 	"""
@@ -879,6 +1031,12 @@ def Sonstige_Aufgabe_EidTI_U6():
 				testWords=testWorte(['a', 'b', 'babbage']))
 	return A
 
+def verifyAutomaten(automaten):
+	for automat in automaten:
+		r = automat.verify()
+		if not r:
+			print automat
+
 def mergeAndOpenPDF(files, output="/Users/wolf/Desktop/automaten.pdf"):
 	if len(files) == 0:
 		print "merge WHAT exactly ?"
@@ -919,6 +1077,7 @@ def Uebungsblatt2():
 
 def ScriptBeispiele():
 	automaten = erstelleAutomatenFuer('Script')
+	verifyAutomaten(automaten)
 	return erstelleAutomatenPDFs(automaten)
 
 def Sonstige():
@@ -938,8 +1097,8 @@ def Tester():
 
 if __name__ == '__main__':
 	#mergeAndOpenPDF(Uebungsblatt1(), "/Users/wolf/Desktop/Automaten Übungsblatt 1.pdf")
-	mergeAndOpenPDF(Uebungsblatt2(), "/Users/wolf/Desktop/Automaten Übungsblatt 2.pdf")
-	#mergeAndOpenPDF(ScriptBeispiele(), "/Users/wolf/Desktop/Automaten Script Beispiele.pdf")
+	#mergeAndOpenPDF(Uebungsblatt2(), "/Users/wolf/Desktop/Automaten Übungsblatt 2.pdf")
+	mergeAndOpenPDF(ScriptBeispiele(), "/Users/wolf/Desktop/Automaten Script Beispiele.pdf")
 	#mergeAndOpenPDF(Sonstige(), "/Users/wolf/Desktop/Automaten Sonstige.pdf")
 
 	#Tester()

@@ -5,7 +5,7 @@ import os,sys
 import automatenausgabe
 from automatenausgabe import *
 
-USED_LOGLEVEL = logging.INFO
+USED_LOGLEVEL = logging.WARNING
 
 class AutomatException(Exception):
 	"""
@@ -163,7 +163,7 @@ class NichtDeterministischerAutomat(OAsciiAutomat, OLaTeXAutomat, ODotAutomat):
 			self.log.addHandler(lhandler)
 			self.log.setLevel(USED_LOGLEVEL)
 
-	def __init__(self, S, s0, F, Sigma, delta, name="EinNDA", beschreibung='', testWords=None):
+	def __init__(self, S, s0, F, Sigma, delta, name="EinNDA", beschreibung='', testWords=None, verifyWords=None):
 		"""
 		>>> mini = NichtDeterministischerAutomat('s0 s1 s2 s3', 's0', 's3', '0 1', {'s0' : {'0' : ['s0', 's1'], '1' : 's0'}, 's1' : {'0' : 's2', '1' : 's2'}, 's2' : { '0' : 's3', '1' : 's3'}})
 		>>> mini._delta('s0', '0')
@@ -228,6 +228,7 @@ class NichtDeterministischerAutomat(OAsciiAutomat, OLaTeXAutomat, ODotAutomat):
 		self.F = F
 		self.Sigma = Sigma
 		self.delta = self._fixDeltaMapping(delta)
+		self.ableitungsPfad = list()
 
 		# Ueberpruefen III - das delta Ueberfuehrungsregelwerk soll keine Uebergaenge fuer Zustaende
 		#                    definieren, die nicht eine Untermenge von S sind
@@ -239,6 +240,7 @@ class NichtDeterministischerAutomat(OAsciiAutomat, OLaTeXAutomat, ODotAutomat):
 		self.name = name
 		self.ZustandIndex = dict()
 		self.testWords = testWords
+		self.verifyWords = verifyWords
 		self.beschreibung = beschreibung
 
 		# Automat zuruecksetzen (aktuellen Zustand auf s0 setzen)
@@ -265,6 +267,7 @@ class NichtDeterministischerAutomat(OAsciiAutomat, OLaTeXAutomat, ODotAutomat):
 		Setzt den Automaten zurueck
 		"""
 		self.Zustand = self.s0
+		self.ableitungsPfad = list()
 
 	def istDEA(self):
 		"""
@@ -459,6 +462,7 @@ class NichtDeterministischerAutomat(OAsciiAutomat, OLaTeXAutomat, ODotAutomat):
 			try:
 				altZustand = self.Zustand
 				self.Zustand = self._delta(self.Zustand, Zeichen)
+				self.ableitungsPfad.append(self.Zustand)
 				if len(self.Zustand) == 0:
 					msg = "Kein Ziel-Zustand fuer Zeichen '%s' (Alphabet: %s)" % (Zeichen, self._fzString(self.Sigma))
 					msg += " von Zustand %s definiert." % (self._fzString(altZustand))
@@ -477,7 +481,7 @@ class NichtDeterministischerAutomat(OAsciiAutomat, OLaTeXAutomat, ODotAutomat):
 					raise
 				return False
 
-		if not self.Zustand.issubset(self.F):
+		if len(self.Zustand.intersection(self.F)) == 0:
 			self.log.debug("Kein Endzustand erreicht.")
 			if doRaise:
 				raise NoAcceptingStateException(self.Zustand, self.F)
@@ -507,8 +511,28 @@ class NichtDeterministischerAutomat(OAsciiAutomat, OLaTeXAutomat, ODotAutomat):
 				self.log.info("[%6s] %s : %s" % ((successful and "SUCCESS" or "FAILED"), word, result))
 		return resultset
 
+	def verify(self, vWords=None):
+		verified = True
+		if vWords == None:
+			if self.verifyWords != None:
+				vWords = self.verifyWords
+		
+		if vWords == None or (isinstance(vWords, dict) and len(vWords) == 0):
+			self.log.warning("%s: Will not verify." % self.name)
+			return
+
+		for word in vWords:
+			expectation = vWords[word]
+			result = self.check(word)
+			self.log.debug("'%s', expecting: %s, got: %s" % (word, expectation, result))
+			if expectation != result:
+				self.log.error("%s: '%s' failed!" % (self.name, word))
+				self.log.warning(self.ableitungsPfad)
+				verified = False
+		return verified
+
 class Automat(NichtDeterministischerAutomat):
-	def __init__(self, S, s0, F, Sigma, delta, name="EinDEA", beschreibung='', testWords=None):
+	def __init__(self, S, s0, F, Sigma, delta, name="EinDEA", beschreibung='', testWords=None, verifyWords=None):
 		"""
 		>>> mini = Automat('s0 s1 s2 s3', 's0', 's3', '0 1', {'s0' : {'0' : 's0 s1', '1' : 's0'}, 's1' : {'0' : 's2', '1' : 's2'}, 's2' : { '0' : 's3', '1' : 's3'}})
 		Traceback (most recent call last):
@@ -556,20 +580,20 @@ class Automat(NichtDeterministischerAutomat):
 		NoAcceptingStateException: frozenset([]) ist nicht Teil der Menge der moeglichen Endzustaende [z0,z1]
 
 		"""
-		NichtDeterministischerAutomat.__init__(self, S, s0, F, Sigma, delta, name, beschreibung, testWords)
+		NichtDeterministischerAutomat.__init__(self, S, s0, F, Sigma, delta, name, beschreibung, testWords, verifyWords)
 		if not self.istDEA():
 			raise Exception("Ich fuehle mich so nichtdeterministisch.")
 
 class EpsilonAutomat(NichtDeterministischerAutomat):
 	EPSILON='EPSILON'
 	
-	def __init__(self, S, s0, F, Sigma, delta, name="EinNDAe", beschreibung='', testWords=None):
+	def __init__(self, S, s0, F, Sigma, delta, name="EinNDAe", beschreibung='', testWords=None, verifyWords=None):
 		"""
 
 		"""
 		Sigma = self._toList(Sigma)
 		Sigma.append(EpsilonAutomat.EPSILON)
-		NichtDeterministischerAutomat.__init__(self, S, s0, F, Sigma, delta, name, beschreibung, testWords)
+		NichtDeterministischerAutomat.__init__(self, S, s0, F, Sigma, delta, name, beschreibung, testWords, verifyWords)
 		#self.log.warning(delta)
 
 	def _delta(self, Zustand, Zeichen):
@@ -582,9 +606,17 @@ class EpsilonAutomat(NichtDeterministischerAutomat):
 			epsilonMenge = NichtDeterministischerAutomat._delta(self, Zustand, EpsilonAutomat.EPSILON)
 			self.log.debug("%s : zM: %s; eM: %s" % (Zeichen, zielMenge, epsilonMenge))
 			
+			gesehen = dict()
 			while epsilonMenge != leereMenge:
 				self.log.debug("Mit Epsilon gehts weiter .. -> %s" % epsilonMenge)
 				zielMenge = NichtDeterministischerAutomat._delta(self, epsilonMenge, Zeichen)
+				if not gesehen.has_key(zielMenge):
+					gesehen[zielMenge] = 0
+				gesehen[zielMenge] += 1
+				
+				if gesehen[zielMenge] > 2:
+					self.log.warning("loop %s" % gesehen)
+					return leereMenge
 				if zielMenge != leereMenge:
 					self.log.debug("==>> %s" % zielMenge)
 					return zielMenge
@@ -614,6 +646,7 @@ class EpsilonAutomat(NichtDeterministischerAutomat):
 
 			epsilonMenge = NichtDeterministischerAutomat._delta(self, e.value, EpsilonAutomat.EPSILON)
 			self.log.debug("Mit epsilon gehts hierhin %s" % epsilonMenge)
+			gesehen = dict()
 			
 			while epsilonMenge != leereMenge:
 				inter = epsilonMenge.intersection(self.F)
@@ -621,6 +654,12 @@ class EpsilonAutomat(NichtDeterministischerAutomat):
 					self.log.debug("aber mit dem epsilon ..")
 					self.log.debug(inter)
 					return True
+				if not gesehen.has_key(epsilonMenge):
+					gesehen[epsilonMenge] = 0
+				gesehen[epsilonMenge] += 1
+				if gesehen[epsilonMenge] > 1:
+					self.log.warning("loop %s" % gesehen)
+					raise
 				epsilonMenge = NichtDeterministischerAutomat._delta(self, epsilonMenge, EpsilonAutomat.EPSILON)
 			if doRaise:
 				raise
