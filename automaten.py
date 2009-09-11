@@ -3,9 +3,8 @@
 import logging, logging.config
 import os,sys
 import automatenausgabe
-from automatenausgabe import *
 
-USED_LOGLEVEL = logging.WARNING
+USED_LOGLEVEL = logging.DEBUG
 
 class AutomatException(Exception):
 	"""
@@ -59,7 +58,7 @@ def test():
 	failed, total = doctest.testmod()
 	print("doctest: %d/%d tests failed." % (failed, total))
 
-class NichtDeterministischerAutomat(OAsciiAutomat, OLaTeXAutomat, ODotAutomat):
+class NichtDeterministischerAutomat(automatenausgabe.OAsciiAutomat, automatenausgabe.OLaTeXAutomat, automatenausgabe.ODotAutomat):
 	def _toList(self, what):
 		"""
 		>>> mini = NichtDeterministischerAutomat('s0', 's0', 's0', '0 1', { 's0' : {'0' : 's0'}})
@@ -518,7 +517,7 @@ class NichtDeterministischerAutomat(OAsciiAutomat, OLaTeXAutomat, ODotAutomat):
 				vWords = self.verifyWords
 		
 		if vWords == None or (isinstance(vWords, dict) and len(vWords) == 0):
-			self.log.warning("%s: Will not verify." % self.name)
+			self.log.warning("%s: Will not be verified." % self.name)
 			return
 
 		for word in vWords:

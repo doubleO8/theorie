@@ -1,26 +1,18 @@
-\documentclass[11pt,a4paper,oneside]{article}
+%%__CHAPTER__
 
-\usepackage[german]{babel}
-\usepackage{pgf}
-\usepackage{tikz}
-\usetikzlibrary{arrows,automata}
-\usepackage[utf8]{inputenc}
-\usepackage{verbatim}
-\usepackage{float}
-\usepackage{longtable}
+%%__AUTOMAT__
 
-\begin{document}
-
-\section{Spezifikation}
+\subsection{Spezifikation}
 %%__SPEC__
 
-\section{Test}
+%%__VERIFY__
+
 %%__RESULTS__
 
-\section{Überführungsfunktion als Tabelle}
+\subsection{Überführungsfunktion als Tabelle}
 %%__DELTA__
 
-\section{Graph}
+\subsection{Graph}
 \begin{tikzpicture}[->,>=stealth',shorten >=1pt,auto,node distance=2.0cm, semithick]
 	\tikzstyle{every state}=[fill=none,draw=black,text=black]
 
@@ -45,4 +37,5 @@
 \end{tikzpicture}
 
 %%__DOT_GRAPH__
-\end{document}
+
+\clearpage

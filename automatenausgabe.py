@@ -1,11 +1,37 @@
 # -*- coding: utf-8 -*-
-import os, sys, tempfile
+import os, sys, tempfile, shutil, random, atexit
 from subprocess import *
-import automaten
 import logging
 
 WORKINGDIR = '/Users/wolf/Documents/programming/theorie'
 OUTPUTDIR = os.path.join(WORKINGDIR, 'texOutput')
+EPSILON = 'EPSILON'
+
+class SelfRemovingTempdir(object):
+	def __init__(self, workDir=None, removeAtExit=True, log = None):
+		self.workDir = workDir
+		self.removeAtExit = removeAtExit
+		if log == None:
+			logging.basicConfig(level=logging.DEBUG)
+			log = logging.getLogger('runCommand')
+		self.log = log
+		self.tmp = tempfile.mkdtemp(dir=workDir)
+		if self.removeAtExit:
+			atexit.register(self._atExitHooker)
+		self.log.debug("tmp: %s, removed at exit : %s" % (self.tmp, self.removeAtExit))
+	
+	def _getRandomFilename(self, seq=list("a7ksLo2ksk38AOIDHJKgbenmguziwoamna35678923ohdskljjhwriu"), length=18):
+		random.shuffle(seq)
+		filename = ''.join(seq)
+		return filename[:length]
+	
+	def getRandomFilename(self):
+		return os.path.join(self.tmp, self._getRandomFilename())
+
+	def _atExitHooker(self):
+		if self.removeAtExit:
+			self.log.debug("Removing tmp '%s'" % self.tmp)
+			shutil.rmtree(self.tmp)
 
 def runCommand(command, parameter, logger=None, workDir=os.getcwd()):
 	if logger == None:
@@ -105,6 +131,12 @@ class AusgebenderAutomat(object):
 		return tempfile.mkstemp(dir=OUTPUTDIR)[1]
 
 class OAsciiAutomat(AusgebenderAutomat):
+# 	def _getAsciiArtMinimierTabelle(self):
+# 		sS = sorted(self.S)
+# 		for zustandA in sS:
+# 			for zustandB in sS:
+# 				pass
+
 	def _getAsciiArtDeltaTable(self, prefix=' '):
 		pfxLen = len(prefix)
 		rows = list([prefix + "Überführungsfunktion:"])
@@ -288,7 +320,7 @@ class OLaTeXAutomat(AusgebenderAutomat):
 		aTyp = "%seterministischer Automat" % ((self.istDEA() and 'D' or 'Nichtd'))
 
 		s.append(r'\textbf{%s \emph{%s}}' % (aTyp, self.name))
-		if automaten.EpsilonAutomat.EPSILON in self.Sigma:
+		if EPSILON in self.Sigma:
 			s.append(r" ($\epsilon$-Übergänge möglich)")
 
 		if self.beschreibung :
@@ -337,7 +369,7 @@ class OLaTeXAutomat(AusgebenderAutomat):
 	def _TeXResults(self):
 		s = ''
 		if self.testWords:
-			testResults = [ r'\begin{longtable}{lll}' ]
+			testResults = [ r'\subsection{Test}', r'\begin{longtable}{lll}' ]
 			testResults.append(r'Erfolg & Wort & Ergebnis\\')
 			testResults.append(r'\hline')
 			for (word, successful, result) in self.checkWords(self.testWords):
@@ -345,6 +377,26 @@ class OLaTeXAutomat(AusgebenderAutomat):
 				t.append(r'{\small %s}' % (successful and "OK" or r'\textbf{KO}'))
 				t.append(r'{\small %s}' % word)
 				t.append(r'{\small \emph{%s}}' % result)
+				testResults.append(' & '.join(t) + r'\\')
+			testResults.append(r'\end{longtable}')
+			s = "\n".join(testResults)
+		return s
+
+	def _TeXVerify(self):
+		s = ''
+		if self.verifyWords:
+			testResults = [ r'\subsection{Verifikationstests}', r'\begin{longtable}{llll}' ]
+			testResults.append(r'Wort & Erwartungswert & Ergebnis & Verifiziert\\')
+			testResults.append(r'\hline')
+			for word in self.verifyWords:
+				expected = self.verifyWords[word]
+				
+			for (word, successful, result) in self.checkWords(self.verifyWords.keys()):
+				t = list()
+				t.append(r'{\small %s}' % word)
+				t.append(r'{\small %s}' % self.verifyWords[word])
+				t.append(r'{\small \emph{%s, %s}}' % (successful, result))
+				t.append(r'{\small %s}' % ((self.verifyWords[word] == successful) and "ja" or r'\textbf{NEIN}'))
 				testResults.append(' & '.join(t) + r'\\')
 			testResults.append(r'\end{longtable}')
 			s = "\n".join(testResults)
@@ -361,6 +413,9 @@ class OLaTeXAutomat(AusgebenderAutomat):
 			orientation = '[right of=%s]' % zustand
 		return (tNodes, tEdges)
 
+	def _TeXAutomatStart(self):
+		return r'\section{%s}' % self.name
+		
 	def _toTeX(self, template):
 		s = self._readTemplate(template)
 
@@ -368,9 +423,11 @@ class OLaTeXAutomat(AusgebenderAutomat):
 		s = s.replace("%%__NODES__", "\n".join(tNodes))
 		s = s.replace("%%__PATH__", "\path\n" + "\n".join(tEdges) + ";\n")
 
+		s = s.replace("%%__AUTOMAT__", self._TeXAutomatStart())
 		s = s.replace("%%__SPEC__", self._TeXSpecification())
 		s = s.replace("%%__DELTA__", self._TeXDeltaTable())
 		s = s.replace('%%__RESULTS__', self._TeXResults())
+		s = s.replace('%%__VERIFY__', self._TeXVerify())
 
 		if 'createDotDocument' in dir(self):
 			dotgraph = self.createDotDocument()
@@ -380,6 +437,49 @@ class OLaTeXAutomat(AusgebenderAutomat):
 				self.log.error("Kein dotgraph")
 
 		return s
+
+	def createLaTeXBinder(self, files=list(), output=None):
+		if 'log' not in dir(self) :
+			logging.basicConfig(level=logging.DEBUG)
+			self.log = logging.getLogger('cLB')
+
+		basename = self._genFilename()
+		basedir = os.path.dirname(basename)
+		tex_filename = os.path.basename(basename + '.tex')
+		pdf_filename = os.path.basename(basename + '.pdf')
+		template = os.path.join(basedir, 'binder.tex')
+		returnValue = os.path.join(basedir, pdf_filename)
+
+		s = self._readTemplate(template)
+		includeFiles = list()
+		for file in files:
+			includeFiles.append(r'\include{%s}' % file)
+		s = s.replace("%%__FILES__", "\n".join(includeFiles))
+		try:
+			out = open(os.path.join(basedir, tex_filename), "w")
+			out.write(s)
+			out.close()
+		except Exception, e:
+			try:
+				self.log.error(e)
+			except Exception, e:
+				print e
+			returnValue = False
+
+		(rc, out, err) = runCommand('pdflatex', '"%s"' % tex_filename, logger=self.log, workDir=basedir)
+		if rc != 0:
+			print err
+			print "----------------------"
+			print out
+			returnValue = False
+		(rc, out, err) = runCommand('pdflatex', '"%s"' % tex_filename, logger=self.log, workDir=basedir)
+		if rc != 0:
+			print err
+			print "----------------------"
+			print out
+			returnValue = False
+		
+		return returnValue
 
 	def createTeXDocument(self, filename = None):
 		basename = self._genFilename()

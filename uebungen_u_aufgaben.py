@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 from automaten import *
+from automatenausgabe import *
 
 def int2bin(value, fill=0):
 	result = list()
@@ -488,10 +489,13 @@ def Uebungsblatt1_Aufgabe_2b():
 						},
 				'z6' : {},
 			}
+	verifyWords = { 'baa' : True, 'ab' : True, 'abb' : True, 'a' : False, 'ba' : False}
 	A = Automat('z0 z1 z2 z3 z4 z5 z6', 'z0', 'z2 z3 z6', 'a b', delta,
 				name="U1A2b",
 				beschreibung="Akzeptiert die drei Worte baa ab abb",
-				testWords=U1A2_Testworte)
+				testWords=U1A2_Testworte,
+				verifyWords=verifyWords
+				)
 	return A
 
 def Uebungsblatt1_Aufgabe_2c():
@@ -509,10 +513,13 @@ def Uebungsblatt1_Aufgabe_2c():
 							'b' : 'z1',
 						},
 			}
+	verifyWords = { 'baa' : True, 'ab' : True, 'aba' : False, 'a' : True, 'ba' : False}
 	A = Automat('z0 z1 z2', 'z0', 'z0 z1', 'a b', delta,
 				name="U1A2c",
 				beschreibung="Akzeptiert alle Worte, die nicht mit ba enden",
-				testWords=U1A2_Testworte)
+				testWords=U1A2_Testworte,
+				verifyWords=verifyWords
+				)
 	return A
 
 def Uebungsblatt1_Aufgabe_2d():
@@ -549,10 +556,13 @@ def Uebungsblatt1_Aufgabe_2d():
 							'b' : 'z2',
 						},
 			}
+	verifyWords = { 'a' : False, 'aa' : True, 'abb' : True, 'aba' : False, 'aabb' : True}
 	A = Automat('z0 z1 z2 z3 z4 z5 z6 z7', 'z0', 'z3 z6 z7', 'a b', delta,
 				name="U1A2d",
 				beschreibung="Akzeptiert alle Worte, die mit zwei gleichen Zeichen enden oder beginnen",
-				testWords=U1A2_Testworte)
+				testWords=U1A2_Testworte,
+				verifyWords=verifyWords
+				)
 	return A
 
 def Uebungsblatt1_Aufgabe_2d1():
@@ -592,10 +602,12 @@ def Uebungsblatt1_Aufgabe_2d1():
 							'b' : 'z10',
 						},
 			}
+	verifyWords = { 'a' : False, 'aa' : True, 'abb' : True, 'aba' : False, 'aabb' : True}
 	A = Automat('z1 z2 z3 z4 z5 z7 z8 z9 z10', 'z1', 'z3 z5 z8 z10', 'a b', delta,
 				name="U1A2d (alternativ)",
 				beschreibung="Akzeptiert alle Worte, die mit zwei gleichen Zeichen enden oder beginnen",
-				testWords=U1A2_Testworte)
+				testWords=U1A2_Testworte,
+				verifyWords=verifyWords)
 	return A
 
 def Uebungsblatt1_Aufgabe_2e():
@@ -609,10 +621,13 @@ def Uebungsblatt1_Aufgabe_2e():
 							'b' : 'z1',
 						},
 			}
+	verifyWords = { 'a' : True, 'aa' : False, 'abb' : True, 'aba' : False, 'aabb' : False}
 	A = Automat('z0 z1', 'z0', 'z1', 'a b', delta,
 				name="U1A2e",
 				beschreibung="Akzeptiert alle Worte, die eine ungerade Anzahl von a's enthalten",
-				testWords=U1A2_Testworte)
+				testWords=U1A2_Testworte,
+				verifyWords=verifyWords
+				)
 	return A
 
 def Uebungsblatt1_Aufgabe_3a():
@@ -627,13 +642,21 @@ def Uebungsblatt1_Aufgabe_3a():
 						},
 			}
 	tw = list()
-	for i in xrange(20):
-		tw.append(int2bin(i))
+	verifyWords = dict()
+	for i in xrange(10):
+		add = int2bin(i)
+		tw.append(add)
+		if i % 2 == 0:
+			verifyWords[add] = True
+		else:
+			verifyWords[add] = False
 
-	A = Automat('z0 z1', 'z0', 'z1', '0 1', delta,
+	A = Automat('z0 z1', 'z0', 'z0', '0 1', delta,
 				name="U1A3a",
 				beschreibung="DEA, der für eine ganze Zahl in Binärdarstellung entscheidet, ob die Zahl durch 2 ohne Rest teilbar ist",
-				testWords=tw)
+				testWords=tw, 
+				verifyWords=verifyWords
+				)
 	return A
 
 def Uebungsblatt1_Aufgabe_3b():
@@ -656,16 +679,21 @@ def Uebungsblatt1_Aufgabe_3b():
 						},
 			}
 	tw = list()
-	for i in xrange(10):
-		tw.append(int2bin(i))
-	for i in xrange(10, 300):
+	verifyWords = dict()
+	for i in xrange(20):
+		add = int2bin(i)
+		tw.append(add)
 		if i % 3 == 0:
-			tw.append(int2bin(i))
+			verifyWords[add] = True
+		else:
+			verifyWords[add] = False
 
 	A = Automat('z0 z1 z2 z3', 'z0', 'z1', '0 1', delta,
 				name="U1A3b",
 				beschreibung="DEA, der für eine ganze Zahl in Binärdarstellung entscheidet, ob die Zahl durch 3 ohne Rest teilbar ist",
-				testWords=tw)
+				testWords=tw,
+				verifyWords=verifyWords
+				)
 	return A
 
 def Sonstige_Aufgabe_3x1():
@@ -979,6 +1007,67 @@ def Uebungsblatt2_Aufgabe_2c():
 	e.testWords = e.testWorteGenerator(5, Sigma=['0', '1'])
 	return e
 
+def Uebungsblatt2_Aufgabe_4():
+	S = 'z0 z1 z2 z3 z4 zF'
+	s0 = 'z0'
+	F = 'z3 z4'
+	Sigma = '0 1'
+	delta = {
+				'z0' : { 
+							'0' : 'z1',
+							'1' : 'z2',
+						},
+				'z1' : {
+							'0' : 'z1',
+							'1' : 'z3',
+						},
+				'z2' : { 
+							'0' : 'z2',
+							'1' : 'z4', 
+						},
+				'z3' : { 
+							'0' : 'z2',
+							'1' : 'zF',
+						},
+				'z4' : { 
+							'0' : 'z1',
+							'1' : 'zF',
+						},
+				'zF' : {
+							'0' : 'zF',
+							'1' : 'zF',
+						},
+				}
+	A = Automat(S, s0, F, Sigma, delta,
+				name="U2A4",
+				beschreibung="DEA x")
+	A.testWords = A.testWorteGenerator(5, Sigma=['0', '1'])
+	return A
+
+def Uebungsblatt2_Aufgabe5a():
+	S = 'a1 a2'
+	s0 = 'a1'
+	F = 'a1'
+	Sigma = 'a b'
+	delta = {
+				'a1' : {
+						'a' : 'a2',
+						'b' : 'a2',
+						},
+				'a2' : {
+						'a' : 'a1',
+						'b' : 'a2',
+						}
+			}
+	verifyWords = { '' : True, 'a' : False, 'aa' : True, 'ab' : False, 'aab' : True}
+	A = Automat(S, s0, F, Sigma, delta,
+				name="U2A5a",
+				beschreibung="DEA, der alle Worte über a,b akzeptiert, die eine gerade Anzahl von a's (inklusive leeres Wort) haben",
+				verifyWords=verifyWords
+				)
+	A.testWords = A.testWorteGenerator(3)
+	return A
+
 def Sonstige_Aufgabe_EidTI_U6():
 	"""
 	boese: schlecht erarbeitet und hingewuergt.
@@ -1044,10 +1133,15 @@ def mergeAndOpenPDF(files, output="/Users/wolf/Desktop/automaten.pdf"):
 	baseCmd = 'gs -q -dNOPAUSE -dBATCH -sDEVICE=pdfwrite -sOutputFile="%s" ' % output
 	command = baseCmd + ' '.join(files) + '&& open "%s"' % output
 	call(command, shell=True)
+	ola = OLaTeXAutomat() 
+	binder = ola.createLaTeXBinder(files)
+	if binder:
+		call('open "%s"' % binder)
 
 def erstelleAutomatenPDFs(automaten):
 	opFiles = list()
 	for automat in automaten:
+		automat.verify()
 		outputFile = automat.createTeXDocument()
 		if outputFile:
 			opFiles.append(outputFile)
@@ -1069,37 +1163,135 @@ def erstelleAutomatenFuer(prefix):
 
 def Uebungsblatt1():
 	automaten = erstelleAutomatenFuer('Uebungsblatt1')
-	return erstelleAutomatenPDFs(automaten)
+	automatenReport(automaten, finalFileBase='Uebungsblatt1')
 
 def Uebungsblatt2():
 	automaten = erstelleAutomatenFuer('Uebungsblatt2')
-	return erstelleAutomatenPDFs(automaten)
+	automatenReport(automaten, finalFileBase='Uebungsblatt2')
 
 def ScriptBeispiele():
 	automaten = erstelleAutomatenFuer('Script')
-	verifyAutomaten(automaten)
-	return erstelleAutomatenPDFs(automaten)
+	automatenReport(automaten, finalFileBase='Script')
 
 def Sonstige():
 	automaten = erstelleAutomatenFuer('Sonstige')
-	return erstelleAutomatenPDFs(automaten)
+	automatenReport(automaten, finalFileBase='Sonstige')
+
+def automatenReport(automaten, finalFileBase='AutomatReport', WORKINGDIR = '/Users/wolf/Documents/programming/theorie', TEMPLATESDIR = os.path.join(WORKINGDIR, 'texOutput')):
+	o = AusgebenderAutomat()
+	t = SelfRemovingTempdir(workDir = WORKINGDIR)
+	tmpDir = t.tmp
+	base = t.getRandomFilename()
+
+	texTarget = base + '.tex'
+	pdfTarget = base + '.pdf'
+	finalFile = os.path.join(WORKINGDIR, finalFileBase + '.pdf')
+	
+	contentS = ''
+	for automat in automaten:
+		contentS += automat._toTeX(os.path.join(TEMPLATESDIR, 'template.tex'))
+	content = list()
+	
+	for line in contentS.split("\n"):
+		line = line.strip()
+		if not line.startswith("%") and line != '':
+			content.append(line)
+
+	binder = o._readTemplate(os.path.join(TEMPLATESDIR, 'binder.tex'))
+	binder = binder.replace("%%__CONTENT__", "\n".join(content))
+	
+	try:
+		out = open(texTarget, "w")
+		out.write(binder)
+		out.close()
+	except Exception, e:
+		print e
+
+	(rc, out, err) = runCommand('pdflatex', ('"%s"' % texTarget), workDir=tmpDir)
+	if rc != 0:
+		print err
+		print "----------------------"
+		print out
+
+	if rc == 0:
+		(rc, out, err) = runCommand('pdflatex', ('"%s"' % texTarget), workDir=tmpDir)
+		if rc != 0:
+			print err
+			print "----------------------"
+			print out
+		if rc == 0 and os.path.isfile(pdfTarget):
+			shutil.move(pdfTarget, finalFile)
+			runCommand('open', '"%s"' % finalFile)
+
+def uCross(set1, set2):
+	resulting_set = set()
+	for s1 in set1:
+		for s2 in set2:
+			fz = frozenset([s1, s2])
+			if len(fz) > 1:
+				resulting_set.add(fz)
+	return resulting_set
 
 def Tester():
-	automaten = [Script_Beispiel_1_6_NDA(), Script_Beispiel_1_6_DEA(), Uebungsblatt2_Aufgabe1(), Script_Beispiel_1_7(), Script_Beispiel_1_7reduziert()]
-	#erstelleAutomatenFuer('Script')
-	for automat in automaten:
-		print automat
-		if automat.testWords:
-			print "\nTEST:\n%s" % ('-' * 80)
-			for (word, successful, result) in automat.checkWords(automat.testWords):
-				print "[%2s] %-10s : %s" % ((successful and 'ok' or 'KO'), word, result)
-			print "\n"
+	a = Uebungsblatt2_Aufgabe_4()
+	U = set()
+	S = set(a.S)
+	F = set(a.F)
+	SmF = S - F
+	U = uCross(SmF, F).union(uCross(F,SmF))
+	
+	print "S:"
+	print S
+	print "F:"
+	print F
+	print "S - F :"
+	print SmF
+	print "U:"
+	print U
+	print "S x S:"
+	SxS = uCross(S, S)
+	print SxS
+	print "S x S - U:"
+	print SxS.intersection(U)
+	changed = True
+	N = set()
+	Uprev = U.copy()
+	while changed:
+		changed = False
+		for st in SxS.intersection(U):
+			if len(st) == 2:
+				(s, t) = list(st) 
+				print "Vergleiche %s und %s" % (s,t)
+				for zeichen in a.Sigma:
+					first = list(a._delta(s, zeichen))[0]
+					second = list(a._delta(t, zeichen))[0]
+					fz = frozenset([first, second])
+					print " d(%s, %s), d(%s, %s) => %s,%s             --*--        %s" % (s, zeichen, t, zeichen, first, second, fz)
+					if len(fz) > 1 and fz not in U:
+						#print " >> (%s,%s) in U: %s" % (first, second, U)
+						U.add(st)
+						changed = True
+						print "changed"
+
+	print "Resultierendes U:"
+	for item in U:
+		print sorted(item)
+	print "=="
+	print "N:"
+	for item in N:
+		print "%s %s" % (item, item in SxS - Uprev)
+# 	automaten = [Script_Beispiel_1_6_NDA(), Script_Beispiel_1_6_DEA(), Uebungsblatt2_Aufgabe1(), Script_Beispiel_1_7(), Script_Beispiel_1_7reduziert()]
+# 	#erstelleAutomatenFuer('Script')
+# 	for automat in automaten:
+# 		print automat
+# 		if automat.testWords:
+# 			print "\nTEST:\n%s" % ('-' * 80)
+# 			for (word, successful, result) in automat.checkWords(automat.testWords):
+# 				print "[%2s] %-10s : %s" % ((successful and 'ok' or 'KO'), word, result)
+# 			print "\n"
 
 if __name__ == '__main__':
-	#mergeAndOpenPDF(Uebungsblatt1(), "/Users/wolf/Desktop/Automaten Übungsblatt 1.pdf")
-	#mergeAndOpenPDF(Uebungsblatt2(), "/Users/wolf/Desktop/Automaten Übungsblatt 2.pdf")
-	mergeAndOpenPDF(ScriptBeispiele(), "/Users/wolf/Desktop/Automaten Script Beispiele.pdf")
-	#mergeAndOpenPDF(Sonstige(), "/Users/wolf/Desktop/Automaten Sonstige.pdf")
-
-	#Tester()
-	
+	Uebungsblatt1()
+	Uebungsblatt2()
+	ScriptBeispiele()
+	Sonstige()
