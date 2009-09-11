@@ -1052,7 +1052,7 @@ def Uebungsblatt2_Aufgabe5a():
 	delta = {
 				'a1' : {
 						'a' : 'a2',
-						'b' : 'a2',
+						'b' : 'a1',
 						},
 				'a2' : {
 						'a' : 'a1',
@@ -1291,7 +1291,7 @@ def Tester():
 # 			print "\n"
 
 if __name__ == '__main__':
-	Uebungsblatt1()
+	#Uebungsblatt1()
 	Uebungsblatt2()
-	ScriptBeispiele()
-	Sonstige()
+	#ScriptBeispiele()
+	#Sonstige()
