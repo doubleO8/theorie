@@ -242,6 +242,9 @@ class NichtDeterministischerAutomat(automatenausgabe.OAsciiAutomat, automatenaus
 		self.verifyWords = verifyWords
 		self.beschreibung = beschreibung
 
+		if self.testWords == None:
+			self.log.debug("Adding Test Words")
+			self.testWords = self.testWorteGenerator()
 		# Automat zuruecksetzen (aktuellen Zustand auf s0 setzen)
 		self.reset()
 

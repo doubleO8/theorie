@@ -12,7 +12,7 @@ class SelfRemovingTempdir(object):
 		self.workDir = workDir
 		self.removeAtExit = removeAtExit
 		if log == None:
-			logging.basicConfig(level=logging.DEBUG)
+			logging.basicConfig(level=logging.INFO)
 			log = logging.getLogger('runCommand')
 		self.log = log
 		self.tmp = tempfile.mkdtemp(dir=workDir)
@@ -33,38 +33,40 @@ class SelfRemovingTempdir(object):
 			self.log.debug("Removing tmp '%s'" % self.tmp)
 			shutil.rmtree(self.tmp)
 
-def runCommand(command, parameter, logger=None, workDir=os.getcwd()):
+def runCommand(command, parameter=None, logger=None, workDir=os.getcwd(), validReturnCodes = [0]):
 	if logger == None:
 		logging.basicConfig(level=logging.DEBUG)
 		logger = logging.getLogger('runCommand')
 
 	cwd = os.getcwd()
-	cmd = command + ' ' + parameter
-	buffer=512
+	cmd = command 
+	if parameter:
+		cmd += ' ' + parameter
+	buffer=1024
 	retcode = -1
-	stdout = PIPE
-	stderr = PIPE
+	stdout = ''
+	stderr = ''
 
-	logger.debug("Ausfuehren : %s" % cmd)
+	logger.debug("Ausfuehren : '%s'" % cmd)
 	try:
 		os.chdir(workDir)
-		p = Popen(cmd, shell=True, bufsize=buffer, stdout=stdout, stderr=stderr, close_fds=True)
+		p = Popen(cmd, shell=True, bufsize=buffer, stdout=PIPE, stderr=PIPE, close_fds=True)
 		p.wait()
 		retcode = p.returncode
-		if retcode == 0:
-			pass
-		else:
+		stdout = p.stdout.read()
+		stderr = p.stderr.read()
+		if not retcode in validReturnCodes:
 			if retcode < 0:
 				logger.error("Ausfuehrung schlug fehl : %d" % -retcode)
 			elif retcode > 0:
-				logger.warning("Ausfuehrung Returncode : %d" % retcode)
-			logger.debug("STDERR Output:")
-			logger.debug(stderr)
+				logger.warning("Ausfuehrung return code : %d" % retcode)
+			logger.error("STDERR Output:")
+			logger.error(stderr)
 			logger.debug("STDOUT Output:")
 			logger.debug(stdout)
 	except OSError, e:
 		logger.critical("Ausfuehrung schlug fehl: %s" %  e)
-	logger.debug("Exit code : '%s'" % retcode)
+	logger.debug("return code : '%s'" % retcode)
 	os.chdir(cwd)
 	return (retcode, stdout, stderr)
 
@@ -510,3 +512,7 @@ class OLaTeXAutomat(AusgebenderAutomat):
 			returnValue = False
 		
 		return returnValue
+
+if __name__ == '__main__':
+	runCommand("true", "whatever")
+	
