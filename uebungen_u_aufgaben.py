@@ -24,7 +24,9 @@ def testWorte(Sigma, length=3):
 		worte += SigmaTmp
 	return worte
 
+# Einige von mehreren Automaten genutzte Testwort-Mengen
 U1A2_Testworte = testWorte(['a', 'b'])
+testZahlen1='0 1 2 +99 -99 9- a - +- -+ -+99 0019292'
 
 def Script_Beispiel_1_1():
 	S = 'aus an'
@@ -243,8 +245,6 @@ def Script_Beispiel_1_5_DEA():
 				testWords=testWorte(['0', '1']),
 				verifyWords = verifyWords
 				)
-
-testZahlen1='0 1 2 +99 -99 9- a - +- -+ -+99 0019292'
 
 def Script_Beispiel_1_6_NDA():
 	S = 's0 s1 s2'
@@ -1781,7 +1781,15 @@ def Uebungsblatt4_Aufgabe1c():
 						'a b' : 'F',
 					},
 				}
-	verifyWords = { '' : False, 'ba' : True, 'ab' : True, 'bbab' : True, 'abba' : False }
+	#verifyWords = { '' : False, 'ba' : True, 'ab' : True, 'bbab' : True, 'abba' : False }
+	worte = [''] + 'ba ab bbab abba'.split()
+	pattern = re.compile('^ba|(a|bb)a*b$')
+
+	verifyWords = dict()
+	for wort in worte:
+		res = pattern.match(wort)
+		verifyWords[wort] = pattern.match(wort) and True or False
+
 	return NichtDeterministischerAutomat(S, s0, F, Sigma, delta,
 						name='U4A1c',
 						beschreibung="Regular Expression $ba|(a|bb)a*b$",
@@ -1815,8 +1823,7 @@ def Uebungsblatt4_Aufgabe2():
 
 	# Testworte mittels regular expression modul von python testen
 	worte = ['0', '1', '+0.1', '-00.1', 'xx']
-	import re
-	pattern = re.compile(r'(0|1)|(\+|-)(0|1)(0|1)*|(0|1)|(\+|-)(0|1)(0|1)*.(0|1)(0|1)*')
+	pattern = re.compile(r'^(0|1)|(\+|-)(0|1)(0|1)*|(0|1)|(\+|-)(0|1)(0|1)*.(0|1)(0|1)*$')
 	verifyWords = dict()
 	for wort in worte:
 		verifyWords[wort] = pattern.match(wort) and True or False
@@ -2112,5 +2119,5 @@ if __name__ == '__main__':
 	blaetterwald = ['Uebungsblatt1', 'Uebungsblatt2', 'Uebungsblatt3', 'Uebungsblatt4', 'Script', 'Sonstige']
 	#blaetterwald = ['Uebungsblatt3']
 	#blaetterwald = ['Sonstige']
-	#blaetterwald = ['Uebungsblatt4']
+	blaetterwald = ['Uebungsblatt4']
 	AutomatenBlatt(blaetterwald)
