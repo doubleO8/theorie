@@ -1,10 +1,9 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-import logging, logging.config
-import os,sys
+import logging, logging.config, os, sys
 import automatenausgabe
 
-USED_LOGLEVEL = logging.DEBUG
+USED_LOGLEVEL = logging.INFO
 
 class AutomatException(Exception):
 	"""
@@ -14,39 +13,49 @@ class AutomatException(Exception):
 	>>> print x
 	'ohje' xXx [achNein]
 	"""
-	def __init__(self, value, validSet=frozenset(), explanation='', hint=None):
+	def __init__(self, value, validSet=frozenset(), explanation='', hint=None, ableitungspfad=list()):
 		self.value = value
 		self.validSet = validSet
 		self.explanation = explanation
 		self.hint = hint
+		self.ableitungspfad = ableitungspfad
+
+	def _ableitungsPfad__str__(self, what):
+		if len(what) == 0:
+			return ''
+		items = list()
+		for item in what:
+			items.append('{%s}' % ','.join(sorted(item)))
+		return " Ableitung:\n %s" % '->'.join(items)
 
 	def __str__(self):
-		# Alte Exception gab nur value zurueck, deswegen: HACK.
-		if len(self.value) > 10:
-			return repr(self.value)
+		## Alte Exception gab nur value zurueck, deswegen: HACK.
+		##if len(self.value) > 10:
+		##	return repr(self.value)
 		validSetText = ''
 		hint = ''
+		ableitungspfadText = self._ableitungsPfad__str__(self.ableitungspfad) 
 		if len(self.validSet):
 			validSetText = '[%s]' % ','.join(sorted(self.validSet))
 		if self.hint:
 			hint = '*%s* ' % self.hint.upper()
-		return "%s%s %s %s" % (hint, repr(self.value), self.explanation, validSetText)
+		return "%s%s %s %s%s" % (hint, repr(self.value), self.explanation, validSetText, ableitungspfadText)
 
 class NotInSigmaException(AutomatException):
-	def __init__(self, value, validSet=frozenset(), hint=None):
-		AutomatException.__init__(self, value, validSet, 'ist nicht Teil der Menge der Eingabezeichen', hint)
+	def __init__(self, value, validSet=frozenset(), hint=None, ableitungspfad=list()):
+		AutomatException.__init__(self, value, validSet, 'ist nicht Teil der Menge der Eingabezeichen', hint, ableitungspfad)
 
 class NoSuchStateException(AutomatException):
-	def __init__(self, value, validSet=frozenset(), hint=None):
-		AutomatException.__init__(self, value, validSet, 'ist nicht Teil der Menge der moeglichen Zustaende', hint)
+	def __init__(self, value, validSet=frozenset(), hint=None, ableitungspfad=list()):
+		AutomatException.__init__(self, value, validSet, 'ist nicht Teil der Menge der moeglichen Zustaende', hint, ableitungspfad)
 
 class NoAcceptingStateException(AutomatException):
-	def __init__(self, value, validSet=frozenset()):
-		AutomatException.__init__(self, value, validSet, 'ist nicht Teil der Menge der moeglichen Endzustaende')
+	def __init__(self, value, validSet=frozenset(), ableitungspfad=list()):
+		AutomatException.__init__(self, value, validSet, 'ist nicht Teil der Menge der moeglichen Endzustaende', ableitungspfad)
 
 class NoRuleForStateException(AutomatException):
-	def __init__(self, value, statesWithRules=list()):
-		AutomatException.__init__(self, value, frozenset(statesWithRules), 'hat keine definierten Regeln.')
+	def __init__(self, value, statesWithRules=list(), ableitungspfad=list()):
+		AutomatException.__init__(self, value, frozenset(statesWithRules), 'hat keine definierten Regeln.', ableitungspfad)
 
 def test():
 	"""
@@ -58,7 +67,7 @@ def test():
 	failed, total = doctest.testmod()
 	print("doctest: %d/%d tests failed." % (failed, total))
 
-class NichtDeterministischerAutomat(automatenausgabe.OAsciiAutomat, automatenausgabe.OLaTeXAutomat, automatenausgabe.ODotAutomat):
+class NichtDeterministischerAutomat(automatenausgabe.OAsciiAutomat, automatenausgabe.OLaTeXAutomat, automatenausgabe.ODotAutomat, automatenausgabe.OPlaintextAutomat):
 	def _toList(self, what):
 		"""
 		>>> mini = NichtDeterministischerAutomat('s0', 's0', 's0', '0 1', { 's0' : {'0' : 's0'}})
@@ -85,7 +94,11 @@ class NichtDeterministischerAutomat(automatenausgabe.OAsciiAutomat, automatenaus
 		frozenset(['a', 'c', 'b'])
 		>>> mini._toFrozenSet('z1')
 		frozenset(['z1'])
+		>>> mini._toFrozenSet(set(['a', 'c', 'b']))
+		frozenset(['a', 'c', 'b'])
 		"""
+		if isinstance(what, set):
+			return frozenset(what)
 		return frozenset(self._toList(what))
 
 	def _fzString(self, what):
@@ -154,10 +167,10 @@ class NichtDeterministischerAutomat(automatenausgabe.OAsciiAutomat, automatenaus
 		return deltaNeu
 
 	def _initLogging(self):
-		self.log = logging.getLogger("x")
+		self.log = logging.getLogger("automaten")
 		if len(self.log.handlers) == 0:
 			lhandler = logging.StreamHandler()
-			lformatter = logging.Formatter('%(asctime)s %(levelname)s:  %(message)s')
+			lformatter = logging.Formatter('%(asctime)s %(levelname)s: %(message)s')
 			lhandler.setFormatter(lformatter)
 			self.log.addHandler(lhandler)
 			self.log.setLevel(USED_LOGLEVEL)
@@ -235,12 +248,26 @@ class NichtDeterministischerAutomat(automatenausgabe.OAsciiAutomat, automatenaus
 		if not fzDeltaKeys.issubset(self.S):
 			raise NoSuchStateException(fzDeltaKeys.difference(self.S), self.S, "Ueberfuehrungsfunktion")
 
+		# Ueberpruefen IV - das delta Ueberfuehrungsregelwerk soll keine Uebergaenge fuer Zustaende
+		#                    definieren, die Zeichen benutzen, die nicht in Sigma sind
+		for zustand in fzDeltaKeys:
+			zZeichen = self.delta[zustand].keys()
+			zeichenSet = set()
+			for item in zZeichen:
+				addme = list(item)[0]
+				zeichenSet.add(addme)
+			self.log.debug('%s : %s, in Sigma: %s' % (zustand, zeichenSet, zeichenSet.issubset(self.Sigma)))
+			
+			if not zeichenSet.issubset(self.Sigma):
+				raise NotInSigmaException(zeichenSet.difference(self.Sigma), self.Sigma)
+
 		# Ein paar meta Daten ..
 		self.name = name
 		self.ZustandIndex = dict()
 		self.testWords = testWords
 		self.verifyWords = verifyWords
 		self.beschreibung = beschreibung
+		self.ableitungsPfad = list()
 
 		if self.testWords == None:
 			self.log.debug("Adding Test Words")
@@ -263,6 +290,14 @@ class NichtDeterministischerAutomat(automatenausgabe.OAsciiAutomat, automatenaus
 			s += self._getAsciiArtDeltaTable()
 		s += " (%se Überführungsfunktion)\n" % (self.istDeltaVollstaendig() and 'vollständig' or 'partiell')
 		return s
+
+	def _ableitungsPfad__str__(self):
+		if len(self.ableitungsPfad) == 0:
+			return ''
+		items = list()
+		for item in self.ableitungsPfad:
+			items.append('{%s}' % ','.join(sorted(item)))
+		return " Ableitung:\n %s" % ' -> '.join(items)
 
 	def reset(self):
 		"""
@@ -386,7 +421,6 @@ class NichtDeterministischerAutomat(automatenausgabe.OAsciiAutomat, automatenaus
 				for item in Zustand:
 					ziele = ziele.union(self._delta(item, Zeichen))
 				return ziele
-			##pass
 		else:
 			self.log.warning("Zustand: nicht unterstuetzter Datentyp %s" % repr(Zustand))
 			raise ValueError()
@@ -511,6 +545,7 @@ class NichtDeterministischerAutomat(automatenausgabe.OAsciiAutomat, automatenaus
 			resultset.append((word, successful, result))
 			if not silence:
 				self.log.info("[%6s] %s : %s" % ((successful and "SUCCESS" or "FAILED"), word, result))
+				self.log.debug(self._ableitungsPfad__str__())
 		return resultset
 
 	def verify(self, vWords=None):
@@ -526,11 +561,12 @@ class NichtDeterministischerAutomat(automatenausgabe.OAsciiAutomat, automatenaus
 		for word in vWords:
 			expectation = vWords[word]
 			result = self.check(word)
-			self.log.debug("'%s', expecting: %s, got: %s" % (word, expectation, result))
+			self.log.info("[VERIFY] %-10s expecting: %-5s, got: %-5s" % (word, expectation, result))
 			if expectation != result:
 				self.log.error("%s: '%s' failed!" % (self.name, word))
-				self.log.warning(self.ableitungsPfad)
+				self.log.debug(self.ableitungsPfad)
 				verified = False
+		self.log.info("Automat '%s' %sverifiziert" % (self.name, (not verified and 'NICHT ') or ''))
 		return verified
 
 class Automat(NichtDeterministischerAutomat):
@@ -591,12 +627,10 @@ class EpsilonAutomat(NichtDeterministischerAutomat):
 	
 	def __init__(self, S, s0, F, Sigma, delta, name="EinNDAe", beschreibung='', testWords=None, verifyWords=None):
 		"""
-
 		"""
 		Sigma = self._toList(Sigma)
 		Sigma.append(EpsilonAutomat.EPSILON)
 		NichtDeterministischerAutomat.__init__(self, S, s0, F, Sigma, delta, name, beschreibung, testWords, verifyWords)
-		#self.log.warning(delta)
 
 	def _delta(self, Zustand, Zeichen):
 		"""
@@ -668,8 +702,11 @@ class EpsilonAutomat(NichtDeterministischerAutomat):
 		except Exception, e:
 			if doRaise:
 				raise
-		self.log.debug("FAAAAAAAAAAALSE")
+		self.log.debug("check(%s, %s) ----> FALSE" % (Wort, doRaise))
 		return False
+
+	def testWorteGenerator(self, length=3, Sigma=None):
+		return NichtDeterministischerAutomat.testWorteGenerator(self, length, self.Sigma - frozenset([EpsilonAutomat.EPSILON]))
 
 if __name__ == '__main__':
 	test()
