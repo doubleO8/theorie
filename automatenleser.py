@@ -181,9 +181,3 @@ class AutomatenLeser(object):
 
 if __name__ == '__main__':
 	test()
-	#A = AutomatenLeser(filename='data/u4a3e1').automat()
-	#print A._plaintext(joiner=';', pretty=False)
-	#print A._plaintext()
-	##A = AutomatenLeser(filename='data/u4a3e_Vorarbeit').automat()
-	#print A
-	#print A.verify()
