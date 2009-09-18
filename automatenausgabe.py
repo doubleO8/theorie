@@ -8,7 +8,6 @@ PDFLATEX_BIN = 'pdflatex'
 
 OUTPUTDIR = os.path.join(WORKINGDIR, 'texOutput')
 EPSILON = 'EPSILON'
-TIKZ = False
 
 class SelfRemovingTempdir(object):
 	def __init__(self, workDir=None, removeAtExit=True, log = None):
@@ -323,75 +322,6 @@ class ODotAutomat(AusgebenderAutomat):
 		return returnValue
 
 class OLaTeXAutomat(AusgebenderAutomat):
-	def _TeXNode(self, Zustand, orientation=''):
-		styles = ['state']
-		description = Zustand
-		name = Zustand
-		#	\node[initial,state]	(A)						{$q_a$};
-		if Zustand in self.s0:
-			styles.append('initial')
-		if Zustand in self.F:
-			styles.append('accepting')
-		node = r'\node[%s] (%s) %s {%s};' % (','.join(styles), name, orientation, description)
-		self.log.debug(node)
-		return node
-
-	def _TeXEdge(self, Zustand):
-		#(A) edge              node {0,1,L} (B)
-		#    edge              node {1,1,R} (C)
-		quelle = Zustand
-		s = r'(%s)' % Zustand
-		
-		erreichbareZiele = dict()
-		for zeichen in self.Sigma:
-			ziel = self._delta(Zustand, zeichen)
-			if ziel:
-				if not erreichbareZiele.has_key(ziel):
-					erreichbareZiele[ziel] = list()
-				erreichbareZiele[ziel].append(zeichen)
-		#self.log.debug("Erreichbare Ziele Index : %s" % erreichbareZiele)
-
-		oMoeglichkeiten = ('', '[bend left]', '[bend right]')
-		omLen = len(oMoeglichkeiten)
-		zustandIndex = self._genZustandIndex()
-		#self.log.debug("Zustand-Index : %s" % zustandIndex)
-		
-		# Quell Index-Nummer
-		qIndex = zustandIndex[Zustand]
-		zielZaehler = 0
-		
-		for ziel in erreichbareZiele:
-			stringZiel = list(ziel)[0]
-			orientation = ''
-			eZieleLen = len(erreichbareZiele[ziel])
-
-			self.log.debug("ZIEL: %s (%s)" % (stringZiel, repr(ziel)))
-			
-			# Ziel Index-Nummer
-			zIndex = zustandIndex[stringZiel]
-			self.log.debug('zIndex> ' + str(zIndex))
-			
-			indexDelta = qIndex - zIndex
-			
-			if indexDelta == 0:
-				orientation = '[loop above]'
-			if indexDelta > 1:
-				orientation = '[bend right]'
-			elif indexDelta < -1:
-				orientation = '[bend left]'
-
-			if eZieleLen > 0 and orientation == '':
-				oNum = zielZaehler % omLen
-				orientation = oMoeglichkeiten[oNum]
-				zielZaehler +=1
-			
-			self.log.debug("kuerzmenge PRE")
-			zeichen = self.kuerzMenge(erreichbareZiele[ziel])
-			self.log.debug("kuerzmenge POST")
-
-			s += " edge %s node {%s} (%s)\n " % (orientation, zeichen, stringZiel)
-		return s
-
 	def _TeXSpecification(self):
 		s = list()
 		aTyp = "%seterministischer Automat" % ((self.istDEA() and 'D' or 'Nichtd'))
@@ -479,26 +409,6 @@ class OLaTeXAutomat(AusgebenderAutomat):
 			s = "\n".join(testResults)
 		return s
 
-	def _tikzGraph(self):
-		self._genZustandIndex(True)
-		tNodes = []
-		tEdges = []
-		orientation = ''
-		for zustand in self.S:
-			tNodes.append(self._TeXNode(zustand, orientation))
-			tEdges.append(self._TeXEdge(zustand))
-			orientation = '[right of=%s]' % zustand
-		return (tNodes, tEdges)
-
-	def _addTikz(self):
-		if TIKZ:
-			(tNodes, tEdges) = self._tikzGraph()
-			s = s.replace("%%__TIKZ_BEGIN__", r"\begin{tikzpicture}[->,>=stealth',shorten >=1pt,auto,node distance=2.0cm, semithick]")
-			s = s.replace("%%__TIKZ_STYLE__", r"\tikzstyle{every state}=[fill=none,draw=black,text=black]")
-			s = s.replace("%%__TIKZ_END__", r"\end{tikzpicture}")
-			s = s.replace("%%__NODES__", "\n".join(tNodes))
-			s = s.replace("%%__PATH__", "\path\n" + "\n".join(tEdges) + ";\n")
-	
 	def _TeXAutomatStart(self):
 		return r'\section{%s}' % self.name
 		
