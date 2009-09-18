@@ -1,0 +1,39 @@
+# Automatendefinition
+# Uebungsblatt 4, Aufgabe 3e)
+
+Name: U4A3e (Vorbereitung)
+Beschreibung: Ein Automat, der nur Woerter akzeptiert, die aus 101 Kombinationen bestehen
+
+# Alphabet definieren. Muss mit "Sigma:" beginnen, durch Whitespace getrennt.
+Sigma: 0 1
+
+# Finale Zustaende definieren. Muss mit "F:" beginnen, durch Whitespace getrennt.
+F: BE
+
+# Startzustand definieren. Muss mit "s0:" beginnen, durch Whitespaces getrennt.
+s0: A
+
+# Uebergaenge, Format :
+# Zustand, Zeichen, Zielzustand (durch whitespace getrennt)
+A	0	F
+A	1	B
+
+B	0	C
+B	1	F
+
+BE	0	C
+BE	1	F
+
+C	0	F
+C	1	BE
+
+F	0	F
+F	1	F
+
+# Optional: Worte, die _nicht akzeptiert werden duerfen
+# Muss mit "FailingVerifyWords:" beginnen, durch Whitespace getrennt
+FailingVerifyWords: 001 0 1 10 111 0101 010101
+
+# Optional: Worte, die _nicht akzeptiert werden duerfen
+# Muss mit "AcceptedVerifyWords:" beginnen, durch Whitespace getrennt
+AcceptedVerifyWords: 101 10101 1010101
