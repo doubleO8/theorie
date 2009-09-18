@@ -5,16 +5,21 @@
 \subsection{Spezifikation}
 %%__SPEC__
 
+\subsection{Überführungsfunktion als Tabelle}
+%%__DELTA__
+
+%%__DOT_GRAPH__
+\clearpage
+
 %%__VERIFY__
 
 %%__RESULTS__
 
-\subsection{Überführungsfunktion als Tabelle}
-%%__DELTA__
-
-\subsection{Graph}
-\begin{tikzpicture}[->,>=stealth',shorten >=1pt,auto,node distance=2.0cm, semithick]
-	\tikzstyle{every state}=[fill=none,draw=black,text=black]
+%% \subsection{Graph}
+%%__TIKZ_BEGIN__
+%%__TIKZ_STYLE__
+%% \begin{tikzpicture}[->,>=stealth',shorten >=1pt,auto,node distance=2.0cm, semithick]
+%% \tikzstyle{every state}=[fill=none,draw=black,text=black]
 
 %	\node[initial,state]	(A)						{$q_a$};
 %	\node[state]			(B)	[above right of=A]	{$q_b$};
@@ -34,8 +39,7 @@
 %            edge              node {0,1,R} (A)
 %        (E) edge [bend left]  node {1,0,R} (A);
 %%__PATH__
-\end{tikzpicture}
-
-%%__DOT_GRAPH__
+%%__TIKZ_END__
+%% \end{tikzpicture}
 
 \clearpage
