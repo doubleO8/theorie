@@ -480,7 +480,6 @@ class OLaTeXAutomat(AusgebenderAutomat):
 		return s
 
 	def _tikzGraph(self):
-		return( [], [] )
 		self._genZustandIndex(True)
 		tNodes = []
 		tEdges = []
@@ -491,12 +490,7 @@ class OLaTeXAutomat(AusgebenderAutomat):
 			orientation = '[right of=%s]' % zustand
 		return (tNodes, tEdges)
 
-	def _TeXAutomatStart(self):
-		return r'\section{%s}' % self.name
-		
-	def _toTeX(self, template):
-		s = self._readTemplate(template)
-
+	def _addTikz(self):
 		if TIKZ:
 			(tNodes, tEdges) = self._tikzGraph()
 			s = s.replace("%%__TIKZ_BEGIN__", r"\begin{tikzpicture}[->,>=stealth',shorten >=1pt,auto,node distance=2.0cm, semithick]")
@@ -504,6 +498,12 @@ class OLaTeXAutomat(AusgebenderAutomat):
 			s = s.replace("%%__TIKZ_END__", r"\end{tikzpicture}")
 			s = s.replace("%%__NODES__", "\n".join(tNodes))
 			s = s.replace("%%__PATH__", "\path\n" + "\n".join(tEdges) + ";\n")
+	
+	def _TeXAutomatStart(self):
+		return r'\section{%s}' % self.name
+		
+	def _toTeX(self, template):
+		s = self._readTemplate(template)
 
 		s = s.replace("%%__AUTOMAT__", self._TeXAutomatStart())
 		s = s.replace("%%__SPEC__", self._TeXSpecification())
