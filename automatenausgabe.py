@@ -115,17 +115,6 @@ class AusgebenderAutomat(object):
 			return '-'
 		return ', '.join(sorted(what))
 
-	def _genZustandIndex(self, force=False):
-		if self.ZustandIndex and not force:
-			return self.ZustandIndex
-
-		self.ZustandIndex = dict()
-		i = 0
-		for zustand in sorted(self.S):
-			self.ZustandIndex[zustand] = i
-			i += 1
-		#self.log.debug(self.ZustandIndex)
-
 	def _readTemplate(self, template):
 		if not os.path.isfile(template):
 			raise IOError("Template '%s' nicht gefunden." % (template))
@@ -270,7 +259,6 @@ class ODotAutomat(AusgebenderAutomat):
 		return p
 		
 	def _toDot(self, template):
-		self._genZustandIndex(True)
 		s = self._readTemplate(template)
 		s = s.replace('//__FINAL_STATES__', ' '.join(self.F) + ";\n")
 		s = s.replace('//__ORIGIN__', "null -> %s;\n" % self._fzAscii(self.s0))
