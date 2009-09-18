@@ -412,7 +412,7 @@ class OLaTeXAutomat(AusgebenderAutomat):
 		if 'createDotDocument' in dir(self):
 			dotgraph = self.createDotDocument()
 			if dotgraph:
-				s = s.replace('%%__DOT_GRAPH__', r'\subsection{Gemalt mit dot}' + self._TeXIncludeFigure(dotgraph))
+				s = s.replace('%%__DOT_GRAPH__', r'\subsection{Graph}' + self._TeXIncludeFigure(dotgraph))
 			else:
 				self.log.error("Kein dotgraph")
 
