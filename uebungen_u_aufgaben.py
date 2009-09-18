@@ -24,6 +24,20 @@ def testWorte(Sigma, length=3):
 		worte += SigmaTmp
 	return worte
 
+def RegularExpressionTestWorte(worte, regexp):
+	if not regexp.startswith("^"):
+		regexp = '^' + regexp
+	if not regexp.endswith("$"):
+		regexp += '$'
+
+	pattern = re.compile(regexp)
+
+	verifyWords = dict()
+	for wort in worte:
+		res = pattern.match(wort)
+		verifyWords[wort] = pattern.match(wort) and True or False
+	return verifyWords
+
 # Einige von mehreren Automaten genutzte Testwort-Mengen
 U1A2_Testworte = testWorte(['a', 'b'])
 testZahlen1='0 1 2 +99 -99 9- a - +- -+ -+99 0019292'
@@ -1822,11 +1836,7 @@ def Uebungsblatt4_Aufgabe2():
 				}
 
 	# Testworte mittels regular expression modul von python testen
-	worte = ['0', '1', '+0.1', '-00.1', 'xx']
-	pattern = re.compile(r'^(0|1)|(\+|-)(0|1)(0|1)*|(0|1)|(\+|-)(0|1)(0|1)*.(0|1)(0|1)*$')
-	verifyWords = dict()
-	for wort in worte:
-		verifyWords[wort] = pattern.match(wort) and True or False
+	verifyWords = RegularExpressionTestWorte(['0', '1', '+0.1', '-00.1', 'xx'], r'(0|1)|(\+|-)(0|1)(0|1)*|(0|1)|(\+|-)(0|1)(0|1)*.(0|1)(0|1)*')
 
 	return NichtDeterministischerAutomat(S, s0, F, Sigma, delta,
 						name='U4A2',
@@ -1860,10 +1870,7 @@ def Uebungsblatt4_Aufgabe3a():
 
 	# Testworte mittels regular expression modul von python testen
 	worte = ['a', 'b', 'ab', 'abc', 'cab', 'cc', 'bca']
-	pattern = re.compile(r'c*a(a|c)*b(a|b|c)*|c*b(b|c)*a(a|b|c)*')
-	verifyWords = dict()
-	for wort in worte:
-		verifyWords[wort] = pattern.match(wort) and True or False
+	verifyWords = RegularExpressionTestWorte(worte, r'c*a(a|c)*b(a|b|c)*|c*b(b|c)*a(a|b|c)*')
 
 	return NichtDeterministischerAutomat(S, s0, F, Sigma, delta,
 						name='U4A3a',
@@ -1899,10 +1906,7 @@ def Uebungsblatt4_Aufgabe3b():
 
 	# Testworte mittels regular expression modul von python testen
 	worte = ['0', '1', '10000', '010000', '111111111111111111111']
-	pattern = re.compile(r'(0|1)*1(0|1)(0|1)(0|1)(0|1)')
-	verifyWords = dict()
-	for wort in worte:
-		verifyWords[wort] = pattern.match(wort) and True or False
+	verifyWords = RegularExpressionTestWorte(worte, r'(0|1)*1(0|1)(0|1)(0|1)(0|1)')
 
 	return NichtDeterministischerAutomat(S, s0, F, Sigma, delta,
 						name='U4A3b',
@@ -1930,10 +1934,7 @@ def Uebungsblatt4_Aufgabe3c():
 
 	# Testworte mittels regular expression modul von python testen
 	worte = ['0', '1', '10', '01100', '11']
-	pattern = re.compile(r'(0|1)*11(0|1)*')
-	verifyWords = dict()
-	for wort in worte:
-		verifyWords[wort] = pattern.match(wort) and True or False
+	verifyWords = RegularExpressionTestWorte(worte, r'(0|1)*11(0|1)*')
 
 	return NichtDeterministischerAutomat(S, s0, F, Sigma, delta,
 						name='U4A3c',
@@ -1973,10 +1974,7 @@ def Uebungsblatt4_Aufgabe3d():
 
 	# Testworte mittels regular expression modul von python testen
 	worte = ['0', '1', '00100', '11000', '111101', '001101010']
-	pattern = re.compile(r'0|0(0*)|1|(0(0*)|0(0*)1)|(0(0*)10|0(0*)101(1*))|(0(0*)11(1*))|(0(0*)11(1*)01)|(0(0*)11(1*)0)')
-	verifyWords = dict()
-	for wort in worte:
-		verifyWords[wort] = pattern.match(wort) and True or False
+	verifyWords = RegularExpressionTestWorte(worte, r'0|0(0*)|1|(0(0*)|0(0*)1)|(0(0*)10|0(0*)101(1*))|(0(0*)11(1*))|(0(0*)11(1*)01)|(0(0*)11(1*)0)')
 
 	return NichtDeterministischerAutomat(S, s0, F, Sigma, delta,
 						name='U4A3d',
@@ -1991,6 +1989,11 @@ def Uebungsblatt4_Aufgabe3e_Vorarbeit():
 
 def Uebungsblatt4_Aufgabe3e():
 	A = AutomatenLeser(filename='data/u4a3e').automat()
+	A.testWords = A.testWorteGenerator(Sigma=list(['0', '1', '101']))
+	return A
+
+def Uebungsblatt4_Aufgabe3e_Tester():
+	A = AutomatenLeser(filename='data/u4a3e_test').automat()
 	A.testWords = A.testWorteGenerator(Sigma=list(['0', '1', '101']))
 	return A
 

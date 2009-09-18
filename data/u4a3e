@@ -2,7 +2,7 @@
 # Uebungsblatt 4, Aufgabe 3e)
 
 Name: U4A3e
-Beschreibung: Ein Automat, der nur Woerter akzeptiert, die 101 nicht enthalten
+Beschreibung: Ein Automat, der nur Woerter akzeptiert, die nicht nur aus 101 bestehen
 
 # Alphabet definieren, muss mit Sigma: beginnen, durch whitespace getrennt
 Sigma: 0 1
