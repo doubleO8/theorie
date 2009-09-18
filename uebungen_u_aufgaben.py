@@ -2,6 +2,9 @@
 # -*- coding: utf-8 -*-
 from automaten import *
 from automatenausgabe import *
+from automatenleser import *
+
+import re
 
 def int2bin(value, fill=0):
 	result = list()
@@ -10,32 +13,6 @@ def int2bin(value, fill=0):
 		value >>= 1
 	result.reverse()
 	return ''.join(result).zfill(fill) 
-
-def quersumme(value):
-	result = 0
-	value=str(value)
-	for z in value:
-		result += int(z)
-	return result
-
-def binaere_zahlen(end=20, modulo=3, showOnlyModulo=False):
-	for i in xrange(end):
-		hit = (i % modulo == 0) and '*' or ''
-		
-		# i binaer
-		binaer = int2bin(i)
-		
-		# letzte zwei ziffern
-		lpCount = 1 + modulo % 2
-		lastPortion = binaer[-2:]
-		
-		if hit or not showOnlyModulo:
-			s = ["%3d : %-8s" % (i, binaer)]
-			#s.append("%1s" % hit)
-			s.append("%-8s" % int2bin(quersumme(i)))
-			s.append(binaer.replace('0', ''))
-			print ' '.join(s)
-			#print("%3d : %-8s %1s %2s %-5s" % (i, binaer, hit, lastPortion, binaer.replace('0', '')))
 
 def testWorte(Sigma, length=3):
 	worte = list(Sigma)
@@ -1303,6 +1280,713 @@ def Uebungsblatt3_Aufgabe3():
 	A.testWords = A.testWorteGenerator(3)
 	return A
 
+def Uebungsblatt3_Aufgabe5a():
+	S = list("01234567")
+	s0 = '0'
+	F = '3 7'
+	Sigma = list("abewy")
+	delta = {
+				'0' : {
+						'a b y' : '0', 
+						'w' : '1',
+						'e' : '4',
+						},
+				'1' : {
+						'e' : '2',
+						EpsilonAutomat.EPSILON : '0',
+						},
+				'2' : {
+						'b' : '3',
+						EpsilonAutomat.EPSILON : '0',
+						},
+				'3' : {
+						'a b e w y' : '3',
+						},
+				'4' : {
+						'b' : '5',
+						EpsilonAutomat.EPSILON : '0',
+						},
+				'5' : {
+						'a' : '6',
+						EpsilonAutomat.EPSILON : '0',
+						},
+				'6' : {
+						'y' : '7',
+						EpsilonAutomat.EPSILON : '0',
+						},
+				'7' : {
+						'a b e w y' : '7',
+						},
+			}
+	verifyWords = { 'ebay' : True, 'web' : True }
+	testWords = ['eeeebay', 'webay', 'weeeebay', 'we', 'bay', 'webebay', 'webwebweb']
+	e = EpsilonAutomat(S, s0, F, Sigma, delta,
+						name='U3A5a',
+						beschreibung="Sucht in einem Text die Worte web und ebay",
+						verifyWords=verifyWords,
+						testWords=testWords
+						)
+	return e
+
+def Uebungsblatt3_Aufgabe5b1():
+	S = "0 1 2 3 4 5 6 7 05 06 07 47 17 057 067 03 34 13 035 036 037 0347 0357 137 0367 347 42"
+	s0 = '0'
+	F = '3 7 07 47 17 057 067 03 34 13 035 036 037 0347 0357 137 0367 347'
+	Sigma = list("abewy")
+	delta = {
+				'0' : {
+						'a b y' : '0', 
+						'e' : '4',
+						'w' : '1',
+						},
+				'1' : {
+						'a b y' : '0', 
+						'e' : '42',
+						'w' : '1',
+						},
+				'2' : {
+						'a y' : '0',
+						'b' : '0 3',
+						'e' : '4',
+						'w' : '1',
+						},
+				'3' : {
+						'a b e w y' : '3',
+						},
+				'4' : {
+						'a y' : '0', 
+						'b' : '0 5',
+						'e' : '4',
+						'w' : '1',
+						},
+				'5' : {
+						'a' : '0 6',
+						'b y' : '0', 
+						'e' : '4',
+						'w' : '1',
+						},
+				'6' : {
+						'a b' : '0',
+						'y' : '0 7',
+						'w' : '1',
+						'e' : '4',
+						},
+				'7' : {
+						'a b e w y' : '7',
+						},
+				'05' : {
+						'a' : '06',
+						'b' : '0',
+						'e' : '4',
+						'w' : '1',
+						'y' : '0',
+						},
+				'06' : {
+						'a' : '0',
+						'b' : '0',
+						'e' : '4',
+						'w' : '1',
+						'y' : '07',
+						},
+				'07' : {
+						'a' : '07',
+						'b' : '07',
+						'e' : '47',
+						'w' : '17',
+						'y' : '07',
+						},
+				'47' : {
+						'a' : '07',
+						'b' : '057',
+						'e' : '47',
+						'w' : '17',
+						'y' : '07',
+						},
+				'17' : {
+						'a' : '07',
+						'b' : '07',
+						'e' : '47',
+						'w' : '17',
+						'y' : '07',
+						},
+				'057' : {
+						'a' : '067',
+						'b' : '07',
+						'e' : '47',
+						'w' : '17',
+						'y' : '07',
+						},
+				'067' : {
+						'a' : '07',
+						'b' : '07',
+						'e' : '47',
+						'w' : '17',
+						'y' : '07',
+						},
+				'03' : {
+						'a' : '03',
+						'b' : '03',
+						'e' : '34',
+						'w' : '13',
+						'y' : '03',
+						},
+				'34' : {
+						'a' : '03',
+						'b' : '035',
+						'e' : '34',
+						'w' : '13',
+						'y' : '03',
+						},
+				'13' : {
+						'a' : '03',
+						'b' : '03',
+						'e' : '34',
+						'w' : '13',
+						'y' : '03',
+						},
+				'035' : {
+						'a' : '036',
+						'b' : '03',
+						'e' : '34',
+						'w' : '13',
+						'y' : '03',
+						},
+				'036' : {
+						'a' : '03',
+						'b' : '03',
+						'e' : '34',
+						'w' : '13',
+						'y' : '037',
+						},
+				'037' : {
+						'a' : '037',
+						'b' : '037',
+						'e' : '0347',
+						'w' : '137',
+						'y' : '037',
+						},
+				'0347' : {
+						'a' : '037',
+						'b' : '0357',
+						'e' : '347',
+						'w' : '137',
+						'y' : '037',
+						},
+				'0357' : {
+						'a' : '0367',
+						'b' : '0357',
+						'e' : '347',
+						'w' : '137',
+						'y' : '037',
+						},
+				'137' : {
+						'a' : '037',
+						'b' : '037',
+						'e' : '347',
+						'w' : '137',
+						'y' : '037',
+						},
+				'0367' : {
+						'a' : '037',
+						'b' : '037',
+						'e' : '347',
+						'w' : '137',
+						'y' : '037',
+						},
+				'347' : {
+						'a' : '037',
+						'b' : '0357',
+						'e' : '347',
+						'w' : '137',
+						'y' : '037',
+						},
+				'42' : {
+						'a y' : '0',
+						'b' : '035',
+						'e' : '4',
+						'w' : '1',
+						}
+			}
+	verifyWords = { 'ebay' : True, 'web' : True }
+	testWords = ['eeeebay', 'webay', 'weeeebay', 'we', 'bay', 'webebay', 'webwebweb']
+	e = NichtDeterministischerAutomat(S, s0, F, Sigma, delta,
+						name='U3A5b',
+						beschreibung="Sucht in einem Text die Worte web und ebay",
+						verifyWords=verifyWords,
+						testWords=testWords
+						)
+	return e
+
+def Uebungsblatt3_Aufgabe5b2():
+	S = list("014ABCDEFGHI")
+	s0 = '0'
+	F = list('BCDEFG')
+	Sigma = list("abewy")
+	delta = {
+				'0' : {
+						'a b y' : '0', 
+						'e' : '4',
+						'w' : '1',
+						},
+				'1' : {
+						'a b y' : '0', 
+						'e' : 'A',
+						'w' : '1',
+						},
+				'4' : {
+						'a y' : '0', 
+						'b' : 'H',
+						'e' : '4',
+						'w' : '1',
+						},
+				'A' : {
+						'a y' : '0', 
+						'b' : 'B',
+						'e' : '4',
+						'w' : '1',
+						},
+				'B' : {
+						'a' : 'C', 
+						'b' : 'D',
+						'e' : 'E',
+						'w' : 'F',
+						'y' : 'D',
+						},
+				'C' : {
+						'a' : 'D', 
+						'b' : 'D',
+						'e' : 'E',
+						'w' : 'F',
+						'y' : 'D',
+						},
+				'D' : {
+						'a' : 'D', 
+						'b' : 'D',
+						'e' : 'E',
+						'w' : 'F',
+						'y' : 'D',
+						},
+				'E' : {
+						'a' : 'D', 
+						'b' : 'B',
+						'e' : 'E',
+						'w' : 'F',
+						'y' : 'D',
+						},
+				'F' : {
+						'a' : 'D', 
+						'b' : 'D',
+						'e' : 'G',
+						'w' : 'F',
+						'y' : 'D',
+						},
+				'G' : {
+						'a' : 'D', 
+						'b' : 'B',
+						'e' : 'E',
+						'w' : 'F',
+						'y' : 'D',
+						},
+				'H' : {
+						'a' : 'I', 
+						'b' : '0',
+						'e' : '4',
+						'w' : '1',
+						'y' : '0',
+						},
+				'I' : {
+						'a' : '0', 
+						'b' : '0',
+						'e' : '4',
+						'w' : '1',
+						'y' : 'D',
+						},
+
+			}
+	verifyWords = { 'ebay' : True, 'web' : True }
+	testWords = ['eeeebay', 'webay', 'weeeebay', 'we', 'bay', 'webebay', 'webwebweb']
+	e = NichtDeterministischerAutomat(S, s0, F, Sigma, delta,
+						name='U3A5b2',
+						beschreibung="Sucht in einem Text die Worte web und ebay",
+						verifyWords=verifyWords,
+						testWords=testWords
+						)
+	return e
+
+def Uebungsblatt3_Aufgabe5b2minimiert():
+	S = list("014AXHI")
+	s0 = '0'
+	F = list('X')
+	Sigma = list("abewy")
+	delta = {
+				'0' : {
+						'a b y' : '0', 
+						'e' : '4',
+						'w' : '1',
+						},
+				'1' : {
+						'a b y' : '0', 
+						'e' : 'A',
+						'w' : '1',
+						},
+				'4' : {
+						'a y' : '0', 
+						'b' : 'H',
+						'e' : '4',
+						'w' : '1',
+						},
+				'A' : {
+						'a y' : '0', 
+						'b' : 'X',
+						'e' : '4',
+						'w' : '1',
+						},
+				'X' : {
+						'a b e w y' : 'X',
+						},
+				'H' : {
+						'a' : 'I', 
+						'b' : '0',
+						'e' : '4',
+						'w' : '1',
+						'y' : '0',
+						},
+				'I' : {
+						'a' : '0', 
+						'b' : '0',
+						'e' : '4',
+						'w' : '1',
+						'y' : 'X',
+						},
+
+			}
+	verifyWords = { 'ebay' : True, 'web' : True }
+	testWords = ['eeeebay', 'webay', 'weeeebay', 'we', 'bay', 'webebay', 'webwebweb']
+	e = NichtDeterministischerAutomat(S, s0, F, Sigma, delta,
+						name='U3A5b2minimiert',
+						beschreibung="Sucht in einem Text die Worte web und ebay",
+						verifyWords=verifyWords,
+						testWords=testWords
+						)
+	return e
+
+def Uebungsblatt4_Aufgabe1a():
+	S = '0 2 4'
+	s0 = '0'
+	F = S
+	Sigma = 'a b'
+	delta = {
+				'0' : {
+						'a' : '2',
+						'b' : '4',
+					},
+				'2' : {
+						'a' : '2',
+						'b' : '4',
+					},
+				'4' : {
+						'b' : '4',
+					},
+				}
+	verifyWords = { '' : True, 'b' : True, 'ba' : False, 'aaaa' : True }
+	return Automat(S, s0, F, Sigma, delta,
+						name='U4A1a',
+						beschreibung="Regular Expression $a*b*$",
+						verifyWords=verifyWords,
+						)
+
+def Uebungsblatt4_Aufgabe1b():
+	S = 's 2 4 e'
+	s0 = 's'
+	F = 's e'
+	Sigma = 'a b'
+	delta = {
+				's' : {
+						'a' : '2',
+						'b' : '4',
+					},
+				'2' : {
+						'b' : 'e',
+					},
+				'4' : {
+						'a' : 'e',
+					},
+				'e' : {
+						'a' : '2',
+						'b' : '4',
+					},
+				}
+	verifyWords = { '' : True, 'b' : False, 'ba' : True, 'aaaa' : False, 'abba' : True, 'ab' : True }
+	return Automat(S, s0, F, Sigma, delta,
+						name='U4A1b',
+						beschreibung="Regular Expression $(ab|ba)*$",
+						verifyWords=verifyWords,
+						)
+
+def Uebungsblatt4_Aufgabe1bminimiert():
+	S = '2 4 es F'
+	s0 = 'es'
+	F = 'es'
+	Sigma = 'a b'
+	delta = {
+				'es' : {
+						'a' : '2',
+						'b' : '4',
+					},
+				'2' : {
+						'a' : 'F',
+						'b' : 'es',
+					},
+				'4' : {
+						'a' : 'es',
+						'b' : 'F',
+					},
+				'F' : {
+						'a b' : 'F',
+					},
+				}
+	verifyWords = { '' : True, 'b' : False, 'ba' : True, 'aaaa' : False, 'abba' : True, 'ab' : True }
+	return Automat(S, s0, F, Sigma, delta,
+						name='U4A1b (minimiert)',
+						beschreibung="Regular Expression $(ab|ba)*$",
+						verifyWords=verifyWords,
+						)
+
+def Uebungsblatt4_Aufgabe1c():
+	S = 'H B C Cy y F'
+	s0 = 'H'
+	F = 'y Cy'
+	Sigma = 'a b'
+	delta = {
+				'H' : {
+						'a' : 'C',
+						'b' : 'B',
+					},
+				'B' : {
+						'a' : 'Cy',
+						'b' : 'C',
+					},
+				'C' : {
+						'a' : 'C',
+						'b' : 'y',
+					},
+				'Cy' : {
+						'a' : 'C',
+						'b' : 'F',
+					},
+				'y' : {
+						'a b' : 'F',
+					},
+				'F' : {
+						'a b' : 'F',
+					},
+				}
+	verifyWords = { '' : False, 'ba' : True, 'ab' : True, 'bbab' : True, 'abba' : False }
+	return NichtDeterministischerAutomat(S, s0, F, Sigma, delta,
+						name='U4A1c',
+						beschreibung="Regular Expression $ba|(a|bb)a*b$",
+						verifyWords=verifyWords,
+						)
+
+def Uebungsblatt4_Aufgabe2():
+	S = 'z0 z1 z2 z3 z4'
+	s0 = 'z0'
+	F = 'z2 z4'
+	Sigma = '0 1 + - .'
+	delta = {
+				'z0' : {
+						'+ -' : 'z1',
+						'0 1' : 'z2',
+					},
+				'z1' : {
+						'0 1' : 'z2',
+					},
+				'z2' : {
+						'0 1' : 'z2',
+						'.' : 'z3',
+					},
+				'z3' : {
+						'0 1' : 'z4',
+					},
+				'z4' : {
+						'0 1' : 'z4',
+					},
+				}
+
+	# Testworte mittels regular expression modul von python testen
+	worte = ['0', '1', '+0.1', '-00.1', 'xx']
+	import re
+	pattern = re.compile(r'(0|1)|(\+|-)(0|1)(0|1)*|(0|1)|(\+|-)(0|1)(0|1)*.(0|1)(0|1)*')
+	verifyWords = dict()
+	for wort in worte:
+		verifyWords[wort] = pattern.match(wort) and True or False
+
+	return NichtDeterministischerAutomat(S, s0, F, Sigma, delta,
+						name='U4A2',
+						beschreibung="Regular Expression fuer Automaten generieren",
+						verifyWords=verifyWords,
+						)
+
+def Uebungsblatt4_Aufgabe3a():
+	S = '0 1 2 3'
+	s0 = '0'
+	F = '2'
+	Sigma = 'a b c'
+	delta = {
+				'0' : {
+						'a' : '1',
+						'b' : '3',
+						'c' : '0',
+					},
+				'1' : {
+						'a c' : '1',
+						'b' : '2',
+					},
+				'3' : {
+						'b c' : '3',
+						'a' : '2',
+					},
+				'2' : {
+						'a b c' : '2',
+					}
+				}
+
+	# Testworte mittels regular expression modul von python testen
+	worte = ['a', 'b', 'ab', 'abc', 'cab', 'cc', 'bca']
+	pattern = re.compile(r'c*a(a|c)*b(a|b|c)*|c*b(b|c)*a(a|b|c)*')
+	verifyWords = dict()
+	for wort in worte:
+		verifyWords[wort] = pattern.match(wort) and True or False
+
+	return NichtDeterministischerAutomat(S, s0, F, Sigma, delta,
+						name='U4A3a',
+						beschreibung="Regular Expression fuer Automaten generieren, der die Menge aller Woerter ueber a,b,c akzeptiert, die mindestens ein a und ein b enthalten",
+						verifyWords=verifyWords,
+						)
+
+def Uebungsblatt4_Aufgabe3b():
+	S = list('ABCDEF')
+	s0 = 'A'
+	F = 'F'
+	Sigma = '0 1'
+	delta = {
+				'A' : {
+						'0' : 'A',
+						'1' : 'A B',
+					},
+				'B' : {
+						'0 1' : 'C',
+					},
+				'C' : {
+						'0 1' : 'D',
+					},
+				'D' : {
+						'0 1' : 'E',
+					},
+				'E' : {
+						'0 1' : 'F',
+					},
+				'F' : {
+					},
+				}
+
+	# Testworte mittels regular expression modul von python testen
+	worte = ['0', '1', '10000', '010000', '111111111111111111111']
+	pattern = re.compile(r'(0|1)*1(0|1)(0|1)(0|1)(0|1)')
+	verifyWords = dict()
+	for wort in worte:
+		verifyWords[wort] = pattern.match(wort) and True or False
+
+	return NichtDeterministischerAutomat(S, s0, F, Sigma, delta,
+						name='U4A3b',
+						beschreibung="Regular Expression fuer Automaten generieren, der die Menge aller Woerter ueber 0,1 akzeptiert, deren fuenftes Symbol von rechts eine 1 ist",
+						verifyWords=verifyWords,
+						)
+
+def Uebungsblatt4_Aufgabe3c():
+	S = list('ABC')
+	s0 = 'A'
+	F = 'C'
+	Sigma = '0 1'
+	delta = {
+				'A' : {
+						'0' : 'A',
+						'1' : 'A B',
+					},
+				'B' : {
+						'1' : 'C',
+					},
+				'C' : {
+						'0 1' : 'C',
+					},
+				}
+
+	# Testworte mittels regular expression modul von python testen
+	worte = ['0', '1', '10', '01100', '11']
+	pattern = re.compile(r'(0|1)*11(0|1)*')
+	verifyWords = dict()
+	for wort in worte:
+		verifyWords[wort] = pattern.match(wort) and True or False
+
+	return NichtDeterministischerAutomat(S, s0, F, Sigma, delta,
+						name='U4A3c',
+						beschreibung="Regular Expression fuer Automaten generieren, der die Menge aller Woerter ueber 0,1 akzeptiert, die mindestens ein 11-Paar enthalten",
+						verifyWords=verifyWords,
+						)
+
+def Uebungsblatt4_Aufgabe3d():
+	S = list('ABCDEF')
+	s0 = 'A'
+	F = S
+	Sigma = '0 1'
+	delta = {
+				'A' : {
+						'0' : 'B',
+						'1' : 'C',
+					},
+				'B' : {
+						'0' : 'A',
+						'1' : 'C',
+					},
+				'C' : {
+						'0' : 'F',
+						'1' : 'D',
+					},
+				'D' : {
+						'0' : 'E',
+						'1' : 'D',
+					},
+				'E' : {
+						'1' : 'D',
+					},
+				'F' : {
+						'1' : 'D',
+					},
+				}
+
+	# Testworte mittels regular expression modul von python testen
+	worte = ['0', '1', '00100', '11000', '111101', '001101010']
+	pattern = re.compile(r'0|0(0*)|1|(0(0*)|0(0*)1)|(0(0*)10|0(0*)101(1*))|(0(0*)11(1*))|(0(0*)11(1*)01)|(0(0*)11(1*)0)')
+	verifyWords = dict()
+	for wort in worte:
+		verifyWords[wort] = pattern.match(wort) and True or False
+
+	return NichtDeterministischerAutomat(S, s0, F, Sigma, delta,
+						name='U4A3d',
+						beschreibung="Regular Expression fuer Automaten generieren, der die Menge aller Woerter ueber 0,1 akzeptiert, deren 00-Paare vor allen 11-Paaren steht",
+						verifyWords=verifyWords,
+						)
+
+def Uebungsblatt4_Aufgabe3e_Vorarbeit():
+	A = AutomatenLeser(filename='data/u4a3e_inverted').automat()
+	A.testWords = A.testWorteGenerator(Sigma=list(['0', '1', '101']))
+	return A
+
+def Uebungsblatt4_Aufgabe3e():
+	A = AutomatenLeser(filename='data/u4a3e').automat()
+	A.testWords = A.testWorteGenerator(Sigma=list(['0', '1', '101']))
+	return A
+
 def Sonstige_Aufgabe_EidTI_U6():
 	"""
 	boese: schlecht erarbeitet und hingewuergt.
@@ -1400,14 +2084,14 @@ def automatenReport(automaten, finalFileBase='AutomatReport', WORKINGDIR = '/Use
 	except Exception, e:
 		print e
 
-	(rc, out, err) = runCommand('pdflatex', ('"%s"' % texTarget), workDir=tmpDir)
+	(rc, out, err) = runCommand(PDFLATEX_BIN, ('"%s"' % texTarget), workDir=tmpDir)
 	if rc != 0:
 		print err
 		print "----------------------"
 		print out
 
 	if rc == 0:
-		(rc, out, err) = runCommand('pdflatex', ('"%s"' % texTarget), workDir=tmpDir)
+		(rc, out, err) = runCommand(PDFLATEX_BIN, ('"%s"' % texTarget), workDir=tmpDir)
 		if rc != 0:
 			print err
 			print "----------------------"
@@ -1415,64 +2099,6 @@ def automatenReport(automaten, finalFileBase='AutomatReport', WORKINGDIR = '/Use
 		if rc == 0 and os.path.isfile(pdfTarget):
 			shutil.move(pdfTarget, finalFile)
 			runCommand('open', '"%s"' % finalFile)
-
-def uCross(set1, set2):
-	resulting_set = set()
-	for s1 in set1:
-		for s2 in set2:
-			fz = frozenset([s1, s2])
-			if len(fz) > 1:
-				resulting_set.add(fz)
-	return resulting_set
-
-def Tester():
-	a = Uebungsblatt2_Aufgabe_4()
-	U = set()
-	S = set(a.S)
-	F = set(a.F)
-	SmF = S - F
-	U = uCross(SmF, F).union(uCross(F,SmF))
-	
-	print "S:"
-	print S
-	print "F:"
-	print F
-	print "S - F :"
-	print SmF
-	print "U:"
-	print U
-	print "S x S:"
-	SxS = uCross(S, S)
-	print SxS
-	print "S x S - U:"
-	print SxS.intersection(U)
-	changed = True
-	N = set()
-	Uprev = U.copy()
-	while changed:
-		changed = False
-		for st in SxS.intersection(U):
-			if len(st) == 2:
-				(s, t) = list(st) 
-				print "Vergleiche %s und %s" % (s,t)
-				for zeichen in a.Sigma:
-					first = list(a._delta(s, zeichen))[0]
-					second = list(a._delta(t, zeichen))[0]
-					fz = frozenset([first, second])
-					print " d(%s, %s), d(%s, %s) => %s,%s             --*--        %s" % (s, zeichen, t, zeichen, first, second, fz)
-					if len(fz) > 1 and fz not in U:
-						#print " >> (%s,%s) in U: %s" % (first, second, U)
-						U.add(st)
-						changed = True
-						print "changed"
-
-	print "Resultierendes U:"
-	for item in U:
-		print sorted(item)
-	print "=="
-	print "N:"
-	for item in N:
-		print "%s %s" % (item, item in SxS - Uprev)
 
 def AutomatenBlatt(prefix):
 	if not isinstance(prefix, list):
@@ -1483,6 +2109,8 @@ def AutomatenBlatt(prefix):
 		automatenReport(automaten, finalFileBase=item)
 
 if __name__ == '__main__':
-	blaetterwald = ['Uebungsblatt1', 'Uebungsblatt2', 'Uebungsblatt3', 'Script', 'Sonstige']
-	blaetterwald = ['Uebungsblatt3']
+	blaetterwald = ['Uebungsblatt1', 'Uebungsblatt2', 'Uebungsblatt3', 'Uebungsblatt4', 'Script', 'Sonstige']
+	#blaetterwald = ['Uebungsblatt3']
+	#blaetterwald = ['Sonstige']
+	#blaetterwald = ['Uebungsblatt4']
 	AutomatenBlatt(blaetterwald)
