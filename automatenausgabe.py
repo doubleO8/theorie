@@ -214,12 +214,6 @@ class OPlaintextAutomat(AusgebenderAutomat):
 		return joiner.join(out)
 
 class OAsciiAutomat(AusgebenderAutomat):
-# 	def _getAsciiArtMinimierTabelle(self):
-# 		sS = sorted(self.S)
-# 		for zustandA in sS:
-# 			for zustandB in sS:
-# 				pass
-
 	def _getAsciiArtDeltaTable(self, prefix=' '):
 		pfxLen = len(prefix)
 		rows = list([prefix + "Überführungsfunktion:"])
