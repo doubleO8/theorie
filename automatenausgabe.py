@@ -4,8 +4,11 @@ from subprocess import *
 import logging
 
 WORKINGDIR = '/Users/wolf/Documents/programming/theorie'
+PDFLATEX_BIN = 'pdflatex'
+
 OUTPUTDIR = os.path.join(WORKINGDIR, 'texOutput')
 EPSILON = 'EPSILON'
+TIKZ = False
 
 class SelfRemovingTempdir(object):
 	def __init__(self, workDir=None, removeAtExit=True, log = None):
@@ -131,6 +134,84 @@ class AusgebenderAutomat(object):
 
 	def _genFilename(self, tdir=None):
 		return tempfile.mkstemp(dir=OUTPUTDIR)[1]
+
+class OPlaintextAutomat(AusgebenderAutomat):
+	def _addHeader(self):
+		out = list(['# Automatendefinition'])
+		out.append("Name: %s" % self.name)
+		if self.beschreibung:
+			out.append("Beschreibung: %s" % self.beschreibung)
+		return out
+
+	def _addSigma(self):
+		return ['# Alphabet definieren. Muss mit "Sigma:" beginnen, durch Whitespace getrennt.', "Sigma:\t" + ' '.join(list(self.Sigma)) ]
+
+	def _addS0(self):
+		return ['# Startzustand definieren. Muss mit "s0:" beginnen, durch Whitespaces getrennt.', "s0:\t" + ' '.join(list(self.s0)) ]
+
+	def _addF(self):
+		return ['# Finale Zustaende definieren. Muss mit "F:" beginnen, durch Whitespace getrennt.', "F:\t" + ' '.join(list(self.F)) ]
+
+	def _addDelta(self):
+		out = list(['# Uebergaenge, Format :', '# Zustand, Zeichen, Zielzustand (durch whitespace getrennt)'])
+		for zustand in sorted(self.delta.keys()):
+			for fzKeyset in self.delta[zustand]:
+				ziele = self.delta[zustand][fzKeyset]
+				
+				for zeichen in reversed(sorted(fzKeyset)):
+					for zielZustand in sorted(ziele):
+						self.log.debug("%s %s %s" % (zustand, zeichen, zielZustand))
+						out.append("%s\t%s\t%s" % (zustand, zeichen, zielZustand))
+		return out
+
+	def _addVerifyWords(self):
+		if not self.verifyWords:
+			return list()
+		out = list()
+		failingWords = list()
+		acceptedWords = list()
+		
+		for word in self.verifyWords:
+			result = self.verifyWords[word]
+			if result == True:
+				acceptedWords.append(word)
+			else:
+				failingWords.append(word)
+
+		if len(failingWords) > 0:
+			out += ['# Optional: Worte, die _nicht akzeptiert werden duerfen', '# Muss mit "FailingVerifyWords:" beginnen, durch Whitespace getrennt' ]
+			out.append("%s:\t%s" % ('FailingVerifyWords', ' '.join(failingWords)))
+		if len(acceptedWords) > 0:
+			out += ['# Optional: Worte, die akzeptiert werden muessen', '# Muss mit "AcceptedVerifyWords:" beginnen, durch Whitespace getrennt' ]
+			out.append("%s:\t%s" % ('AcceptedVerifyWords', ' '.join(acceptedWords)))
+		return out
+
+	def _plaintext(self, joiner="\n", pretty=True):
+		LINE = ['#' * 80]
+		SPACER = ['']
+		
+		out = list()
+		if pretty:
+			out += LINE
+		out += self._addHeader()
+		if pretty:
+			out += LINE + SPACER + SPACER
+		out += self._addSigma()
+		if pretty:
+			out += SPACER
+		out += self._addS0()
+		if pretty:
+			out += SPACER
+		out += self._addF()
+		if pretty:
+			out += SPACER
+		out += self._addDelta()
+		if pretty:
+			out += SPACER
+		out += self._addVerifyWords()
+		if pretty:
+			out += SPACER
+		return joiner.join(out)
 
 class OAsciiAutomat(AusgebenderAutomat):
 # 	def _getAsciiArtMinimierTabelle(self):
@@ -405,6 +486,7 @@ class OLaTeXAutomat(AusgebenderAutomat):
 		return s
 
 	def _tikzGraph(self):
+		return( [], [] )
 		self._genZustandIndex(True)
 		tNodes = []
 		tEdges = []
@@ -421,9 +503,13 @@ class OLaTeXAutomat(AusgebenderAutomat):
 	def _toTeX(self, template):
 		s = self._readTemplate(template)
 
-		(tNodes, tEdges) = self._tikzGraph()
-		s = s.replace("%%__NODES__", "\n".join(tNodes))
-		s = s.replace("%%__PATH__", "\path\n" + "\n".join(tEdges) + ";\n")
+		if TIKZ:
+			(tNodes, tEdges) = self._tikzGraph()
+			s = s.replace("%%__TIKZ_BEGIN__", r"\begin{tikzpicture}[->,>=stealth',shorten >=1pt,auto,node distance=2.0cm, semithick]")
+			s = s.replace("%%__TIKZ_STYLE__", r"\tikzstyle{every state}=[fill=none,draw=black,text=black]")
+			s = s.replace("%%__TIKZ_END__", r"\end{tikzpicture}")
+			s = s.replace("%%__NODES__", "\n".join(tNodes))
+			s = s.replace("%%__PATH__", "\path\n" + "\n".join(tEdges) + ";\n")
 
 		s = s.replace("%%__AUTOMAT__", self._TeXAutomatStart())
 		s = s.replace("%%__SPEC__", self._TeXSpecification())
@@ -468,13 +554,13 @@ class OLaTeXAutomat(AusgebenderAutomat):
 				print e
 			returnValue = False
 
-		(rc, out, err) = runCommand('pdflatex', '"%s"' % tex_filename, logger=self.log, workDir=basedir)
+		(rc, out, err) = runCommand(PDFLATEX_BIN, '"%s"' % tex_filename, logger=self.log, workDir=basedir)
 		if rc != 0:
 			print err
 			print "----------------------"
 			print out
 			returnValue = False
-		(rc, out, err) = runCommand('pdflatex', '"%s"' % tex_filename, logger=self.log, workDir=basedir)
+		(rc, out, err) = runCommand(PDFLATEX_BIN, '"%s"' % tex_filename, logger=self.log, workDir=basedir)
 		if rc != 0:
 			print err
 			print "----------------------"
@@ -504,7 +590,7 @@ class OLaTeXAutomat(AusgebenderAutomat):
 			self.log.error(e)
 			returnValue = False
 		
-		(rc, out, err) = runCommand('pdflatex', '"%s"' % tex_filename, logger=self.log, workDir=basedir)
+		(rc, out, err) = runCommand(PDFLATEX_BIN, '"%s"' % tex_filename, logger=self.log, workDir=basedir)
 		if rc != 0:
 			print err
 			print "----------------------"
