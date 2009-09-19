@@ -5,15 +5,12 @@ from subprocess import *
 import logging
 from automaten import *
 
-USED_LOGLEVEL = logging.INFO
-
 def test():
 	"""
 	doctest (unit testing)
 	"""
 	import doctest
-	global USED_LOGLEVEL
-	USED_LOGLEVEL = logging.DEBUG
+	AutomatLogger(logging.DEBUG).log
 	failed, total = doctest.testmod()
 	print("doctest: %d/%d tests failed." % (failed, total))
 
@@ -124,13 +121,7 @@ class AutomatenLeser(object):
 		return (S, s0, F, Sigma, delta, name, beschreibung, verifyWords)
 
 	def _initLogging(self):
-		self.log = logging.getLogger("al")
-		if len(self.log.handlers) == 0:
-			lhandler = logging.StreamHandler()
-			lformatter = logging.Formatter('%(asctime)s %(levelname)s: %(message)s')
-			lhandler.setFormatter(lformatter)
-			self.log.addHandler(lhandler)
-			self.log.setLevel(USED_LOGLEVEL)
+		self.log = AutomatLogger().log
 
 	def automat(self):
 		(S, s0, F, Sigma, delta, name, beschreibung, verifyWords) = self.parsePlaintext()

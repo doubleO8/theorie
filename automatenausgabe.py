@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 import os, sys, tempfile, shutil, random, atexit
 from subprocess import *
-import logging
 
 WORKINGDIR = os.path.abspath('.')
 PDFLATEX_BIN = 'pdflatex'
@@ -14,8 +13,8 @@ class SelfRemovingTempdir(object):
 		self.workDir = workDir
 		self.removeAtExit = removeAtExit
 		if log == None:
-			logging.basicConfig(level=logging.INFO)
-			log = logging.getLogger('runCommand')
+			import automaten
+			log = automaten.AutomatLogger().log
 		self.log = log
 		self.tmp = tempfile.mkdtemp(dir=workDir)
 		if self.removeAtExit:
@@ -37,8 +36,8 @@ class SelfRemovingTempdir(object):
 
 def runCommand(command, parameter=None, logger=None, workDir=os.getcwd(), validReturnCodes = [0]):
 	if logger == None:
-		logging.basicConfig(level=logging.DEBUG)
-		logger = logging.getLogger('runCommand')
+		import automaten
+		logger = automaten.AutomatLogger().log
 
 	cwd = os.getcwd()
 	cmd = command 
@@ -119,6 +118,28 @@ class AusgebenderAutomat(object):
 		if not os.path.isfile(template):
 			raise IOError("Template '%s' nicht gefunden." % (template))
 		return open(template).read()
+
+	def writeContent(self, target, content):
+		#print("WRITING %s" % target)
+		try:
+			out = open(target, "w")
+			out.write(content)
+			out.close()
+			return True
+		except Exception, e:
+			print e
+		return False
+
+	def writePlaintext(self, targetDir='.', targetFile=None, suffix='.automat'):
+		if not targetFile:
+			targetFile = self.name.lower()
+			if targetFile == '':
+				print "OUCH, targetFile=''"
+				return False
+			target = os.path.join(os.path.abspath(targetDir), targetFile + suffix)
+		else:
+			target = targetFile
+		return self.writeContent(target, self._plaintext())
 
 class OPlaintextAutomat(AusgebenderAutomat):
 	def _addHeader(self):
@@ -419,9 +440,14 @@ class OLaTeXAutomat(AusgebenderAutomat):
 		return s
 
 class LaTeXBinder(AusgebenderAutomat):
-	def __init__(self, template, finalFileBase='AutomatBinder', WORKINGDIR=None):
+	def __init__(self, template=None, finalFileBase='AutomatBinder', WORKINGDIR=None, TEMPLATESDIR=None):
 		if not WORKINGDIR:
 			WORKINGDIR = os.path.abspath('.')
+		if not TEMPLATESDIR:
+			TEMPLATESDIR = os.path.join(WORKINGDIR, 'output_templates')
+		if not template:
+			template = os.path.join(TEMPLATESDIR, 'binder.tex')
+
 		self.content = list()
 		self.template = template
 		self.t = SelfRemovingTempdir()
@@ -440,19 +466,15 @@ class LaTeXBinder(AusgebenderAutomat):
 		binder = self._readTemplate(self.template)
 		binder = binder.replace("%%__CONTENT__", "\n".join(self.content))
 
-		try:
-			out = open(self.texTarget, "w")
-			out.write(binder)
-			out.close()
-		except Exception, e:
-			print e
+		if not self.writeContent(self.texTarget, binder):
+			return
 
 		(rc, out, err) = runCommand(PDFLATEX_BIN, ('"%s"' % self.texTarget), workDir=self.t.tmp)
 		if rc != 0:
 			print err
 			print "----------------------"
 			print out
-	
+
 		if rc == 0:
 			(rc, out, err) = runCommand(PDFLATEX_BIN, ('"%s"' % self.texTarget), workDir=self.t.tmp)
 			if rc != 0:
@@ -467,6 +489,8 @@ def automatenReport(automaten, finalFileBase='AutomatReport',
 					WORKINGDIR=None, TEMPLATESDIR=None, AUTOMAT_TEMPLATE=None, BINDER_TEMPLATE=None,
 					DOT_TEMPLATE=None
 					):
+	if not isinstance(automaten, list):
+		automaten = [automaten]
 	if len(automaten) == 0:
 		print "Automatenliste ist mir zu leer."
 		return
@@ -486,7 +510,10 @@ def automatenReport(automaten, finalFileBase='AutomatReport',
 	
 	contentS = ''
 	for automat in automaten:
-		contentS += automat._toTeX(AUTOMAT_TEMPLATE, DOT_TEMPLATE)
+		try:
+			contentS += automat._toTeX(AUTOMAT_TEMPLATE, DOT_TEMPLATE)
+		except Exception, e:
+			print e
 	content = list()
 	
 	for line in contentS.split("\n"):
@@ -496,6 +523,3 @@ def automatenReport(automaten, finalFileBase='AutomatReport',
 
 	b.appendContent(content)
 	b.write()
-
-if __name__ == '__main__':
-	runCommand("ls -al; false")

@@ -2071,9 +2071,19 @@ def AutomatenBlatt(prefix):
 		automaten = erstelleAutomatenFuer(item)
 		automatenReport(automaten, finalFileBase=item)
 
+def AutomatenPlaintext(prefix):
+	if not isinstance(prefix, list):
+		prefix = [prefix]
+
+	for item in prefix:
+		automaten = erstelleAutomatenFuer(item)
+		for automat in automaten:
+			automat.writePlaintext(targetDir='/Users/wolf/Desktop/automaten')
+
 if __name__ == '__main__':
 	blaetterwald = ['Uebungsblatt1', 'Uebungsblatt2', 'Uebungsblatt3', 'Uebungsblatt4', 'Script', 'Sonstige']
 	#blaetterwald = ['Uebungsblatt3']
 	#blaetterwald = ['Sonstige']
-	blaetterwald = ['Uebungsblatt4']
-	AutomatenBlatt(blaetterwald)
+	#blaetterwald = ['Uebungsblatt4']
+	#AutomatenBlatt(blaetterwald)
+	AutomatenPlaintext(blaetterwald)
