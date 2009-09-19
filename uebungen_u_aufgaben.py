@@ -29,7 +29,6 @@ def RegularExpressionTestWorte(worte, regexp):
 		regexp = '^' + regexp
 	if not regexp.endswith("$"):
 		regexp += '$'
-
 	pattern = re.compile(regexp)
 
 	verifyWords = dict()
@@ -1974,7 +1973,7 @@ def Uebungsblatt4_Aufgabe3d():
 
 	# Testworte mittels regular expression modul von python testen
 	worte = ['0', '1', '00100', '11000', '111101', '001101010']
-	verifyWords = RegularExpressionTestWorte(worte, r'0|0(0*)|1|(0(0*)|0(0*)1)|(0(0*)10|0(0*)101(1*))|(0(0*)11(1*))|(0(0*)11(1*)01)|(0(0*)11(1*)0)')
+	verifyWords = RegularExpressionTestWorte(worte, r'0|0(0*)|1|(0(0*)|0(0*)1)|(0(0*)10|0(0*)101(1*))|(0(0*)11(1*))|(0(0*)11(1*)01)|(0(0*)11(1*)0)|00*111*011*|00*111*011*0|00*101')
 
 	return NichtDeterministischerAutomat(S, s0, F, Sigma, delta,
 						name='U4A3d',
@@ -1995,6 +1994,10 @@ def Uebungsblatt4_Aufgabe3e():
 def Uebungsblatt4_Aufgabe3e_Tester():
 	A = AutomatenLeser(filename='data/u4a3e_test').automat()
 	A.testWords = A.testWorteGenerator(Sigma=list(['0', '1', '101']))
+
+	# Testworte mittels regular expression modul von python testen
+	worte = ['0', '1', '00101', '1100110', '111101', '001101010']
+	A.verifyWords = RegularExpressionTestWorte(worte, r'((0*)|(0*)1(1*)|(0*)1(1*)0|(0*)1(1*)00(0*)|(0*)1(1*)00(0*)1(1*)|(0*)1(1*)00(0*)1(1*)0)')
 	return A
 
 def Sonstige_Aufgabe_EidTI_U6():
@@ -2059,56 +2062,6 @@ def erstelleAutomatenFuer(prefix):
 	for item in sorted(fNames):
 		automaten.append(eval(item + '()'))
 	return automaten
-
-def automatenReport(automaten, finalFileBase='AutomatReport', WORKINGDIR = '/Users/wolf/Documents/programming/theorie', TEMPLATESDIR = os.path.join(WORKINGDIR, 'texOutput')):
-	if len(automaten) == 0:
-		print "Automatenliste ist mir zu leer."
-		return
-
-	o = AusgebenderAutomat()
-	t = SelfRemovingTempdir(workDir = WORKINGDIR)
-	tmpDir = t.tmp
-	base = t.getRandomFilename()
-
-	texTarget = base + '.tex'
-	pdfTarget = base + '.pdf'
-	finalFile = os.path.join(WORKINGDIR, finalFileBase + '.pdf')
-	
-	contentS = ''
-	for automat in automaten:
-		contentS += automat._toTeX(os.path.join(TEMPLATESDIR, 'template.tex'))
-	content = list()
-	
-	for line in contentS.split("\n"):
-		line = line.strip()
-		if not line.startswith("%") and line != '':
-			content.append(line)
-
-	binder = o._readTemplate(os.path.join(TEMPLATESDIR, 'binder.tex'))
-	binder = binder.replace("%%__CONTENT__", "\n".join(content))
-	
-	try:
-		out = open(texTarget, "w")
-		out.write(binder)
-		out.close()
-	except Exception, e:
-		print e
-
-	(rc, out, err) = runCommand(PDFLATEX_BIN, ('"%s"' % texTarget), workDir=tmpDir)
-	if rc != 0:
-		print err
-		print "----------------------"
-		print out
-
-	if rc == 0:
-		(rc, out, err) = runCommand(PDFLATEX_BIN, ('"%s"' % texTarget), workDir=tmpDir)
-		if rc != 0:
-			print err
-			print "----------------------"
-			print out
-		if rc == 0 and os.path.isfile(pdfTarget):
-			shutil.move(pdfTarget, finalFile)
-			runCommand('open', '"%s"' % finalFile)
 
 def AutomatenBlatt(prefix):
 	if not isinstance(prefix, list):

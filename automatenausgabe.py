@@ -3,7 +3,7 @@ import os, sys, tempfile, shutil, random, atexit
 from subprocess import *
 import logging
 
-WORKINGDIR = '/Users/wolf/Documents/programming/theorie'
+WORKINGDIR = os.path.abspath('.')
 PDFLATEX_BIN = 'pdflatex'
 
 OUTPUTDIR = os.path.join(WORKINGDIR, 'texOutput')
@@ -119,9 +119,6 @@ class AusgebenderAutomat(object):
 		if not os.path.isfile(template):
 			raise IOError("Template '%s' nicht gefunden." % (template))
 		return open(template).read()
-
-	def _genFilename(self, tdir=None):
-		return tempfile.mkstemp(dir=OUTPUTDIR)[1]
 
 class OPlaintextAutomat(AusgebenderAutomat):
 	def _addHeader(self):
@@ -278,13 +275,16 @@ class ODotAutomat(AusgebenderAutomat):
 		s = s.replace('//__PATH__', "\n".join(nodes))
 		return s
 
-	def createDotDocument(self, filename = None):
-		basename = self._genFilename()
-		basedir = os.path.dirname(basename)
-		dot_filename = os.path.join(basedir, os.path.basename(basename + '.gv'))
-		pdf_filename = os.path.basename(basename + '.pdf')
-		template = os.path.join(basedir, 'template.dot')
-		returnValue = os.path.join(basedir, pdf_filename)
+	def createDotDocument(self, template = None):
+		tdir = SelfRemovingTempdir()
+		basename = tdir.getRandomFilename()
+		if not template:
+			template = os.path.join(os.path.abspath('output_templates'), 'template.dot')
+
+		dot_filename = basename + '.gv'
+		pdf_filename = basename + '.pdf'
+
+		returnValue = pdf_filename
 
 		try:
 			out = open(dot_filename, "w")
@@ -300,7 +300,7 @@ class ODotAutomat(AusgebenderAutomat):
 			returnValue = False
 		
 		param = '-Tpdf -o "%s" "%s"' % (pdf_filename, dot_filename)
-		(rc, out, err) = runCommand('dot', param, logger=self.log, workDir=basedir)
+		(rc, out, err) = runCommand('dot', param, logger=self.log, workDir=tdir.tmp)
 		if rc != 0:
 			print err
 			print "----------------------"
@@ -400,7 +400,7 @@ class OLaTeXAutomat(AusgebenderAutomat):
 	def _TeXAutomatStart(self):
 		return r'\section{%s}' % self.name
 		
-	def _toTeX(self, template):
+	def _toTeX(self, template, dot_template):
 		s = self._readTemplate(template)
 
 		s = s.replace("%%__AUTOMAT__", self._TeXAutomatStart())
@@ -410,7 +410,7 @@ class OLaTeXAutomat(AusgebenderAutomat):
 		s = s.replace('%%__VERIFY__', self._TeXVerify())
 
 		if 'createDotDocument' in dir(self):
-			dotgraph = self.createDotDocument()
+			dotgraph = self.createDotDocument(dot_template)
 			if dotgraph:
 				s = s.replace('%%__DOT_GRAPH__', r'\subsection{Graph}' + self._TeXIncludeFigure(dotgraph))
 			else:
@@ -418,79 +418,84 @@ class OLaTeXAutomat(AusgebenderAutomat):
 
 		return s
 
-	def createLaTeXBinder(self, files=list(), output=None):
-		if 'log' not in dir(self) :
-			logging.basicConfig(level=logging.DEBUG)
-			self.log = logging.getLogger('cLB')
+class LaTeXBinder(AusgebenderAutomat):
+	def __init__(self, template, finalFileBase='AutomatBinder', WORKINGDIR=None):
+		if not WORKINGDIR:
+			WORKINGDIR = os.path.abspath('.')
+		self.content = list()
+		self.template = template
+		self.t = SelfRemovingTempdir()
+		base = self.t.getRandomFilename()
+		self.texTarget = base + '.tex'
+		self.pdfTarget = base + '.pdf'
+		self.finalFile = os.path.join(WORKINGDIR, finalFileBase + '.pdf')
 
-		basename = self._genFilename()
-		basedir = os.path.dirname(basename)
-		tex_filename = os.path.basename(basename + '.tex')
-		pdf_filename = os.path.basename(basename + '.pdf')
-		template = os.path.join(basedir, 'binder.tex')
-		returnValue = os.path.join(basedir, pdf_filename)
+	def appendContent(self, content):
+		self.content += content
 
-		s = self._readTemplate(template)
-		includeFiles = list()
-		for file in files:
-			includeFiles.append(r'\include{%s}' % file)
-		s = s.replace("%%__FILES__", "\n".join(includeFiles))
+	def write(self, finalFile=None):
+		if finalFile:
+			self.finalFile = finalFile
+
+		binder = self._readTemplate(self.template)
+		binder = binder.replace("%%__CONTENT__", "\n".join(self.content))
+
 		try:
-			out = open(os.path.join(basedir, tex_filename), "w")
-			out.write(s)
+			out = open(self.texTarget, "w")
+			out.write(binder)
 			out.close()
 		except Exception, e:
-			try:
-				self.log.error(e)
-			except Exception, e:
-				print e
-			returnValue = False
+			print e
 
-		(rc, out, err) = runCommand(PDFLATEX_BIN, '"%s"' % tex_filename, logger=self.log, workDir=basedir)
+		(rc, out, err) = runCommand(PDFLATEX_BIN, ('"%s"' % self.texTarget), workDir=self.t.tmp)
 		if rc != 0:
 			print err
 			print "----------------------"
 			print out
-			returnValue = False
-		(rc, out, err) = runCommand(PDFLATEX_BIN, '"%s"' % tex_filename, logger=self.log, workDir=basedir)
-		if rc != 0:
-			print err
-			print "----------------------"
-			print out
-			returnValue = False
-		
-		return returnValue
+	
+		if rc == 0:
+			(rc, out, err) = runCommand(PDFLATEX_BIN, ('"%s"' % self.texTarget), workDir=self.t.tmp)
+			if rc != 0:
+				print err
+				print "----------------------"
+				print out
+			if rc == 0 and os.path.isfile(self.pdfTarget):
+				shutil.move(self.pdfTarget, self.finalFile)
+				runCommand('open', '"%s"' % self.finalFile)
 
-	def createTeXDocument(self, filename = None):
-		basename = self._genFilename()
-		basedir = os.path.dirname(basename)
-		tex_filename = os.path.basename(basename + '.tex')
-		pdf_filename = os.path.basename(basename + '.pdf')
-		template = os.path.join(basedir, 'template.tex')
-		returnValue = os.path.join(basedir, pdf_filename)
+def automatenReport(automaten, finalFileBase='AutomatReport', 
+					WORKINGDIR=None, TEMPLATESDIR=None, AUTOMAT_TEMPLATE=None, BINDER_TEMPLATE=None,
+					DOT_TEMPLATE=None
+					):
+	if len(automaten) == 0:
+		print "Automatenliste ist mir zu leer."
+		return
 		
-		try:
-			out = open(os.path.join(basedir, tex_filename), "w")
-			rawLines = self._toTeX(template).split("\n")
-			content = list()
-			for line in rawLines:
-				if not line.strip().startswith("%"):
-					content.append(line)
-			out.write("\n".join(content))
-			out.close()
-		except Exception, e:
-			self.log.error(e)
-			returnValue = False
-		
-		(rc, out, err) = runCommand(PDFLATEX_BIN, '"%s"' % tex_filename, logger=self.log, workDir=basedir)
-		if rc != 0:
-			print err
-			print "----------------------"
-			print out
-			returnValue = False
-		
-		return returnValue
+	if not WORKINGDIR:
+		WORKINGDIR = os.path.abspath('.')
+	if not TEMPLATESDIR:
+		TEMPLATESDIR = os.path.join(WORKINGDIR, 'output_templates')
+	if not AUTOMAT_TEMPLATE:
+		AUTOMAT_TEMPLATE = os.path.join(TEMPLATESDIR, 'automat.tex')
+	if not BINDER_TEMPLATE:
+		BINDER_TEMPLATE = os.path.join(TEMPLATESDIR, 'binder.tex')
+	if not DOT_TEMPLATE:
+		DOT_TEMPLATE = os.path.join(TEMPLATESDIR, 'automat.dot')
+
+	b = LaTeXBinder(BINDER_TEMPLATE, finalFileBase=finalFileBase)
+	
+	contentS = ''
+	for automat in automaten:
+		contentS += automat._toTeX(AUTOMAT_TEMPLATE, DOT_TEMPLATE)
+	content = list()
+	
+	for line in contentS.split("\n"):
+		line = line.strip()
+		if not line.startswith("%") and line != '':
+			content.append(line)
+
+	b.appendContent(content)
+	b.write()
 
 if __name__ == '__main__':
-	runCommand("true", "whatever")
-	
+	runCommand("ls -al; false")
