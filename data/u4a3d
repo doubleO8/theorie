@@ -1,0 +1,41 @@
+# Automatendefinition
+# Uebungsblatt 4, Aufgabe 3d)
+
+Name: U4A3d
+Beschreibung: Ein Automat, der die Menge aller Woerter ueber 0,1 akzeptiert, deren 00-Paare vor allen 11-Paaren stehen
+
+# Alphabet definieren, muss mit Sigma: beginnen, durch whitespace getrennt
+Sigma: 0 1
+
+# Finale Zustaende definieren, durch whitespace getrennt
+F: A B C D
+
+# Startzustand definieren, durch whitespace getrennt
+s0: A
+
+# Uebergaenge
+# Zustand, Zeichen, Zielzustand (durch whitespace getrennt)
+A	0	A
+A	1	B
+
+B	0	A
+B	1	C
+
+C	0	D
+C	1	C
+
+D	0	E
+D	1	C
+
+E	0	E
+E	1	E
+
+# Optional: Worte, die akzeptiert werden muessen
+AcceptedVerifyWords: 0 1 001 0011 0000010 10011
+
+# Optional: Worte, die _nicht akzeptiert werden duerfen
+FailingVerifyWords: 1100 1001100
+
+RegularExpression: ((0*|10(0*))(1|(101)*)1(1*)(0|(010)*)|0*|1|11|110|10(0*))
+
+TestWords: 0 1 001 0011 0000010 10011 1100 1001100

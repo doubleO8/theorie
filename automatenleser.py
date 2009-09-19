@@ -48,6 +48,8 @@ class AutomatenLeser(object):
 		name = 'EinAutomat'
 		beschreibung = ''
 		verifyWords = None
+		testWords = None
+		verifyRegExp = None
 		failingWords = list()
 		acceptedWords = list()
 		
@@ -80,6 +82,10 @@ class AutomatenLeser(object):
 				failingWords = self._teileOderJaule(line, 'Nicht akzeptierte Worte')
 			elif line.startswith("AcceptedVerifyWords:"):
 				acceptedWords = self._teileOderJaule(line, 'Zu akzeptierende Worte')
+			elif line.startswith("TestWords:"):
+				testWords = self._teileOderJaule(line, 'Testworte')
+			elif line.startswith("RegularExpression:"):
+				verifyRegExp = self._teileOderJaule(line, 'Regular Expression')[0]
 			else:
 				splatter = line.split()
 				if len(splatter) != 3:
@@ -117,17 +123,19 @@ class AutomatenLeser(object):
 		self.log.debug("F: %s" % F)
 		self.log.debug("delta: %s" % delta)
 		self.log.debug("verifyWords: %s" % verifyWords)
-		
-		return (S, s0, F, Sigma, delta, name, beschreibung, verifyWords)
+		self.log.debug("testWords: %s" % testWords)
+		self.log.debug("Regular Expression: %s" % verifyRegExp)
+
+		return (S, s0, F, Sigma, delta, name, beschreibung, verifyWords, testWords, verifyRegExp)
 
 	def _initLogging(self):
 		self.log = AutomatLogger().log
 
 	def automat(self):
-		(S, s0, F, Sigma, delta, name, beschreibung, verifyWords) = self.parsePlaintext()
+		(S, s0, F, Sigma, delta, name, beschreibung, verifyWords, testWords, verifyRegExp) = self.parsePlaintext()
 		if EpsilonAutomat.EPSILON in Sigma:
-			return EpsilonAutomat(S, s0, F, Sigma, delta, name, beschreibung, verifyWords=verifyWords)
-		return NichtDeterministischerAutomat(S, s0, F, Sigma, delta, name, beschreibung, verifyWords=verifyWords)
+			return EpsilonAutomat(S, s0, F, Sigma, delta, name, beschreibung, verifyWords=verifyWords, testWords=testWords, verifyRegExp=verifyRegExp)
+		return NichtDeterministischerAutomat(S, s0, F, Sigma, delta, name, beschreibung, verifyWords=verifyWords, testWords=testWords, verifyRegExp=verifyRegExp)
 
 	def __init__(self, filename=None, contentList=None, data=None, dataDelimiter="\n"):
 		"""

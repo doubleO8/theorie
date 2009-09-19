@@ -62,10 +62,12 @@ for file in files:
 	
 		if options.verify:
 			A.verify()
+			A.verifyByRegExp()
 	
 		if options.testWords:
 			words = options.testWords.split()
 			A.checkWords(words)
+			A.verifyByRegExp(words)
 	except Exception, e:
 		logger.error("[EXCEPTION] '%s' %s" % (file, e))
 

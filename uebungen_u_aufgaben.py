@@ -1991,67 +1991,6 @@ def Uebungsblatt4_Aufgabe3e():
 	A.testWords = A.testWorteGenerator(Sigma=list(['0', '1', '101']))
 	return A
 
-def Uebungsblatt4_Aufgabe3e_Tester():
-	A = AutomatenLeser(filename='data/u4a3e_test').automat()
-	A.testWords = A.testWorteGenerator(Sigma=list(['0', '1', '101']))
-
-	# Testworte mittels regular expression modul von python testen
-	worte = ['0', '1', '00101', '1100110', '111101', '001101010']
-	A.verifyWords = RegularExpressionTestWorte(worte, r'((0*)|(0*)1(1*)|(0*)1(1*)0|(0*)1(1*)00(0*)|(0*)1(1*)00(0*)1(1*)|(0*)1(1*)00(0*)1(1*)0)')
-	return A
-
-def Sonstige_Aufgabe_EidTI_U6():
-	"""
-	boese: schlecht erarbeitet und hingewuergt.
-	"""
-	delta = {
-				'A' : {
-							('a', 'e', 'g', 'X') : 'A',
-							'b' : 'AB',
-						},
-				'AB' : {
-							'a' : 'AC',
-							'b' : 'AB',
-							('e', 'g', 'X') : 'A',
-						},
-				'AC' : {
-							('a', 'e', 'g', 'X') : 'A',
-							'b' : 'ABD',
-						},
-				'ABD' : {
-							'a' : 'ACE',
-							'b' : 'ABC',
-							('e', 'g', 'X') : 'A',
-						},
-				'ACE' : {
-							'a' : 'A',
-							'b' : 'ABD',
-							('e', 'X') : 'A',
-							'g' : 'AG',
-						},
-				'ABC' : {
-							'a' : 'ACE',
-							'b' : 'ABD',
-							('e', 'g', 'X') : 'A',
-						},
-				'AG' : {
-							'a' : 'A',
-							'b' : 'AB',
-							('g', 'X') : 'A',
-							'e' : 'AH',
-						},
-				'AH' : {
-							'a' : 'A',
-							'b' : 'AB',
-							('e', 'g', 'X') : 'A',
-						},
-			}
-	A = Automat('A AB AC ABD ACE ABC AG AH', 'A', 'AH', 'a b e g X', delta,
-				name="EidTIU6",
-				beschreibung="Akzeptiert alle Worte, die mit babbage aufhoeren",
-				testWords=testWorte(['a', 'b', 'babbage']))
-	return A
-
 def erstelleAutomatenFuer(prefix):
 	automaten = list()
 	fNames = list()
@@ -2081,9 +2020,9 @@ def AutomatenPlaintext(prefix):
 			automat.writePlaintext(targetDir='/Users/wolf/Desktop/automaten')
 
 if __name__ == '__main__':
-	blaetterwald = ['Uebungsblatt1', 'Uebungsblatt2', 'Uebungsblatt3', 'Uebungsblatt4', 'Script', 'Sonstige']
+	blaetterwald = ['Uebungsblatt1', 'Uebungsblatt2', 'Uebungsblatt3', 'Uebungsblatt4', 'Script']
 	#blaetterwald = ['Uebungsblatt3']
 	#blaetterwald = ['Sonstige']
-	#blaetterwald = ['Uebungsblatt4']
-	#AutomatenBlatt(blaetterwald)
-	AutomatenPlaintext(blaetterwald)
+	blaetterwald = ['Uebungsblatt4']
+	AutomatenBlatt(blaetterwald)
+	#AutomatenPlaintext(blaetterwald)

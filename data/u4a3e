@@ -2,36 +2,37 @@
 # Uebungsblatt 4, Aufgabe 3e)
 
 Name: U4A3e
-Beschreibung: Ein Automat, der nur Woerter akzeptiert, die nicht nur aus 101 bestehen
+Beschreibung: Ein Automat, der nur Woerter akzeptiert, in denen 101 nicht vorkommt
 
 # Alphabet definieren, muss mit Sigma: beginnen, durch whitespace getrennt
 Sigma: 0 1
 
 # Finale Zustaende definieren, durch whitespace getrennt
-F: A B C F
+F: A B C
 
 # Startzustand definieren, durch whitespace getrennt
 s0: A
 
 # Uebergaenge
 # Zustand, Zeichen, Zielzustand (durch whitespace getrennt)
-A	0	F
+A	0	A
 A	1	B
 
 B	0	C
-B	1	F
+B	1	B
 
-BE	0	C
-BE	1	F
+C	0	A
+C	1	D
 
-C	0	F
-C	1	BE
+D	0	D
+D	1	D
 
-F	0	F
-F	1	F
-
-# Optional: Worte, die _nicht akzeptiert werden duerfen
-AcceptedVerifyWords: 001 0 1 10 111 0101 010101
+# Optional: Worte, die akzeptiert werden sollen
+AcceptedVerifyWords: 0 1 11 00 110 1100
 
 # Optional: Worte, die _nicht akzeptiert werden duerfen
-FailingVerifyWords: 101 10101 1010101
+FailingVerifyWords: 101 0101 0010101 10110 11010
+
+RegularExpression: ((0*)|(0*)1(1*)|(0*)1(1*)0|(0*)1(1*)00(0*)|(0*)1(1*)00(0*)1(1*)|(0*)1(1*)00(0*)1(1*)0)
+
+TestWords: 0 1 00101 1100110 111101 001101010

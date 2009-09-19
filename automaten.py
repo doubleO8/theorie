@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-import logging, logging.config, os, sys
+import logging, logging.config, os, sys, re
 import automatenausgabe
 
 if 'USED_LOGLEVEL' not in dir():
@@ -203,7 +203,8 @@ class NichtDeterministischerAutomat(automatenausgabe.OAsciiAutomat, automatenaus
 	def _initLogging(self):
 		self.log = AutomatLogger().log
 
-	def __init__(self, S, s0, F, Sigma, delta, name="EinNDA", beschreibung='', testWords=None, verifyWords=None):
+	def __init__(self, S, s0, F, Sigma, delta, name="EinNDA", beschreibung='', 
+				testWords=None, verifyWords=None, verifyRegExp=None):
 		"""
 		>>> mini = NichtDeterministischerAutomat('s0 s1 s2 s3', 's0', 's3', '0 1', {'s0' : {'0' : ['s0', 's1'], '1' : 's0'}, 's1' : {'0' : 's2', '1' : 's2'}, 's2' : { '0' : 's3', '1' : 's3'}})
 		>>> mini._delta('s0', '0')
@@ -294,6 +295,7 @@ class NichtDeterministischerAutomat(automatenausgabe.OAsciiAutomat, automatenaus
 		self.ZustandIndex = dict()
 		self.testWords = testWords
 		self.verifyWords = verifyWords
+		self.verifyRegExp = verifyRegExp
 		self.beschreibung = beschreibung
 		self.ableitungsPfad = list()
 
@@ -576,6 +578,31 @@ class NichtDeterministischerAutomat(automatenausgabe.OAsciiAutomat, automatenaus
 				self.log.debug(self._ableitungsPfad__str__())
 		return resultset
 
+	def _RegularExpressionTestWorte(self, worte, regexp=None):
+		if not regexp:
+			regexp = self.verifyRegExp
+		if not regexp.startswith("^"):
+			regexp = '^' + regexp
+		if not regexp.endswith("$"):
+			regexp += '$'
+		pattern = re.compile(regexp)
+	
+		verifyWords = dict()
+		for wort in worte:
+			res = pattern.match(wort)
+			verifyWords[wort] = pattern.match(wort) and True or False
+		return verifyWords
+
+	def verifyByRegExp(self, testWords=None, regexp=None):
+		if not testWords:
+			testWords = self.testWords
+		if not regexp and not self.verifyRegExp:
+			self.log.warning("Cannot verify by Regular Expression, returning True")
+			return True
+		vWords = self._RegularExpressionTestWorte(testWords, regexp)
+		self.log.info("Verify by Regular Expression:")
+		return self.verify(vWords)
+		
 	def verify(self, vWords=None):
 		verified = True
 		if vWords == None:
@@ -598,7 +625,7 @@ class NichtDeterministischerAutomat(automatenausgabe.OAsciiAutomat, automatenaus
 		return verified
 
 class Automat(NichtDeterministischerAutomat):
-	def __init__(self, S, s0, F, Sigma, delta, name="EinDEA", beschreibung='', testWords=None, verifyWords=None):
+	def __init__(self, S, s0, F, Sigma, delta, name="EinDEA", beschreibung='', testWords=None, verifyWords=None, verifyRegExp=None):
 		"""
 		>>> mini = Automat('s0 s1 s2 s3', 's0', 's3', '0 1', {'s0' : {'0' : 's0 s1', '1' : 's0'}, 's1' : {'0' : 's2', '1' : 's2'}, 's2' : { '0' : 's3', '1' : 's3'}})
 		Traceback (most recent call last):
@@ -646,19 +673,19 @@ class Automat(NichtDeterministischerAutomat):
 		NoAcceptingStateException: frozenset([]) ist nicht Teil der Menge der moeglichen Endzustaende [z0,z1]
 
 		"""
-		NichtDeterministischerAutomat.__init__(self, S, s0, F, Sigma, delta, name, beschreibung, testWords, verifyWords)
+		NichtDeterministischerAutomat.__init__(self, S, s0, F, Sigma, delta, name, beschreibung, testWords, verifyWords, verifyRegExp)
 		if not self.istDEA():
 			raise Exception("Ich fuehle mich so nichtdeterministisch.")
 
 class EpsilonAutomat(NichtDeterministischerAutomat):
 	EPSILON='EPSILON'
 	
-	def __init__(self, S, s0, F, Sigma, delta, name="EinNDAe", beschreibung='', testWords=None, verifyWords=None):
+	def __init__(self, S, s0, F, Sigma, delta, name="EinNDAe", beschreibung='', testWords=None, verifyWords=None, verifyRegExp=None):
 		"""
 		"""
 		Sigma = self._toList(Sigma)
 		Sigma.append(EpsilonAutomat.EPSILON)
-		NichtDeterministischerAutomat.__init__(self, S, s0, F, Sigma, delta, name, beschreibung, testWords, verifyWords)
+		NichtDeterministischerAutomat.__init__(self, S, s0, F, Sigma, delta, name, beschreibung, testWords, verifyWords, verifyRegExp)
 
 	def _delta(self, Zustand, Zeichen):
 		"""

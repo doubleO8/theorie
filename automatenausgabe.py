@@ -158,6 +158,19 @@ class OPlaintextAutomat(AusgebenderAutomat):
 	def _addF(self):
 		return ['# Finale Zustaende definieren. Muss mit "F:" beginnen, durch Whitespace getrennt.', "F:\t" + ' '.join(list(self.F)) ]
 
+	def _addTestWords(self):
+		if self.testWords:
+			if len(self.testWords) > 0:
+				return ['# Testworte. Muss mit "TestWords:" beginnen, durch Whitespace getrennt.', "TestWords:\t" + ' '.join(list(self.testWords)) ]
+		return list()
+
+	def _addVerifyRegExp(self):
+		if self.verifyRegExp:
+			return ['# Regular Expression, die das Ergebnis fuer die Testworte definiert.',
+					'# Muss mit "TestWords:" beginnen, durch Whitespace getrennt.', 
+					"verifyRegExp:\t " + self.verifyRegExp ]
+		return list()
+
 	def _addDelta(self):
 		out = list(['# Uebergaenge, Format :', '# Zustand, Zeichen, Zielzustand (durch whitespace getrennt)'])
 		for zustand in sorted(self.delta.keys()):
@@ -215,6 +228,12 @@ class OPlaintextAutomat(AusgebenderAutomat):
 		if pretty:
 			out += SPACER
 		out += self._addVerifyWords()
+		if pretty:
+			out += SPACER
+		out += self._addTestWords()
+		if pretty:
+			out += SPACER
+		out += self._addVerifyRegExp()
 		if pretty:
 			out += SPACER
 		return joiner.join(out)
@@ -469,14 +488,14 @@ class LaTeXBinder(AusgebenderAutomat):
 		if not self.writeContent(self.texTarget, binder):
 			return
 
-		(rc, out, err) = runCommand(PDFLATEX_BIN, ('"%s"' % self.texTarget), workDir=self.t.tmp)
+		(rc, out, err) = runCommand(PDFLATEX_BIN, ('-interaction batchmode "%s"' % self.texTarget), workDir=self.t.tmp)
 		if rc != 0:
 			print err
 			print "----------------------"
 			print out
 
 		if rc == 0:
-			(rc, out, err) = runCommand(PDFLATEX_BIN, ('"%s"' % self.texTarget), workDir=self.t.tmp)
+			(rc, out, err) = runCommand(PDFLATEX_BIN, ('-interaction batchmode "%s"' % self.texTarget), workDir=self.t.tmp)
 			if rc != 0:
 				print err
 				print "----------------------"
