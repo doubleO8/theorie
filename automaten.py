@@ -597,7 +597,7 @@ class NichtDeterministischerAutomat(automatenausgabe.OAsciiAutomat, automatenaus
 		if not testWords:
 			testWords = self.testWords
 		if not regexp and not self.verifyRegExp:
-			self.log.warning("Cannot verify by Regular Expression, returning True")
+			self.log.debug("Cannot verify by Regular Expression, returning True")
 			return True
 		vWords = self._RegularExpressionTestWorte(testWords, regexp)
 		self.log.info("Verify by Regular Expression:")
