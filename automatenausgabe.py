@@ -120,6 +120,8 @@ class AusgebenderAutomat(object):
 		return open(template).read()
 
 	def writeContent(self, target, content):
+		if isinstance(content, list):
+			content = "\n".join(content)
 		#print("WRITING %s" % target)
 		try:
 			out = open(target, "w")
@@ -130,13 +132,13 @@ class AusgebenderAutomat(object):
 			print e
 		return False
 
-	def writePlaintext(self, targetDir='.', targetFile=None, suffix='.automat'):
+	def writePlaintext(self, targetDir='.', targetFile=None, prefix='', suffix='.automat'):
 		if not targetFile:
 			targetFile = self.name.lower()
 			if targetFile == '':
 				print "OUCH, targetFile=''"
 				return False
-			target = os.path.join(os.path.abspath(targetDir), targetFile + suffix)
+			target = os.path.join(os.path.abspath(targetDir), prefix + targetFile + suffix)
 		else:
 			target = targetFile
 		return self.writeContent(target, self._plaintext())
@@ -315,37 +317,38 @@ class ODotAutomat(AusgebenderAutomat):
 		s = s.replace('//__PATH__', "\n".join(nodes))
 		return s
 
-	def createDotDocument(self, template = None):
+	def createDotDocument(self, template = None, dumpOnly=False):
+		if not template:
+			template = os.path.join(os.path.abspath('output_templates'), 'automat.dot')
+
 		tdir = SelfRemovingTempdir()
 		basename = tdir.getRandomFilename()
-		if not template:
-			template = os.path.join(os.path.abspath('output_templates'), 'template.dot')
 
 		dot_filename = basename + '.gv'
 		pdf_filename = basename + '.pdf'
 
 		returnValue = pdf_filename
 
-		try:
-			out = open(dot_filename, "w")
-			rawLines = self._toDot(template).split("\n")
-			content = list()
-			for line in rawLines:
-				if not line.strip().startswith("//"):
-					content.append(line)
-			out.write("\n".join(content))
-			out.close()
-		except Exception, e:
-			self.log.error(e)
+		rawLines = self._toDot(template).split("\n")
+		content = list()
+		for line in rawLines:
+			if not line.strip().startswith("//"):
+				content.append(line)
+		
+		if dumpOnly:
+			return "\n".join(content)
+
+		if not self.writeContent(dot_filename, content):
 			returnValue = False
 		
-		param = '-Tpdf -o "%s" "%s"' % (pdf_filename, dot_filename)
-		(rc, out, err) = runCommand('dot', param, logger=self.log, workDir=tdir.tmp)
-		if rc != 0:
-			print err
-			print "----------------------"
-			print out
-			returnValue = False
+		if returnValue:
+			param = '-Tpdf -o "%s" "%s"' % (pdf_filename, dot_filename)
+			(rc, out, err) = runCommand('dot', param, logger=self.log, workDir=tdir.tmp)
+			if rc != 0:
+				print err
+				print "----------------------"
+				print out
+				returnValue = False
 		
 		return returnValue
 
@@ -380,7 +383,7 @@ class OLaTeXAutomat(AusgebenderAutomat):
 		for zustand in sorted(self.S):
 			line = [ (zustand in self.F and '{*}' or '') + zustand ]
 			for zeichen in self.Sigma:
-				zielZustand = self._delta(zustand, zeichen)
+				zielZustand = self._delta__str__(zustand, zeichen)
 				line.append(self._fzTex(zielZustand))
 			s.append(r' & '.join(line))
 			s.append(r' \\')
@@ -440,7 +443,7 @@ class OLaTeXAutomat(AusgebenderAutomat):
 	def _TeXAutomatStart(self):
 		return r'\section{%s}' % self.name
 		
-	def _toTeX(self, template, dot_template):
+	def _toTeX(self, template=None, dot_template=None):
 		s = self._readTemplate(template)
 
 		s = s.replace("%%__AUTOMAT__", self._TeXAutomatStart())
