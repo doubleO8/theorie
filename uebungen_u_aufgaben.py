@@ -2017,12 +2017,13 @@ def AutomatenPlaintext(prefix):
 	for item in prefix:
 		automaten = erstelleAutomatenFuer(item)
 		for automat in automaten:
-			automat.writePlaintext(targetDir='/Users/wolf/Desktop/automaten')
+			automat.writePlaintext(targetDir='/Users/wolf/Desktop/automaten', prefix=item + '_')
 
 if __name__ == '__main__':
 	blaetterwald = ['Uebungsblatt1', 'Uebungsblatt2', 'Uebungsblatt3', 'Uebungsblatt4', 'Script']
 	#blaetterwald = ['Uebungsblatt3']
 	#blaetterwald = ['Sonstige']
-	blaetterwald = ['Uebungsblatt4']
+	#blaetterwald = ['Uebungsblatt4']
+	blaetterwald = ['Uebungsblatt2']
 	AutomatenBlatt(blaetterwald)
 	#AutomatenPlaintext(blaetterwald)
