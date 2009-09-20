@@ -1,0 +1,35 @@
+# Automatendefinition
+# Uebungsblatt 10, Aufgabe 3)
+
+Name: U10A3
+Beschreibung: NEA, der RegExp $aa(a|ba)*$ erkennen soll
+
+# Alphabet definieren, muss mit Sigma: beginnen, durch whitespace getrennt
+Sigma: a b EPSILON
+
+# Finale Zustaende definieren, durch whitespace getrennt
+F: Z
+
+# Startzustand definieren, durch whitespace getrennt
+s0: 0
+
+# Uebergaenge
+# Zustand, Zeichen, Zielzustand (durch whitespace getrennt)
+0	a	1
+
+1	a	X
+
+X	EPSILON	Z
+X	EPSILON	I
+
+I	a	II
+I	a	III
+
+II	EPSILON	Z
+III	b	II
+
+Z	EPSILON	X
+
+TestWords:	a b ab aa bb aab aabb
+
+RegularExpression: aa(a|ba)*

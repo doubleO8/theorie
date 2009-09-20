@@ -1,0 +1,29 @@
+# Automatendefinition
+# Uebungsblatt 10, Aufgabe 2)
+
+Name: U10A2
+Beschreibung: Der Automat U10A2 soll in  einen regulaeren Ausdruck verwandelt werden
+
+# Alphabet definieren, muss mit Sigma: beginnen, durch whitespace getrennt
+Sigma: a b
+
+# Finale Zustaende definieren, durch whitespace getrennt
+F: 2
+
+# Startzustand definieren, durch whitespace getrennt
+s0: 0
+
+# Uebergaenge
+# Zustand, Zeichen, Zielzustand (durch whitespace getrennt)
+0	a	1
+0	b	0
+
+1	a	2
+1	b	0
+
+2	a	2
+2	b	1
+
+TestWords:	a b ab aa bb aab aabb
+
+RegularExpression: b*(a|(b|bb*)a)(a|aa*ba|(a|b(a|(b|bb*)a)a))a*

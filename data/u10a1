@@ -1,0 +1,45 @@
+# Automatendefinition
+# Uebungsblatt 10, Aufgabe 1)
+
+Name: U10A1
+Beschreibung: Ein zu minimierender Automat
+
+# Alphabet definieren, muss mit Sigma: beginnen, durch whitespace getrennt
+Sigma: a b
+
+# Finale Zustaende definieren, durch whitespace getrennt
+F: 2 5 8
+
+# Startzustand definieren, durch whitespace getrennt
+s0: 0
+
+# Uebergaenge
+# Zustand, Zeichen, Zielzustand (durch whitespace getrennt)
+0	a	1
+0	b	4
+
+1	a	2
+1	b	5
+
+2	a	3
+2	b	7
+
+3	a	4
+3	b	7
+
+4	a	5
+4	b	8
+
+5	a	6
+5	b	1
+
+6	a	7
+6	b	1
+
+7	a	8
+7	b	2
+
+8	a	0
+8	b	4
+
+TestWords:	a b ab aa bb aab aabb
