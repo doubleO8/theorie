@@ -198,6 +198,36 @@ class NichtDeterministischerAutomat(automatenausgabe.OAsciiAutomat, automatenaus
 				sZeichen = self._toFrozenSet(zeichen)
 				sZiel = self._toFrozenSet(ziel)
 				deltaNeu[zustand][sZeichen] = sZiel
+			
+			loeschBar = list()
+			zielDict = dict()
+			for zeichenMenge in deltaNeu[zustand]:
+				zielMenge = deltaNeu[zustand][zeichenMenge]
+				#self.log.debug("** Zustand '%s' : %s => %s" % (zustand, zeichenMenge, zielMenge))
+				if zielMenge not in zielDict:
+					zielDict[zielMenge] = frozenset()
+				
+				#self.log.debug("== Old: %s, New: %s" % (zielDict[zielMenge], zeichenMenge))
+				zielDict[zielMenge] = zielDict[zielMenge].union(zeichenMenge)
+				#self.log.debug(">> Now: %s" % (zielDict[zielMenge]))
+				loeschBar.append(zeichenMenge)
+				
+			#self.log.error("XX " + self.dump(deltaNeu))
+			for zeichenMenge in loeschBar:
+				#self.log.debug("-- loesche Uebergang fuer '%s': %s" % (zustand, zeichenMenge))
+				del(deltaNeu[zustand][zeichenMenge])
+			#self.log.error("YY " + self.dump(deltaNeu))
+
+			zustandDict = dict()
+			for ziel in zielDict:
+				zeichen = zielDict[ziel]
+				zustandDict[zeichen] = ziel
+
+				self.log.debug(">> Zustand '%s' : %s => %s" % (zustand, zeichen, ziel))
+				deltaNeu[zustand][zeichen] = ziel
+			#self.log.error("ZZ " + self.dump(deltaNeu))
+			
+		#self.log.debug(deltaNeu)
 		return deltaNeu
 
 	def _initLogging(self):
@@ -293,7 +323,10 @@ class NichtDeterministischerAutomat(automatenausgabe.OAsciiAutomat, automatenaus
 		# Ein paar meta Daten ..
 		self.name = name
 		self.ZustandIndex = dict()
-		self.testWords = testWords
+		if testWords:
+			self.testWords = self._toList(testWords)
+		else:
+			self.testWords = list()
 		self.verifyWords = verifyWords
 		self.verifyRegExp = verifyRegExp
 		self.beschreibung = beschreibung
@@ -320,6 +353,17 @@ class NichtDeterministischerAutomat(automatenausgabe.OAsciiAutomat, automatenaus
 			s += self._getAsciiArtDeltaTable()
 		s += " (%se Überführungsfunktion)\n" % (self.istDeltaVollstaendig() and 'vollständig' or 'partiell')
 		return s
+
+	def dump(self, delta=None):
+		if not delta:
+			delta = self.delta
+		l = list()
+		for zustand in sorted(delta):
+			l.append("%s" % (zustand))
+			for zeichenMenge in sorted(delta[zustand]):
+				zielMenge = delta[zustand][zeichenMenge]
+				l.append(" %-10s : %s" % (repr(zeichenMenge), repr(zielMenge)))
+		return "\n".join(l)
 
 	def _ableitungsPfad__str__(self):
 		if len(self.ableitungsPfad) == 0:
