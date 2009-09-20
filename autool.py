@@ -14,6 +14,11 @@ parser.add_option('-p', "--print",
 					help="Print ASCII representation of the automaton",
 					dest="ascii")
 
+parser.add_option('-d', "--dump",
+					action="store_true", default=False,
+					help="Print raw data",
+					dest="dump")
+
 parser.add_option('-v', "--verify",
 					action="store_true", default=False,
 					help="Verify automaton",
@@ -23,6 +28,11 @@ parser.add_option('-t', "--test-words",
 					default=False,
 					help="Test words (seperated by whitespace)",
 					dest="testWords")
+
+parser.add_option("--dot-dump",
+					action="store_true", default=False,
+					help="Dump DOT source",
+					dest="dotdump")
 
 parser.add_option('-w', "--write-pdf",
 					default=False,
@@ -57,8 +67,14 @@ for file in files:
 		A = AutomatenLeser(filename=file).automat()
 		automaten.append(A)
 	
+		if options.dump:
+			print A.dump()
+
 		if options.ascii:
 			print A
+
+		if options.dotdump:
+			print A.createDotDocument(dumpOnly=True)
 	
 		if options.verify:
 			A.verify()
