@@ -89,7 +89,7 @@ class AutomatenLeser(object):
 			else:
 				splatter = line.split()
 				if len(splatter) != 3:
-					self.log.warning("Konnte Ueberfuehrungsdefinition nicht aus '%s' lesen" % line)
+					self.log.warning("[%s] Konnte Ueberfuehrungsdefinition nicht aus '%s' lesen" % (name,line))
 				else:
 					(zustand, zeichen, ziel) = splatter
 					S.add(zustand)
