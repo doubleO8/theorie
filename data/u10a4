@@ -1,0 +1,35 @@
+# Automatendefinition
+# Uebungsblatt 10, Aufgabe 4)
+
+Name: U10A4
+Beschreibung: DEA, minimiert (U10A3)
+
+# Alphabet definieren, muss mit Sigma: beginnen, durch whitespace getrennt
+Sigma: a b
+
+# Finale Zustaende definieren, durch whitespace getrennt
+F: XZII ZORN
+
+# Startzustand definieren, durch whitespace getrennt
+s0: 0
+
+# Uebergaenge
+# Zustand, Zeichen, Zielzustand (durch whitespace getrennt)
+0	a	1
+0	b	F
+
+1	a	XZII
+1	b	F
+
+XZII	a	ZORN
+XZII	b	F
+
+ZORN	a	ZORN
+ZORN	b	XZII
+
+F	a	F
+F	b	F
+
+TestWords:	a b ab aa bb aab aabb
+
+RegularExpression: aa(a|ba)*
