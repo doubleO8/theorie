@@ -4,7 +4,11 @@ from automaten import *
 from automatenausgabe import *
 from automatenleser import *
 
+import traceback
+from optparse import OptionParser
 import re
+
+DEFAULT_PREFIX_LIST = ['Script', 'Uebungsblatt1', 'Uebungsblatt2', 'Uebungsblatt3', 'Uebungsblatt4', 'Uebungsblatt10']
 
 def int2bin(value, fill=0):
 	result = list()
@@ -1991,39 +1995,134 @@ def Uebungsblatt4_Aufgabe3e():
 	A.testWords = A.testWorteGenerator(Sigma=list(['0', '1', '101']))
 	return A
 
-def erstelleAutomatenFuer(prefix):
+def erstelleAutomatenListeFuer(prefix):
+	if not isinstance(prefix, list):
+		prefix = [prefix]
 	automaten = list()
 	fNames = list()
 	for item in globals().keys():
-		if item.startswith(prefix + '_'):
-			fNames.append(item)
-	
-	for item in sorted(fNames):
+		for aPrefix in prefix:
+			if item.startswith(aPrefix):
+				fNames.append(item)
+	return sorted(fNames)
+
+def erstelleAutomaten(automatenListe):
+	automaten = list()
+	for item in automatenListe:
 		automaten.append(eval(item + '()'))
 	return automaten
 
-def AutomatenBlatt(prefix):
-	if not isinstance(prefix, list):
-		prefix = [prefix]
+def erstelleAutomatenFuer(prefix):
+	automatenListe = erstelleAutomatenListeFuer(prefix)
+	return erstelleAutomaten(automatenListe)
 
-	for item in prefix:
+def AutomatenBlatt(automatenListe, finalFileBase='AutomatenReport'):
+	for item in automatenListe:
 		automaten = erstelleAutomatenFuer(item)
-		automatenReport(automaten, finalFileBase=item)
+		automatenReport(automaten, finalFileBase=finalFileBase)
 
-def AutomatenPlaintext(prefix):
-	if not isinstance(prefix, list):
-		prefix = [prefix]
+def AutomatenPlaintext(automatenListe, targetDir='.'):
+	automaten = erstelleAutomaten(automatenListe)
+	for automat in automaten:
+		automat.writePlaintext(targetDir=targetDir)
 
-	for item in prefix:
-		automaten = erstelleAutomatenFuer(item)
-		for automat in automaten:
-			automat.writePlaintext(targetDir='/Users/wolf/Desktop/automaten', prefix=item + '_')
+# parse options et al
+parser = OptionParser()
 
-if __name__ == '__main__':
-	blaetterwald = ['Script', 'Uebungsblatt1', 'Uebungsblatt2', 'Uebungsblatt3', 'Uebungsblatt4', 'Uebungsblatt10']
-	#blaetterwald = ['Uebungsblatt3']
-	#blaetterwald = ['Sonstige']
-	#blaetterwald = ['Uebungsblatt4']
-	#blaetterwald = ['Uebungsblatt2']
-	#AutomatenBlatt(blaetterwald)
-	AutomatenPlaintext(blaetterwald)
+parser.add_option('-a', "--print",
+					action="store_true", default=False,
+					help="Print ASCII representation of the automaton",
+					dest="ascii")
+
+parser.add_option('-d', "--dump",
+					action="store_true", default=False,
+					help="Print raw data",
+					dest="dump")
+
+parser.add_option('-l', "--list",
+					action="store_true", default=False,
+					help="List automatons",
+					dest="list")
+
+parser.add_option("--log-debug",
+					action="store_const", const=logging.DEBUG,
+					default=logging.INFO,
+					help="set loglevel to DEBUG",
+					dest="loglevel")
+
+parser.add_option("--log-info",
+					action="store_const", const=logging.INFO,
+					help="set loglevel to INFO",
+					dest="loglevel")
+
+parser.add_option("--log-warning",
+					action="store_const", 
+					const=logging.WARNING,
+					help="set loglevel to WARNING",
+					dest="loglevel")
+
+parser.add_option('-o', "--write-plaintext",
+					default=False,
+					help="write plaintext automaton to DIR",
+					dest="dir")
+
+parser.add_option("--prefix",
+					default='all',
+					help="Prefix to use. Possible values: %s" % ','.join(DEFAULT_PREFIX_LIST),
+					dest="prefix")
+
+parser.add_option('-t', "--test-words",
+					default=False,
+					help="Test words (seperated by whitespace)",
+					dest="testWords")
+
+parser.add_option('-v', "--verify",
+					action="store_true", default=False,
+					help="Verify automaton",
+					dest="verify")
+
+parser.add_option('-w', "--write-pdf",
+					default=False,
+					help="Create automaton report PDF",
+					dest="pdf")
+
+(options, files) = parser.parse_args()
+
+# Logging init
+logger = AutomatLogger(options.loglevel).log
+
+if options.prefix == 'all':
+	options.prefix = DEFAULT_PREFIX_LIST
+
+automatenListe = erstelleAutomatenListeFuer(options.prefix)
+
+if options.dump or options.ascii or options.verify or options.testWords:
+	automaten = erstelleAutomaten(automatenListe)
+	for A in automaten:
+		if options.dump:
+			print A.dump()
+	
+		if options.ascii:
+			print A
+	
+		if options.verify:
+			A.verify()
+			A.verifyByRegExp()
+		
+		if options.testWords:
+			words = options.testWords.split()
+			A.checkWords(words)
+			A.verifyByRegExp(words)
+
+if options.list:
+	for aName in automatenListe:
+		logger.info("%s" % aName)
+
+if options.dir:
+	AutomatenPlaintext(automatenListe, targetDir=options.dir)
+	
+if options.pdf:
+	filebase = options.pdf
+	if options.pdf.lower().endswith('.pdf'):
+		filebase = options.pdf[:-4]
+	AutomatenBlatt(automatenListe, finalFileBase=filebase)
