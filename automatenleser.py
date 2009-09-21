@@ -3,14 +3,14 @@
 import os, sys, tempfile, shutil, random, atexit, re
 from subprocess import *
 import logging
-from automaten import *
+import automaten
 
 def test():
 	"""
 	doctest (unit testing)
 	"""
 	import doctest
-	AutomatLogger(logging.DEBUG).log
+	automaten.AutomatLogger(logging.DEBUG).log
 	failed, total = doctest.testmod()
 	print("doctest: %d/%d tests failed." % (failed, total))
 
@@ -128,16 +128,19 @@ class AutomatenLeser(object):
 
 		return (S, s0, F, Sigma, delta, name, beschreibung, verifyWords, testWords, verifyRegExp)
 
-	def _initLogging(self):
-		self.log = AutomatLogger().log
+	def _initLogging(self, log=None):
+		if not log:
+			self.log = automaten.AutomatLogger().log
+		else:
+			self.log = log
 
 	def automat(self):
 		(S, s0, F, Sigma, delta, name, beschreibung, verifyWords, testWords, verifyRegExp) = self.parsePlaintext()
-		if EpsilonAutomat.EPSILON in Sigma:
-			return EpsilonAutomat(S, s0, F, Sigma, delta, name, beschreibung, verifyWords=verifyWords, testWords=testWords, verifyRegExp=verifyRegExp)
-		return NichtDeterministischerAutomat(S, s0, F, Sigma, delta, name, beschreibung, verifyWords=verifyWords, testWords=testWords, verifyRegExp=verifyRegExp)
+		if automaten.EpsilonAutomat.EPSILON in Sigma:
+			return automaten.EpsilonAutomat(S, s0, F, Sigma, delta, name, beschreibung, verifyWords=verifyWords, testWords=testWords, verifyRegExp=verifyRegExp)
+		return automaten.NichtDeterministischerAutomat(S, s0, F, Sigma, delta, name, beschreibung, verifyWords=verifyWords, testWords=testWords, verifyRegExp=verifyRegExp)
 
-	def __init__(self, filename=None, contentList=None, data=None, dataDelimiter="\n"):
+	def __init__(self, filename=None, contentList=None, data=None, dataDelimiter="\n", log=None):
 		"""
 		>>> AutomatenLeser()
 		Traceback (most recent call last):
@@ -160,7 +163,7 @@ class AutomatenLeser(object):
 		>>> L.beschreibung
 		'DumbAutomat'
 		"""
-		self._initLogging()
+		self._initLogging(log)
 		self.lines = list()
 		content = list()
 		

@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 import logging, logging.config, os, sys, re
-import automatenausgabe
+import automatenausgabe, automatenleser
 
 if 'USED_LOGLEVEL' not in dir():
 	USED_LOGLEVEL = logging.INFO
@@ -92,6 +92,10 @@ class NoRuleForStateException(AutomatException):
 	def __init__(self, value, statesWithRules=list(), ableitungspfad=list()):
 		AutomatException.__init__(self, value, frozenset(statesWithRules), 'hat keine definierten Regeln.', ableitungspfad)
 
+class EmptyStateException(AutomatException):
+	def __init__(self, value, statesWithRules=list(), ableitungspfad=list()):
+		AutomatException.__init__(self, value, frozenset(statesWithRules), 'Leere Zustandsmenge', ableitungspfad)
+
 def test():
 	"""
 	doctest (unit testing)
@@ -117,6 +121,8 @@ class NichtDeterministischerAutomat(automatenausgabe.OAsciiAutomat, automatenaus
 		elif isinstance(what, list):
 			return what
 		elif isinstance(what, tuple):
+			return list(what)
+		elif isinstance(what, frozenset):
 			return list(what)
 		else:
 			raise ValueError("Cannot convert '%s' to list()" % str(what))
@@ -473,6 +479,11 @@ class NichtDeterministischerAutomat(automatenausgabe.OAsciiAutomat, automatenaus
 		"""
 		# Sicherstellen, dass Zeichen ein String ist
 		Zeichen = str(Zeichen)
+		#self.log.debug("_delta(%s, %s)" % (Zustand, Zeichen))
+		
+		if Zustand == frozenset([]):
+			self.log.error("[%s] Zustand '%s' Ausgangszustand ist leere Menge!" % (self.name, repr(Zustand)))
+			return frozenset([])
 		
 		# Pruefen, ob das zu lesende Zeichen ueberhaupt Teil der Menge der Eingabezeichen ist
 		if Zeichen not in self.Sigma:
@@ -500,7 +511,11 @@ class NichtDeterministischerAutomat(automatenausgabe.OAsciiAutomat, automatenaus
 			raise ValueError()
 
 		# Da Namen der Zustaende Strings sind, brauchen wir den Zustand auch als String
-		stringZustand = list(Zustand)[0]
+		try:
+			stringZustand = list(Zustand)[0]
+		except Exception, e:
+			self.log.error("[%s] Zustand '%s' Ausgangszustand ist leere Menge!" % (self.name, repr(Zustand)))
+			return frozenset([])
 
 		# Pruefen, ob der zu behandelnde Zustand ueberhaupt Teil der Zustandsmenge ist
 		if not Zustand.issubset(self.S):
@@ -569,9 +584,16 @@ class NichtDeterministischerAutomat(automatenausgabe.OAsciiAutomat, automatenaus
 		Wort = str(Wort)
 
 		for Zeichen in Wort:
+			#self.log.error(Zeichen)
 			try:
 				altZustand = self.Zustand
+				#self.log.error(">------------ %s" % self.Zustand)
 				self.Zustand = self._delta(self.Zustand, Zeichen)
+				#self.log.error("------------> %s" % self.Zustand)
+
+				#self.log.error("============")
+				#self.log.error("altZustand >> %s len:%s" % (altZustand, len(self.Zustand)))
+				#self.log.error("Zustand >>>>> %s len:%s" % (self.Zustand, len(self.Zustand)))
 				self.ableitungsPfad.append(self.Zustand)
 				if len(self.Zustand) == 0:
 					msg = "Kein Ziel-Zustand fuer Zeichen '%s' (Alphabet: %s)" % (Zeichen, self._fzString(self.Sigma))
@@ -590,6 +612,11 @@ class NichtDeterministischerAutomat(automatenausgabe.OAsciiAutomat, automatenaus
 				if doRaise:
 					raise
 				return False
+			except EmptyStateException, e:
+				self.log.error("Empty state ..")
+				if doRaise:
+					raise
+				return False	
 
 		if len(self.Zustand.intersection(self.F)) == 0:
 			self.log.debug("Kein Endzustand erreicht.")
@@ -668,6 +695,9 @@ class NichtDeterministischerAutomat(automatenausgabe.OAsciiAutomat, automatenaus
 		self.log.info("Automat '%s' %sverifiziert" % (self.name, (not verified and 'NICHT ') or ''))
 		return verified
 
+	def EpsilonFrei(self):
+		return self
+
 class Automat(NichtDeterministischerAutomat):
 	def __init__(self, S, s0, F, Sigma, delta, name="EinDEA", beschreibung='', testWords=None, verifyWords=None, verifyRegExp=None):
 		"""
@@ -731,33 +761,137 @@ class EpsilonAutomat(NichtDeterministischerAutomat):
 		Sigma.append(EpsilonAutomat.EPSILON)
 		NichtDeterministischerAutomat.__init__(self, S, s0, F, Sigma, delta, name, beschreibung, testWords, verifyWords, verifyRegExp)
 
+	def _deltaEpsilonLookAhead(self, Zustand):
+		leereMenge = frozenset([])
+		eErreichbareZustaende = leereMenge
+
+		# Zunaechst schauen wir, wie weit wir mit einem Epsilon vom gegebenen Zustand kommen
+		eZustaendeEpsilon = NichtDeterministischerAutomat._delta(self, Zustand, EpsilonAutomat.EPSILON).difference(Zustand)
+		while not (eZustaendeEpsilon == leereMenge):
+			self.log.debug("** eZustaendeEpsilon     : %s %s" % (eZustaendeEpsilon, (eZustaendeEpsilon==leereMenge)))
+			self.log.debug(" < eZustaendeEpsilon     : %s" % eZustaendeEpsilon)
+			eErreichbareZustaende = eErreichbareZustaende.union(eZustaendeEpsilon).difference(Zustand)
+			self.log.debug(" = eErreichbareZustaende : %s" % eErreichbareZustaende)
+			eZustaendeEpsilon = NichtDeterministischerAutomat._delta(self, eZustaendeEpsilon, EpsilonAutomat.EPSILON).difference(eErreichbareZustaende)
+
+		self.log.debug(">> eErreichbareZustaende : %s" % eErreichbareZustaende)
+		return eErreichbareZustaende
+
 	def _delta(self, Zustand, Zeichen):
 		"""
+		>>> automatenString='Sigma: a b EPSILON; F:4; s0:0;'
+		>>> automatenString += '0 a 2; 0 EPSILON 1; 1 EPSILON 3; 2 b 2; 3 a 4; 2 a 5; 2 EPSILON 7; 1 a 6; 6 a 6; 4 a 4; 5 a 5; 7 a 7;'
+		>>> automatenString += 'AcceptedVerifyWords: a;FailingVerifyWords: b ba aa;Beschreibung:eAutomat;Name:eNEA'
+		>>> L = automatenleser.AutomatenLeser(data=automatenString, dataDelimiter=';').automat()
+		>>> print L._delta('0', 'a')
+		frozenset(['2', '4', '7', '6'])
+		>>> print L._delta('1', 'a')
+		frozenset(['4', '6'])
+		>>> print L._delta('1', 'b')
+		frozenset([])
+		>>> print L._delta('2', 'a')
+		frozenset(['5', '7'])
+		>>> automatenString='Sigma: a b EPSILON; F:2; s0:0;'
+		>>> automatenString += '0 EPSILON 1; 1 EPSILON 0; 1 a 2; 2 EPSILON 0;'
+		>>> L = automatenleser.AutomatenLeser(data=automatenString, dataDelimiter=';').automat()
+		>>> print L._delta('0', 'a')
+		frozenset(['1', '0', '2'])
 		"""
+		self.log.debug("_delta<EpsilonAutomat>(%s, %s)" % (Zustand, Zeichen))
 		leereMenge = frozenset([])
-		zielMenge = NichtDeterministischerAutomat._delta(self, Zustand, Zeichen)
-		self.log.debug("%s(%s) : zM: %s." % (Zustand, Zeichen, zielMenge))
-		if zielMenge == leereMenge:
-			epsilonMenge = NichtDeterministischerAutomat._delta(self, Zustand, EpsilonAutomat.EPSILON)
-			self.log.debug("%s : zM: %s; eM: %s" % (Zeichen, zielMenge, epsilonMenge))
-			
-			gesehen = dict()
-			while epsilonMenge != leereMenge:
-				self.log.debug("Mit Epsilon gehts weiter .. -> %s" % epsilonMenge)
-				zielMenge = NichtDeterministischerAutomat._delta(self, epsilonMenge, Zeichen)
-				if not gesehen.has_key(zielMenge):
-					gesehen[zielMenge] = 0
-				gesehen[zielMenge] += 1
-				
-				if gesehen[zielMenge] > 2:
-					self.log.warning("loop %s" % gesehen)
-					return leereMenge
-				if zielMenge != leereMenge:
-					self.log.debug("==>> %s" % zielMenge)
-					return zielMenge
-				epsilonMenge = NichtDeterministischerAutomat._delta(self, epsilonMenge, EpsilonAutomat.EPSILON)
-			self.log.debug("auch epsilon menge war nix")
-		return zielMenge
+
+		eAusgangsZustaende = Zustand
+		ausgangsZustaende = frozenset([Zustand])
+		eErreichbareZustaende = leereMenge
+		
+		if Zeichen != EpsilonAutomat.EPSILON:
+			eErreichbareZustaende = self._deltaEpsilonLookAhead(Zustand)
+		else:
+			self.log.debug("No Epsilon Lookahead")
+
+		self.log.debug("! eErreichbareZustaende : %s" % eErreichbareZustaende)
+		ausgangsZustaende = frozenset([Zustand]).union(eErreichbareZustaende.union(ausgangsZustaende)).difference(leereMenge)
+		self.log.debug("! ausgangsZustaende : %s" % (ausgangsZustaende))
+		
+		if ausgangsZustaende == leereMenge:
+			self.log.warning("Menge der Ausgangszustaende ist leer")
+			return leereMenge
+
+		erreichbareZustaende = leereMenge
+		for item in ausgangsZustaende:
+			#self.log.debug("item : %s" % item)
+			fin = NichtDeterministischerAutomat._delta(self, item, Zeichen)
+			eFin = leereMenge
+			if fin != leereMenge:
+				if Zeichen != EpsilonAutomat.EPSILON:
+					eFin = self._deltaEpsilonLookAhead(fin.difference(eErreichbareZustaende))
+			#self.log.debug("+ eFin: %s" % eFin)
+			erreichbareZustaende = erreichbareZustaende.union(fin, eFin)
+
+		erreichbareZustaende = erreichbareZustaende.difference(leereMenge)
+		if erreichbareZustaende == leereMenge:
+			self.log.debug("Menge der erreichbaren Zustaende ist leer")
+
+		erreichbareZustaende = erreichbareZustaende.difference(leereMenge)
+		self.log.debug("Erreichbare Zustaende : %s" % erreichbareZustaende)
+
+		return erreichbareZustaende
+
+	def EpsilonFrei(self):
+		"""
+		>>> automatenString='Sigma: a b EPSILON; F:2; s0:0;'
+		>>> automatenString += '0 EPSILON 1; 1 EPSILON 0; 1 a 2; 2 EPSILON 0;'
+		>>> L = automatenleser.AutomatenLeser(data=automatenString, dataDelimiter=';').automat()
+		>>> print L.Sigma
+		frozenset(['a', 'EPSILON', 'b'])
+		>>> print L._delta('0', 'a')
+		frozenset(['1', '0', '2'])
+		>>> print L.delta
+		{'1': {frozenset(['a']): frozenset(['2']), frozenset(['EPSILON']): frozenset(['0'])}, '0': {frozenset(['EPSILON']): frozenset(['1'])}, '2': {frozenset(['EPSILON']): frozenset(['0'])}}
+		>>> N = L.EpsilonFrei()
+		>>> print N._delta('0', 'a')
+		frozenset(['1', '0', '2'])
+		>>> print N.delta
+		{'1': {frozenset(['a']): frozenset(['1', '0', '2'])}, '0': {frozenset(['a']): frozenset(['1', '0', '2'])}, '2': {frozenset(['a']): frozenset(['1', '0', '2'])}}
+		>>> print N.Sigma
+		frozenset(['a', 'b'])
+		>>> L.check("a") == N.check("a")
+		True
+		>>> L._delta('0', 'a') == N._delta('0', 'a')
+		True
+		>>> L.F == N.F
+		True
+		>>> automatenString='Sigma: a b EPSILON; F:1; s0:0;'
+		>>> automatenString += '0 EPSILON 1; 0 b 1; 1 EPSILON 1;'
+		>>> L2 = automatenleser.AutomatenLeser(data=automatenString, dataDelimiter=';').automat()
+		>>> N2 = L2.EpsilonFrei()
+		>>> print L2.F
+		frozenset(['1'])
+		>>> print N2.F
+		frozenset(['1', '0'])
+		>>> L2 != N2
+		True
+		>>> print N2.delta
+		{'1': {}, '0': {frozenset(['b']): frozenset(['1'])}}
+		"""
+		neuDelta = dict()
+		fzEpsilon = frozenset([EpsilonAutomat.EPSILON])
+		
+		for zustand in self.S:
+			neuDelta[zustand] = dict()
+			neuF = self.F
+			for zeichen in self.Sigma.difference(fzEpsilon):
+				ziele = self._delta(zustand, zeichen)
+				if not ziele == frozenset([]):
+					neuDelta[zustand][zeichen] = ziele
+				# Epsilon-Uebergaenge die zu einem Endzustand fuehren, sorgen dafuer, dass der
+				# ausgangsZustand auch ein Endzustand werden muss
+				eZiele = self._delta__str__(zustand, EpsilonAutomat.EPSILON)
+				if self.F.intersection(eZiele) != frozenset([]):
+					neuF = neuF.union(frozenset([zustand]))
+		return NichtDeterministischerAutomat(self.S, self.s0, neuF, self.Sigma.difference(fzEpsilon), neuDelta, 
+				'eFrei ' + self.name, self.beschreibung, self.testWords, self.verifyWords,
+				self.verifyRegExp)
 
 	def _delta__str__(self, Zustand, Zeichen):
 		"""

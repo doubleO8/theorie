@@ -2020,10 +2020,10 @@ def AutomatenPlaintext(prefix):
 			automat.writePlaintext(targetDir='/Users/wolf/Desktop/automaten', prefix=item + '_')
 
 if __name__ == '__main__':
-	blaetterwald = ['Uebungsblatt1', 'Uebungsblatt2', 'Uebungsblatt3', 'Uebungsblatt4', 'Script']
+	blaetterwald = ['Script', 'Uebungsblatt1', 'Uebungsblatt2', 'Uebungsblatt3', 'Uebungsblatt4', 'Uebungsblatt10']
 	#blaetterwald = ['Uebungsblatt3']
 	#blaetterwald = ['Sonstige']
 	#blaetterwald = ['Uebungsblatt4']
-	blaetterwald = ['Uebungsblatt2']
-	AutomatenBlatt(blaetterwald)
-	#AutomatenPlaintext(blaetterwald)
+	#blaetterwald = ['Uebungsblatt2']
+	#AutomatenBlatt(blaetterwald)
+	AutomatenPlaintext(blaetterwald)

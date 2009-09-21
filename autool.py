@@ -3,7 +3,7 @@
 from automaten import *
 from automatenausgabe import *
 from automatenleser import *
-
+import traceback
 from optparse import OptionParser
 
 # parse options et al
@@ -64,7 +64,7 @@ logger = AutomatLogger(options.loglevel).log
 automaten = list()
 for file in files:
 	try:
-		A = AutomatenLeser(filename=file).automat()
+		A = AutomatenLeser(filename=file, log=logger).automat()
 		automaten.append(A)
 	
 		if options.dump:
@@ -86,6 +86,8 @@ for file in files:
 			A.verifyByRegExp(words)
 	except Exception, e:
 		logger.error("[EXCEPTION] '%s' %s" % (file, e))
+		traceback.print_exc(file=sys.stdout)
+
 
 if options.pdf and len(automaten) > 0:
 	filebase = options.pdf

@@ -61,6 +61,7 @@ def runCommand(command, parameter=None, logger=None, workDir=os.getcwd(), validR
 				logger.error("Ausfuehrung schlug fehl : %d" % -retcode)
 			elif retcode > 0:
 				logger.warning("Ausfuehrung return code : %d" % retcode)
+			logger.error("%s" % cmd)
 			logger.error("STDERR Output:")
 			logger.error(stderr)
 			logger.debug("STDOUT Output:")
@@ -129,7 +130,7 @@ class AusgebenderAutomat(object):
 			out.close()
 			return True
 		except Exception, e:
-			print e
+			self.log.error(e)
 		return False
 
 	def writePlaintext(self, targetDir='.', targetFile=None, prefix='', suffix='.automat'):
@@ -355,9 +356,11 @@ class ODotAutomat(AusgebenderAutomat):
 class OLaTeXAutomat(AusgebenderAutomat):
 	def _TeXSpecification(self):
 		s = list()
-		aTyp = "%seterministischer Automat" % ((self.istDEA() and 'D' or 'Nichtd'))
+		aTyp = "(%seterministischer) Automat" % ((self.istDEA() and 'D' or 'Nichtd'))
 
-		s.append(r'\textbf{%s \emph{%s}}' % (aTyp, self.name))
+		name = self.name.replace("_", ' ')
+		
+		s.append(r'\textbf{%s \emph{%s}}' % (aTyp, name))
 		if EPSILON in self.Sigma:
 			s.append(r" ($\epsilon$-Übergänge möglich)")
 
@@ -491,19 +494,22 @@ class LaTeXBinder(AusgebenderAutomat):
 		if not self.writeContent(self.texTarget, binder):
 			return
 
-		(rc, out, err) = runCommand(PDFLATEX_BIN, ('-interaction batchmode "%s"' % self.texTarget), workDir=self.t.tmp)
-		if rc != 0:
+		validReturnCodes = [0, 1]
+		(rc, out, err) = runCommand(PDFLATEX_BIN, ('-interaction batchmode "%s"' % self.texTarget), workDir=self.t.tmp, validReturnCodes=validReturnCodes)
+		if not (rc in validReturnCodes):
 			print err
 			print "----------------------"
 			print out
+			self.t.removeAtExit = False
 
-		if rc == 0:
-			(rc, out, err) = runCommand(PDFLATEX_BIN, ('-interaction batchmode "%s"' % self.texTarget), workDir=self.t.tmp)
+		if rc in validReturnCodes:
+			(rc, out, err) = runCommand(PDFLATEX_BIN, ('-interaction batchmode "%s"' % self.texTarget), workDir=self.t.tmp, validReturnCodes=validReturnCodes)
 			if rc != 0:
 				print err
 				print "----------------------"
 				print out
-			if rc == 0 and os.path.isfile(self.pdfTarget):
+				self.t.removeAtExit = False
+			if (rc in validReturnCodes) and os.path.isfile(self.pdfTarget):
 				shutil.move(self.pdfTarget, self.finalFile)
 				runCommand('open', '"%s"' % self.finalFile)
 
