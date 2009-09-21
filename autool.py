@@ -53,7 +53,7 @@ parser.add_option("--log-info",
 parser.add_option("--log-warning",
 					action="store_const", 
 					const=logging.WARNING,
-					help="set loglevel to DEBUG",
+					help="set loglevel to WARNING",
 					dest="loglevel")
 
 (options, files) = parser.parse_args()
