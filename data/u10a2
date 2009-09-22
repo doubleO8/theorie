@@ -26,4 +26,5 @@ s0: 0
 
 TestWords:	a b ab aa bb aab aabb
 
-RegularExpression: b*(a|(b|bb*)a)(a|aa*ba|(a|b(a|(b|bb*)a)a))a*
+#RegularExpression: b*(a|(b|bb*)a)(a|aa*ba|(a|b(a|(b|bb*)a)a))a*
+RegularExpression: b*a(bb*a)*a(a*|b(bb*a)a)
