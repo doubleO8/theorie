@@ -36,14 +36,17 @@ class AutomatenLeser(object):
 			self.log.error("Konnte Definition von %s nicht aus '%s' lesen." % (description, data))
 		return None
 
-	def parsePlaintext(self, lines = None):
+	def parsePlaintext(self, lines = None, description='<Lines>'):
 		if lines == None:
 			lines = self.lines
+		if self.filename:
+			description = '<File> %s' % self.filename
 
 		Sigma = None
 		F = None
 		s0 = None
 		S = set()
+		Sread = None
 		delta = dict()
 		name = 'EinAutomat'
 		beschreibung = ''
@@ -62,6 +65,10 @@ class AutomatenLeser(object):
 				if Sigma != None:
 					self.log.warning("Sigma bereits definiert (%s)" % Sigma)
 				Sigma = self._teileOderJaule(line, 'Sigma')
+			elif line.startswith("S:"):
+				if Sread != None:
+					self.log.warning("Sread bereits definiert (%s)" % F)
+				Sread = self._teileOderJaule(line, 'S')
 			elif line.startswith("F:"):
 				if F != None:
 					self.log.warning("F bereits definiert (%s)" % F)
@@ -89,7 +96,7 @@ class AutomatenLeser(object):
 			else:
 				splatter = line.split()
 				if len(splatter) != 3:
-					self.log.warning("[%s] Konnte Ueberfuehrungsdefinition nicht aus '%s' lesen" % (name,line))
+					self.log.warning("%s: [%s] Konnte Ueberfuehrungsdefinition nicht aus '%s' lesen" % (description, name,line))
 				else:
 					(zustand, zeichen, ziel) = splatter
 					S.add(zustand)
@@ -114,11 +121,19 @@ class AutomatenLeser(object):
 				verifyWords[fail] = False
 			for accept in acceptedWords:
 				verifyWords[accept] = True
-				
+
+		if Sread:
+			Sread = set(Sread)
+			self.log.debug("S=%s wird erweitert um Sread=%s" % (S, Sread))
+			S = S.union(Sread)
+			for zustand in Sread:
+				if not delta.has_key(zustand):
+					delta[zustand] = dict()
 		self.log.debug("Name: '%s'" % name)
 		self.log.debug("Beschreibung: '%s'" % beschreibung)
 		self.log.debug("Sigma: %s" % Sigma)
 		self.log.debug("S: %s" % S)
+		self.log.debug("Sread: %s" % Sread)
 		self.log.debug("s0: %s" % s0)
 		self.log.debug("F: %s" % F)
 		self.log.debug("delta: %s" % delta)
@@ -165,9 +180,11 @@ class AutomatenLeser(object):
 		"""
 		self._initLogging(log)
 		self.lines = list()
+		self.filename = None
 		content = list()
 		
 		if filename != None:
+			self.filename = filename
 			content = self._strippedList(self._getFileContent(filename))
 		elif contentList != None:
 			content = contentList

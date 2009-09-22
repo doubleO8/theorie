@@ -584,16 +584,9 @@ class NichtDeterministischerAutomat(automatenausgabe.OAsciiAutomat, automatenaus
 		Wort = str(Wort)
 
 		for Zeichen in Wort:
-			#self.log.error(Zeichen)
 			try:
 				altZustand = self.Zustand
-				#self.log.error(">------------ %s" % self.Zustand)
 				self.Zustand = self._delta(self.Zustand, Zeichen)
-				#self.log.error("------------> %s" % self.Zustand)
-
-				#self.log.error("============")
-				#self.log.error("altZustand >> %s len:%s" % (altZustand, len(self.Zustand)))
-				#self.log.error("Zustand >>>>> %s len:%s" % (self.Zustand, len(self.Zustand)))
 				self.ableitungsPfad.append(self.Zustand)
 				if len(self.Zustand) == 0:
 					msg = "Kein Ziel-Zustand fuer Zeichen '%s' (Alphabet: %s)" % (Zeichen, self._fzString(self.Sigma))
@@ -671,28 +664,32 @@ class NichtDeterministischerAutomat(automatenausgabe.OAsciiAutomat, automatenaus
 			self.log.debug("Cannot verify by Regular Expression, returning True")
 			return True
 		vWords = self._RegularExpressionTestWorte(testWords, regexp)
-		self.log.info("Verify by Regular Expression:")
+		self.log.debug("Verify by Regular Expression:")
 		return self.verify(vWords)
 		
 	def verify(self, vWords=None):
 		verified = True
 		if vWords == None:
-			if self.verifyWords != None:
-				vWords = self.verifyWords
+			vWords = self.verifyWords
 		
 		if vWords == None or (isinstance(vWords, dict) and len(vWords) == 0):
-			self.log.warning("%s: Will not be verified." % self.name)
+			self.log.warning("%s: Will not be verified. (No words to check)" % self.name)
 			return
 
 		for word in vWords:
 			expectation = vWords[word]
 			result = self.check(word)
-			self.log.info("[VERIFY] %-10s expecting: %-5s, got: %-5s" % (word, expectation, result))
+			self.log.debug("[VERIFY] %-10s expecting: %-5s, got: %-5s" % (word, expectation, result))
 			if expectation != result:
-				self.log.error("%s: '%s' failed!" % (self.name, word))
+				self.log.warning("%s: '%s' verification failed! (expected: %s)" % (self.name, word, expectation))
 				self.log.debug(self.ableitungsPfad)
 				verified = False
-		self.log.info("Automat '%s' %sverifiziert" % (self.name, (not verified and 'NICHT ') or ''))
+
+		logmessage = "Automat '%s' %sverifiziert" % (self.name, (not verified and 'NICHT ') or '')
+		if verified:
+			self.log.info(logmessage)
+		else:
+			self.log.warning(logmessage)
 		return verified
 
 	def EpsilonFrei(self):

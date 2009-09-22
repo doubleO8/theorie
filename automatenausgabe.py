@@ -153,18 +153,24 @@ class OPlaintextAutomat(AusgebenderAutomat):
 		return out
 
 	def _addSigma(self):
-		return ['# Alphabet definieren. Muss mit "Sigma:" beginnen, durch Whitespace getrennt.', "Sigma:\t" + ' '.join(list(self.Sigma)) ]
+		return ['# Alphabet definieren. Muss mit "Sigma:" beginnen, durch Whitespace getrennt.', "Sigma:\t" + ' '.join(sorted(list(self.Sigma))) ]
 
 	def _addS0(self):
-		return ['# Startzustand definieren. Muss mit "s0:" beginnen, durch Whitespaces getrennt.', "s0:\t" + ' '.join(list(self.s0)) ]
+		return ['# Startzustand definieren. Muss mit "s0:" beginnen, durch Whitespaces getrennt.', "s0:\t" + ' '.join(sorted(list(self.s0))) ]
 
 	def _addF(self):
-		return ['# Finale Zustaende definieren. Muss mit "F:" beginnen, durch Whitespace getrennt.', "F:\t" + ' '.join(list(self.F)) ]
+		return ['# Finale Zustaende definieren. Muss mit "F:" beginnen, durch Whitespace getrennt.', "F:\t" + ' '.join(sorted(list(self.F))) ]
+
+	def _addS(self):
+		return ['# Optional: Zustaende definieren.', 
+			'# Falls nicht definiert, werden Zustaende aus den Uebergaengen zusammengestellt.',
+			'# Muss mit "S:" beginnen, durch Whitespace getrennt.',
+			"S:\t" + ' '.join(sorted(list(self.S))) ]
 
 	def _addTestWords(self):
 		if self.testWords:
 			if len(self.testWords) > 0:
-				return ['# Testworte. Muss mit "TestWords:" beginnen, durch Whitespace getrennt.', "TestWords:\t" + ' '.join(list(self.testWords)) ]
+				return ['# Testworte. Muss mit "TestWords:" beginnen, durch Whitespace getrennt.', "TestWords:\t" + ' '.join(sorted(list(self.testWords))) ]
 		return list()
 
 	def _addVerifyRegExp(self):
@@ -222,6 +228,9 @@ class OPlaintextAutomat(AusgebenderAutomat):
 		if pretty:
 			out += SPACER
 		out += self._addS0()
+		if pretty:
+			out += SPACER
+		out += self._addS()
 		if pretty:
 			out += SPACER
 		out += self._addF()

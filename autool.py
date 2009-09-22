@@ -63,30 +63,31 @@ logger = AutomatLogger(options.loglevel).log
 
 automaten = list()
 for file in files:
-	try:
-		A = AutomatenLeser(filename=file, log=logger).automat()
-		automaten.append(A)
+	if not file.endswith("~"):
+		try:
+			A = AutomatenLeser(filename=file, log=logger).automat()
+			automaten.append(A)
+		
+			if options.dump:
+				print A.dump()
 	
-		if options.dump:
-			print A.dump()
-
-		if options.ascii:
-			print A
-
-		if options.dotdump:
-			print A.createDotDocument(dumpOnly=True)
+			if options.ascii:
+				print A
 	
-		if options.verify:
-			A.verify()
-			A.verifyByRegExp()
-	
-		if options.testWords:
-			words = options.testWords.split()
-			A.checkWords(words)
-			A.verifyByRegExp(words)
-	except Exception, e:
-		logger.error("[EXCEPTION] '%s' %s" % (file, e))
-		traceback.print_exc(file=sys.stdout)
+			if options.dotdump:
+				print A.createDotDocument(dumpOnly=True)
+		
+			if options.verify:
+				A.verify()
+				A.verifyByRegExp()
+		
+			if options.testWords:
+				words = options.testWords.split()
+				A.checkWords(words)
+				A.verifyByRegExp(words)
+		except Exception, e:
+			logger.error("[EXCEPTION] '%s' %s" % (file, e))
+			traceback.print_exc(file=sys.stdout)
 
 
 if options.pdf and len(automaten) > 0:
