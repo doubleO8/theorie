@@ -374,6 +374,9 @@ class OLaTeXAutomat(AusgebenderAutomat):
 		s.append(r"\item[] \{%s\} ist Anfangszustand" % self._fzTex(self.s0))
 		s.append(r"\item[] Menge der Endzustände $F = \{%s\}$" % self._fzTex(self.F))
 		s.append(r"\item[] Endliche Menge der Eingabezeichen $\Sigma = \{%s\}$" % self._fzTex(self.Sigma))
+		if self.verifyRegExp:
+			s.append(r"\item[] Regulärer Ausdruck zur Verifikation $%s$" % self.verifyRegExp)
+		
 		s.append(r'\end{itemize}')
 		return "\n".join(s)
 
