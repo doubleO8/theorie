@@ -907,43 +907,7 @@ def Uebungsblatt2_Aufgabe_2a():
 	return e
 
 def Uebungsblatt2_Aufgabe_2b():
-	S = '1 2 3 4 5 6 7 8'
-	s0 = '1'
-	F = '4 8'
-	Sigma = '0 1'
-	delta = {
-				'1' : { 
-							EpsilonAutomat.EPSILON : '2',
-							EpsilonAutomat.EPSILON : '5',
-						},
-				'2' : { 
-							'0' : '3', 
-						},
-				'3' : { 
-							'1' : '4', 
-						},
-				'4' : { 
-							EpsilonAutomat.EPSILON : '2',
-						},
-				'5' : { 
-							'0' : '6', 
-						},
-				'6' : { 
-							'1' : '7', 
-						},
-				'7' : {
-							'0' : '8',
-						},
-				'8' : { 
-							EpsilonAutomat.EPSILON : '5',
-						},
-			}
-
-	e = EpsilonAutomat(S, s0, F, Sigma, delta,
-						name="U2A2b",
-						beschreibung="eNEA zur Erkennung aller Zeichenketten, die aus der ein- oder mehrmaligen Wiederholung von 01 oder 010 bestehen")
-	e.testWords = e.testWorteGenerator(2, Sigma=['01', '010'])
-	return e
+	return AutomatenLeser('data/u2a2b').automat()
 
 def Uebungsblatt2_Aufgabe_2c():
 	S = '0 1 2 3 4 5 6 7 8 9 10'
@@ -2017,9 +1981,8 @@ def erstelleAutomatenFuer(prefix):
 	return erstelleAutomaten(automatenListe)
 
 def AutomatenBlatt(automatenListe, finalFileBase='AutomatenReport'):
-	for item in automatenListe:
-		automaten = erstelleAutomatenFuer(item)
-		automatenReport(automaten, finalFileBase=finalFileBase)
+	automaten = erstelleAutomaten(automatenListe)
+	automatenReport(automaten, finalFileBase=finalFileBase)
 
 def AutomatenPlaintext(automatenListe, targetDir='.'):
 	automaten = erstelleAutomaten(automatenListe)
@@ -2068,7 +2031,9 @@ parser.add_option('-o', "--write-plaintext",
 
 parser.add_option("--prefix",
 					default='all',
-					help="Prefix to use. Possible values: %s" % ','.join(DEFAULT_PREFIX_LIST),
+					help="""Prefix to use.
+					Possible values: 
+					%s""" % ', '.join(DEFAULT_PREFIX_LIST),
 					dest="prefix")
 
 parser.add_option('-t', "--test-words",

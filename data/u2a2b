@@ -1,0 +1,35 @@
+################################################################################
+# Automatendefinition
+Name: U2A2b
+Beschreibung: eNEA zur Erkennung aller Zeichenketten, die aus der ein- oder mehrmaligen Wiederholung von 01 oder 010 bestehen
+################################################################################
+
+
+# Alphabet definieren. Muss mit "Sigma:" beginnen, durch Whitespace getrennt.
+Sigma:	1 0 EPSILON
+
+# Startzustand definieren. Muss mit "s0:" beginnen, durch Whitespaces getrennt.
+s0:	0
+
+# Finale Zustaende definieren. Muss mit "F:" beginnen, durch Whitespace getrennt.
+F:	2 3
+
+# Uebergaenge, Format :
+# Zustand, Zeichen, Zielzustand (durch whitespace getrennt)
+0	0	1
+1	1	2
+2	0	3
+2	EPSILON	0
+3	EPSILON 0
+
+# Testworte. Muss mit "TestWords:" beginnen, durch Whitespace getrennt.
+TestWords:	1 0 11 01 10 00 111 011 101 001 110 010 100 000
+
+# Optional: Worte, die akzeptiert werden sollen
+AcceptedVerifyWords: 01 010 010010 010101
+
+# Optional: Worte, die _nicht akzeptiert werden duerfen
+FailingVerifyWords: 0 1 10 11
+
+RegularExpression: (01|010)*
+
