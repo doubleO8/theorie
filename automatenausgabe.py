@@ -354,11 +354,14 @@ class ODotAutomat(AusgebenderAutomat):
 		return returnValue
 
 class OLaTeXAutomat(AusgebenderAutomat):
+	def _mangleName(self, name):
+		return name.replace("_", ' ')
+	
 	def _TeXSpecification(self):
 		s = list()
 		aTyp = "(%seterministischer) Automat" % ((self.istDEA() and 'D' or 'Nichtd'))
 
-		name = self.name.replace("_", ' ')
+		name = self._mangleName(self.name)
 		
 		s.append(r'\textbf{%s \emph{%s}}' % (aTyp, name))
 		if EPSILON in self.Sigma:
@@ -379,6 +382,8 @@ class OLaTeXAutomat(AusgebenderAutomat):
 		headerLine = [r'$\delta$']
 		for zeichen in self.Sigma:
 			headerLine.append(zeichen)
+		
+		s.append(r'\begin{table}[ht]')
 		s.append(r'\begin{tabular}{r|%s}' % ('c' * (len(headerLine)-1)))
 		s.append(r' & '.join(headerLine) + r' \\')
 		s.append(r'\hline')
@@ -392,12 +397,14 @@ class OLaTeXAutomat(AusgebenderAutomat):
 			s.append(r' \\')
 		
 		s.append(r'\end{tabular}')
+		s.append(r'\caption{Überführungstabelle für %s}' % self._mangleName(self.name))
+		s.append(r'\end{table}')
 
 		return "\n".join(s)
 
 	def _TeXIncludeFigure(self, file, caption=None, label=None):
-		label = label and ("\\label{%s}" % label) or ''
-		caption = caption and ("\\caption{%s}" % caption) or ''
+		label = label and (r'\label{%s}' % label) or ''
+		caption = caption and (r'\caption{%s}' % caption) or ''
 		return """
 		\\begin{figure}[ht!]
 		\\centering
@@ -444,7 +451,7 @@ class OLaTeXAutomat(AusgebenderAutomat):
 		return s
 
 	def _TeXAutomatStart(self):
-		return r'\section{%s}' % self.name
+		return r'\section{Automat %s}' % self._mangleName(self.name)
 		
 	def _toTeX(self, template=None, dot_template=None):
 		s = self._readTemplate(template)
@@ -458,7 +465,10 @@ class OLaTeXAutomat(AusgebenderAutomat):
 		if 'createDotDocument' in dir(self):
 			dotgraph = self.createDotDocument(dot_template)
 			if dotgraph:
-				s = s.replace('%%__DOT_GRAPH__', r'\subsection{Graph}' + self._TeXIncludeFigure(dotgraph))
+				aName = self._mangleName(self.name)
+				label = 'dot%s' % aName 
+				caption = 'Automat %s' % aName
+				s = s.replace('%%__DOT_GRAPH__', r'\subsection{Graph}' + self._TeXIncludeFigure(dotgraph, caption, label))
 			else:
 				self.log.error("Kein dotgraph")
 
@@ -487,8 +497,11 @@ class LaTeXBinder(AusgebenderAutomat):
 	def write(self, finalFile=None):
 		if finalFile:
 			self.finalFile = finalFile
-
+		needSecondRun = False
+		
 		binder = self._readTemplate(self.template)
+		if (-1 != binder.find("listoftables") ) or (-1 != binder.find("listoffigures") ):
+			needSecondRun = True
 		binder = binder.replace("%%__CONTENT__", "\n".join(self.content))
 
 		if not self.writeContent(self.texTarget, binder):
@@ -501,6 +514,14 @@ class LaTeXBinder(AusgebenderAutomat):
 			print "----------------------"
 			print out
 			self.t.removeAtExit = False
+
+		if needSecondRun:
+			(rc, out, err) = runCommand(PDFLATEX_BIN, ('-interaction batchmode "%s"' % self.texTarget), workDir=self.t.tmp, validReturnCodes=validReturnCodes)
+			if not (rc in validReturnCodes):
+				print err
+				print "----------------------"
+				print out
+				self.t.removeAtExit = False
 
 		if rc in validReturnCodes:
 			(rc, out, err) = runCommand(PDFLATEX_BIN, ('-interaction batchmode "%s"' % self.texTarget), workDir=self.t.tmp, validReturnCodes=validReturnCodes)
