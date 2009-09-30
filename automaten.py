@@ -694,6 +694,22 @@ class NichtDeterministischerAutomat(automatenausgabe.OAsciiAutomat, automatenaus
 
 	def EpsilonFrei(self):
 		return self
+	
+	def Grammatik(self):
+		if not self.istDEA:
+			raise NotImplemented
+		import grammatiken
+		P = list()
+		
+		for zustand in sorted(self.delta):
+			for zeichen in self.delta[zustand]:
+				for ziel in self.delta[zustand][zeichen]:
+					for zeichenItem in zeichen:
+						P.append((zustand, zeichenItem, ziel))
+		
+		# G = (N, T, P, S)
+		StartSymbol = list(self.s0)[0]
+		return grammatiken.RechtslineareGrammatik(self.S, self.Sigma, P, StartSymbol, self.F)
 
 class Automat(NichtDeterministischerAutomat):
 	def __init__(self, S, s0, F, Sigma, delta, name="EinDEA", beschreibung='', testWords=None, verifyWords=None, verifyRegExp=None):

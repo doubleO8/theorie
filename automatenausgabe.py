@@ -177,7 +177,7 @@ class OPlaintextAutomat(AusgebenderAutomat):
 		if self.verifyRegExp:
 			return ['# Regular Expression, die das Ergebnis fuer die Testworte definiert.',
 					'# Muss mit "TestWords:" beginnen, durch Whitespace getrennt.', 
-					"verifyRegExp:\t " + self.verifyRegExp ]
+					"RegularExpression:\t " + self.verifyRegExp ]
 		return list()
 
 	def _addDelta(self):
