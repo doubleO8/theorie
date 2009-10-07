@@ -94,7 +94,6 @@ class AusgebenderAutomat(object):
 			*	Falls Menge aus nur einem Element besteht, wird dieses als String zurueckgegeben,
 			*	falls Menge leer, wird '-' zurueckgegeben, 
 			*	andernfalls ein String der Form {a,b,c,d,e,f}
-		
 		"""
 		if len(what) == 1:
 			return list(what)[0]
@@ -123,7 +122,6 @@ class AusgebenderAutomat(object):
 	def writeContent(self, target, content):
 		if isinstance(content, list):
 			content = "\n".join(content)
-		#print("WRITING %s" % target)
 		try:
 			out = open(target, "w")
 			out.write(content)
@@ -176,7 +174,7 @@ class OPlaintextAutomat(AusgebenderAutomat):
 	def _addVerifyRegExp(self):
 		if self.verifyRegExp:
 			return ['# Regular Expression, die das Ergebnis fuer die Testworte definiert.',
-					'# Muss mit "TestWords:" beginnen, durch Whitespace getrennt.', 
+					'# Muss mit "RegularExpression:" beginnen, durch Whitespace getrennt.', 
 					"RegularExpression:\t " + self.verifyRegExp ]
 		return list()
 
