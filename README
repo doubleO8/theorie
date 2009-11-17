@@ -21,7 +21,7 @@ als Python code definiert werden, oder aus einfachen Textdateien eingelesen werd
 Beispiel Automaten Definition als Textdatei:
 #-------------8<---------------------------------------------------------------
 # Automatendefinition
-# Uebungsblatt 4, Aufgabe 3e)
+# [Barth] Uebungsblatt 4, Aufgabe 3e)
 
 Name: U4A3e (Test-Dings)
 Beschreibung: Ein Automat, der nur Woerter akzeptiert, in denen 101 nicht vorkommt
@@ -31,6 +31,10 @@ Sigma: 0 1
 
 # Finale Zustaende definieren, durch whitespace getrennt
 F: A B C
+
+# Optional: Zustaende definieren, durch whitespace getrennt (werden ansonsten durch die Uebergaenge
+# definiert)
+S: A B C D
 
 # Startzustand definieren, durch whitespace getrennt
 s0: A
@@ -55,6 +59,17 @@ AcceptedVerifyWords: 0 1 11 00 110 1100
 # Optional: Worte, die _nicht akzeptiert werden duerfen
 FailingVerifyWords: 101 0101 0010101 10110 11010
 
+## PDF-Datei generieren (pdflatex etc. benoetigt!):
+# ./autool.py data/readme_demo -w o.pdf
+
+## Automat verifizieren lassen:
+# ./autool.py -v data/readme_demo
+
+## Pruefen, ob Testworte akzeptiert werden wuerden:
+# ./autool.py -t "haha hihi hoho 001" data/readme_demo
+
+## Grammatik generieren (BETA!):
+# ./autool.py -g data/readme_demo
 #-------------8<---------------------------------------------------------------
 
 Die verwendeten Automaten orientieren sich an der Vorlesung bzw. Uebung und koennen durchaus falsche
