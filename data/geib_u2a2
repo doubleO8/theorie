@@ -1,0 +1,41 @@
+################################################################################
+# Automatendefinition
+Name: U2A2
+Beschreibung: DFA der genau die Woerter ueber Alphabet a,b akzeptiert, in denen keine drei b direkt hintereinander vorkommen
+################################################################################
+
+
+# Alphabet definieren. Muss mit "Sigma:" beginnen, durch Whitespace getrennt.
+Sigma:	a b
+
+# Startzustand definieren. Muss mit "s0:" beginnen, durch Whitespaces getrennt.
+s0:	s0
+
+S:	s0 s1 s2 s3
+
+# Finale Zustaende definieren. Muss mit "F:" beginnen, durch Whitespace getrennt.
+F:	s0 s1 s2
+
+# Uebergaenge, Format :
+# Zustand, Zeichen, Zielzustand (durch whitespace getrennt)
+s0	a	s0
+s0	b	s1
+
+s1	a	s0
+s1	b	s2
+
+s2	a	s0
+s2	b	s3
+
+s3	a	s3
+s3	b	s3
+
+# Testworte. Muss mit "TestWords:" beginnen, durch Whitespace getrennt.
+TestWords:	aab bbb abbba abba
+
+# Optional: Worte, die akzeptiert werden sollen
+AcceptedVerifyWords: abb aaa bba bb b
+
+# Optional: Worte, die _nicht akzeptiert werden duerfen
+FailingVerifyWords: bbb bbba babbbaaaaa bbabbb abbb
+

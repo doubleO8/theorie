@@ -1,0 +1,39 @@
+################################################################################
+# Automatendefinition
+Name: U3A2a
+Beschreibung: Automat, der alle Woerter akzeptiert, die mit a beginnen oder mit b beginnen und auf a enden
+################################################################################
+
+
+# Alphabet definieren. Muss mit "Sigma:" beginnen, durch Whitespace getrennt.
+Sigma:	a b
+
+# Startzustand definieren. Muss mit "s0:" beginnen, durch Whitespaces getrennt.
+s0:	s0
+
+S:	s0 s1 s2 s3
+
+# Finale Zustaende definieren. Muss mit "F:" beginnen, durch Whitespace getrennt.
+F:	s1 s3
+
+# Uebergaenge, Format :
+# Zustand, Zeichen, Zielzustand (durch whitespace getrennt)
+s0	a	s1
+s0	b	s2
+
+s1	a	s1
+s1	b	s1
+
+s2	a	s2
+s2	a	s3
+s2	b	s2
+
+# Testworte. Muss mit "TestWords:" beginnen, durch Whitespace getrennt.
+TestWords:	ab aab bab b bb bba
+
+# Optional: Worte, die akzeptiert werden sollen
+AcceptedVerifyWords: a ba baa bba
+
+# Optional: Worte, die _nicht akzeptiert werden duerfen
+FailingVerifyWords: b
+

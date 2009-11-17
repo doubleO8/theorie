@@ -1,0 +1,56 @@
+################################################################################
+# Automatendefinition
+Name: U3A3b
+Beschreibung: deterministischer Automat, der alle Woerter akzeptiert, die als drittletztes Zeichen ein a besitzen
+################################################################################
+
+
+# Alphabet definieren. Muss mit "Sigma:" beginnen, durch Whitespace getrennt.
+Sigma:	a b
+
+# Startzustand definieren. Muss mit "s0:" beginnen, durch Whitespaces getrennt.
+s0:	1
+
+S:	1 12 123 13 1234 134 14 124 123
+
+# Finale Zustaende definieren. Muss mit "F:" beginnen, durch Whitespace getrennt.
+F:	1234 134 14 124
+
+# Uebergaenge, Format :
+# Zustand, Zeichen, Zielzustand (durch whitespace getrennt)
+1	a	12
+1	b	1
+
+12	a	123
+12	b	13
+
+123	a	1234
+123	b	134
+
+13	a	124
+13	b	14
+
+1234	a	1234
+1234	b	134
+
+134	a	124
+134	b	14
+
+14	a	12
+14	b	1
+
+124	a	123
+124	b	13
+
+123	a	1234
+123	b	134
+
+# Testworte. Muss mit "TestWords:" beginnen, durch Whitespace getrennt.
+TestWords:	ab aab bab b bb bba
+
+# Optional: Worte, die akzeptiert werden sollen
+AcceptedVerifyWords: aaa abb aba aaaa baaaaaaaaaaa
+
+# Optional: Worte, die _nicht akzeptiert werden duerfen
+FailingVerifyWords: a b bbb bb aa baa
+

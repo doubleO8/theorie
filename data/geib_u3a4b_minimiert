@@ -1,0 +1,41 @@
+################################################################################
+# Automatendefinition
+Name: U3A4bMinimiert
+Beschreibung: Automat, der alle Woerter akzeptiert, die ...
+################################################################################
+
+
+# Alphabet definieren. Muss mit "Sigma:" beginnen, durch Whitespace getrennt.
+Sigma:	a b
+
+# Startzustand definieren. Muss mit "s0:" beginnen, durch Whitespaces getrennt.
+s0:	0
+
+S:	0 12 34 f
+
+# Finale Zustaende definieren. Muss mit "F:" beginnen, durch Whitespace getrennt.
+F:	34
+
+# Uebergaenge, Format :
+# Zustand, Zeichen, Zielzustand (durch whitespace getrennt)
+0	a	12
+0	b	12
+
+12	a	12
+12	b	34
+
+34	a	12
+34	b	f
+
+f	a	f
+f	b	f
+
+# Testworte. Muss mit "TestWords:" beginnen, durch Whitespace getrennt.
+TestWords:	ab aab bab b bb bba
+
+# Optional: Worte, die akzeptiert werden sollen
+#AcceptedVerifyWords: aaa abb aba aaaa baaaaaaaaaaa
+
+# Optional: Worte, die _nicht akzeptiert werden duerfen
+#FailingVerifyWords: a b bbb bb aa baa
+

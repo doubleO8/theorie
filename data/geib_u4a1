@@ -1,0 +1,48 @@
+################################################################################
+# Automatendefinition
+Name: U4A1
+Beschreibung: Automat zum regulaeren Ausdruck $\alpha=(ab|c)*abc$
+################################################################################
+
+
+# Alphabet definieren. Muss mit "Sigma:" beginnen, durch Whitespace getrennt.
+Sigma:	a b c EPSILON
+
+# Startzustand definieren. Muss mit "s0:" beginnen, durch Whitespaces getrennt.
+s0:	1
+
+S:	1 2 3 4 5 6 7 8
+
+# Finale Zustaende definieren. Muss mit "F:" beginnen, durch Whitespace getrennt.
+F:	8
+
+# Uebergaenge, Format :
+# Zustand, Zeichen, Zielzustand (durch whitespace getrennt)
+1	a	2
+1	c	4
+1	EPSILON	5
+
+2	b	3
+
+3	EPSILON	5
+
+4	EPSILON	5
+
+5	a	6
+5	EPSILON	1
+
+6	b	7
+
+7	c	8
+
+# Testworte. Muss mit "TestWords:" beginnen, durch Whitespace getrennt.
+TestWords:	a ab abc aabbcc ababc cabc bbabc
+
+RegularExpression:	(ab|c)*abc
+
+# Optional: Worte, die akzeptiert werden sollen
+AcceptedVerifyWords:	abc abababc cabc ccccccccccccccccccccabc
+
+# Optional: Worte, die _nicht akzeptiert werden duerfen
+FailingVerifyWords: 	babc b a c abab
+

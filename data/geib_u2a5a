@@ -1,0 +1,37 @@
+################################################################################
+# Automatendefinition
+Name: U2A5a
+Beschreibung: Automat, der alle Woerter akzeptiert, die als zweites Zeichen ein b besitzen
+################################################################################
+
+
+# Alphabet definieren. Muss mit "Sigma:" beginnen, durch Whitespace getrennt.
+Sigma:	a b
+
+# Startzustand definieren. Muss mit "s0:" beginnen, durch Whitespaces getrennt.
+s0:	1
+
+S:	1 2 3
+
+# Finale Zustaende definieren. Muss mit "F:" beginnen, durch Whitespace getrennt.
+F:	3
+
+# Uebergaenge, Format :
+# Zustand, Zeichen, Zielzustand (durch whitespace getrennt)
+1	a	2
+1	b	2
+
+2	b	3
+
+3	a	3
+3	b	3
+
+# Testworte. Muss mit "TestWords:" beginnen, durch Whitespace getrennt.
+TestWords:	ab bb aa bbb abaaaa
+
+# Optional: Worte, die akzeptiert werden sollen
+AcceptedVerifyWords: ab abb bbb
+
+# Optional: Worte, die _nicht akzeptiert werden duerfen
+FailingVerifyWords: a b aa aab ba
+

@@ -1,0 +1,44 @@
+################################################################################
+# Automatendefinition
+Name: U2A3
+Beschreibung: Fahrkartenautomat
+################################################################################
+
+
+# Alphabet definieren. Muss mit "Sigma:" beginnen, durch Whitespace getrennt.
+Sigma:	1 2 A
+
+# Startzustand definieren. Muss mit "s0:" beginnen, durch Whitespaces getrennt.
+s0:	s0
+
+S:	s0 s1 s2 s3 f
+
+# Finale Zustaende definieren. Muss mit "F:" beginnen, durch Whitespace getrennt.
+F:	s0
+
+# Uebergaenge, Format :
+# Zustand, Zeichen, Zielzustand (durch whitespace getrennt)
+s0	1	s1
+s0	2	s2
+s0	A	s0
+
+s1	1	s2
+s1	2	s3
+s1	A	s1
+
+s2	1	s3
+s2	2	f
+s2	A	s2
+
+s3	1	f
+s3	2	f
+s3	A	s0
+
+# Testworte. Muss mit "TestWords:" beginnen, durch Whitespace getrennt.
+TestWords:	12A A21
+
+# Optional: Worte, die akzeptiert werden sollen
+AcceptedVerifyWords: 12A 21A 111A AAA A2A1A
+
+# Optional: Worte, die _nicht akzeptiert werden duerfen
+FailingVerifyWords: 1A 222A 121A 12111 2A

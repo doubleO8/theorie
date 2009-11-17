@@ -1,0 +1,40 @@
+################################################################################
+# Automatendefinition
+Name: U2A5b
+Beschreibung: Automat, der die drei Woerter baa ab und abb akzeptiert
+################################################################################
+
+
+# Alphabet definieren. Muss mit "Sigma:" beginnen, durch Whitespace getrennt.
+Sigma:	a b
+
+# Startzustand definieren. Muss mit "s0:" beginnen, durch Whitespaces getrennt.
+s0:	1
+
+S:	1 2 3 4 5 6 7
+
+# Finale Zustaende definieren. Muss mit "F:" beginnen, durch Whitespace getrennt.
+F:	4 6 7
+
+# Uebergaenge, Format :
+# Zustand, Zeichen, Zielzustand (durch whitespace getrennt)
+1	a	5
+1	b	2
+
+2	a	3
+
+3	a	4
+
+5	b	6
+
+6	b	7
+
+# Testworte. Muss mit "TestWords:" beginnen, durch Whitespace getrennt.
+TestWords:	baa ab abb aa bb a b
+
+# Optional: Worte, die akzeptiert werden sollen
+AcceptedVerifyWords: baa ab abb
+
+# Optional: Worte, die _nicht akzeptiert werden duerfen
+FailingVerifyWords: abaa aba abba
+
