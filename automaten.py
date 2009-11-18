@@ -651,10 +651,12 @@ class NichtDeterministischerAutomat(automatenausgabe.OAsciiAutomat, automatenaus
 			regexp += '$'
 		pattern = re.compile(regexp)
 	
+		self.log.debug("RegExp : '%s'" % regexp)
 		verifyWords = dict()
 		for wort in worte:
 			res = pattern.match(wort)
 			verifyWords[wort] = pattern.match(wort) and True or False
+			self.log.debug("         %s : %s" % (wort, verifyWords[wort]))
 		return verifyWords
 
 	def verifyByRegExp(self, testWords=None, regexp=None):
@@ -665,9 +667,10 @@ class NichtDeterministischerAutomat(automatenausgabe.OAsciiAutomat, automatenaus
 			return True
 		vWords = self._RegularExpressionTestWorte(testWords, regexp)
 		self.log.debug("Verify by Regular Expression:")
-		return self.verify(vWords)
 		
-	def verify(self, vWords=None):
+		return self.verify(vWords, True)
+		
+	def verify(self, vWords=None, usingRegExp=False):
 		verified = True
 		if vWords == None:
 			vWords = self.verifyWords
@@ -685,7 +688,7 @@ class NichtDeterministischerAutomat(automatenausgabe.OAsciiAutomat, automatenaus
 				self.log.debug(self.ableitungsPfad)
 				verified = False
 
-		logmessage = "Automat '%s' %sverifiziert" % (self.name, (not verified and 'NICHT ') or '')
+		logmessage = "Automat '%s' %sverifiziert%s" % (self.name, (not verified and 'NICHT ') or '', (usingRegExp and ' (via RE)') or '')
 		if verified:
 			self.log.info(logmessage)
 		else:

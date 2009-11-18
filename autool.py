@@ -6,7 +6,7 @@ from automatenleser import *
 import traceback
 from optparse import OptionParser
 
-FILTER_TYPES = set(['NEA', 'DEA', 'eNDA', 'eDEA'])
+FILTER_TYPES = set(['NEA', 'DEA', 'eNDA', 'eDEA', 'eNEA'])
 # parse options et al
 parser = OptionParser()
 
@@ -92,7 +92,7 @@ for file in files:
 			logger.debug("[%s] class:%s epsilon:%s deterministisch: %s" % (automatenTyp, repr(A), epsilon, deterministisch))
 
 			if not automatenTyp in autoFilter:
-				logger.debug("Ignoriere %s. %s nicht in %s" % (A.name, automatenTyp, ', '.join(autoFilter)))
+				logger.warn("Ignoriere %s. %s nicht in %s" % (A.name, automatenTyp, ', '.join(autoFilter)))
 			else:
 				automaten.append(A)
 	
