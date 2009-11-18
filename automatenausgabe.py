@@ -396,6 +396,8 @@ class OLaTeXAutomat(AusgebenderAutomat):
 		s = list()
 		headerLine = [r'$\delta$']
 		for zeichen in self.Sigma:
+			if zeichen == EPSILON:
+				zeichen = '$\epsilon$'
 			headerLine.append(zeichen)
 		
 		s.append(r'\begin{table}[ht]')
