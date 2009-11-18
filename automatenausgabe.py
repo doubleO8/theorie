@@ -303,7 +303,7 @@ class ODotAutomat(AusgebenderAutomat):
 		# ziel muss frozenset sein .. strings werden zerhackt
 		label = self._fzAscii(zeichenString)
 		if label == EPSILON:
-			label = 'ε'
+			label = '$\epsilon$' #'ε'
 		p = '%s -> %s [ label = "%s" ];' % (quelle, self._fzAscii(ziel), label)
 		#self.log.debug(p)
 		return p
