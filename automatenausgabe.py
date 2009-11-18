@@ -301,7 +301,10 @@ class OAsciiAutomat(AusgebenderAutomat):
 class ODotAutomat(AusgebenderAutomat):
 	def _DotPath(self, quelle, ziel, zeichenString):
 		# ziel muss frozenset sein .. strings werden zerhackt
-		p = '%s -> %s [ label = "%s" ];' % (quelle, self._fzAscii(ziel), self._fzAscii(zeichenString))
+		label = self._fzAscii(zeichenString)
+		if label == EPSILON:
+			label = 'ε'
+		p = '%s -> %s [ label = "%s" ];' % (quelle, self._fzAscii(ziel), label)
 		#self.log.debug(p)
 		return p
 		
@@ -371,8 +374,10 @@ class OLaTeXAutomat(AusgebenderAutomat):
 		name = self._mangleName(self.name)
 		
 		s.append(r'\textbf{%s \emph{%s}}' % (aTyp, name))
-		if EPSILON in self.Sigma:
+		sigmaKopie = self.Sigma
+		if EPSILON in sigmaKopie:
 			s.append(r" ($\epsilon$-Übergänge möglich)")
+			sigmaKopie = self.Sigma.difference(frozenset([EPSILON])).union(frozenset(['$\epsilon$']))
 
 		if self.beschreibung :
 			s.append(r"\newline \emph{%s}" % self.beschreibung)
@@ -380,7 +385,7 @@ class OLaTeXAutomat(AusgebenderAutomat):
 		s.append(r'\item[] Endliche Menge der möglichen Zustände $S = \{%s\}$' % self._fzTex(self.S))
 		s.append(r"\item[] \{%s\} ist Anfangszustand" % self._fzTex(self.s0))
 		s.append(r"\item[] Menge der Endzustände $F = \{%s\}$" % self._fzTex(self.F))
-		s.append(r"\item[] Endliche Menge der Eingabezeichen $\Sigma = \{%s\}$" % self._fzTex(self.Sigma))
+		s.append(r"\item[] Endliche Menge der Eingabezeichen $\Sigma = \{%s\}$" % self._fzTex(sigmaKopie))
 		if self.verifyRegExp:
 			s.append(r"\item[] Regulärer Ausdruck zur Verifikation $%s$" % self.verifyRegExp)
 		
