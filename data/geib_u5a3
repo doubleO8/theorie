@@ -1,0 +1,40 @@
+################################################################################
+# Automatendefinition
+Name: U5A3
+Beschreibung: Epsilon-Automat für den regulären Ausdruck $\alpha = (ab)*$
+################################################################################
+
+
+# Alphabet definieren. Muss mit "Sigma:" beginnen, durch Whitespace getrennt.
+Sigma:	a b EPSILON
+
+# Startzustand definieren. Muss mit "s0:" beginnen, durch Whitespaces getrennt.
+s0:	s0
+
+# Zustaende
+S:	s0 s1 s2 s3 s4
+
+# Finale Zustaende definieren. Muss mit "F:" beginnen, durch Whitespace getrennt.
+F:	s4
+
+# Uebergaenge, Format :
+# Zustand, Zeichen, Zielzustand (durch whitespace getrennt)
+s0	EPSILON	s1
+
+s1	a	s2
+s1	EPSILON	s3
+
+s2	b	s3
+
+s3	EPSILON	s4
+s3	EPSILON	s1
+
+# Testworte. Muss mit "TestWords:" beginnen, durch Whitespace getrennt.
+TestWords:	ab abb bb ababbb abababab
+
+# Optional: Worte, die akzeptiert werden sollen
+AcceptedVerifyWords:	ab abab
+
+# Optional: Worte, die _nicht akzeptiert werden duerfen
+FailingVerifyWords:	babb bb b a
+
