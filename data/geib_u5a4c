@@ -1,0 +1,44 @@
+################################################################################
+# Automatendefinition
+Name: U5A4c
+Beschreibung: Automat fuer ..
+################################################################################
+
+
+# Alphabet definieren. Muss mit "Sigma:" beginnen, durch Whitespace getrennt.
+Sigma:	a b
+
+# Startzustand definieren. Muss mit "s0:" beginnen, durch Whitespaces getrennt.
+s0:	s0
+
+# Zustaende
+S:	s0 s1 s2 s3
+
+# Finale Zustaende definieren. Muss mit "F:" beginnen, durch Whitespace getrennt.
+F:	s3
+
+# Uebergaenge, Format :
+# Zustand, Zeichen, Zielzustand (durch whitespace getrennt)
+s0	a	s3
+s0	b	s1
+
+s1	a	s2
+s1	b	s1
+
+s2	a	s2
+s2	b	s0
+
+s3	a	s0
+s3	b	s0
+
+# Testworte. Muss mit "TestWords:" beginnen, durch Whitespace getrennt.
+TestWords:	baba babbbaaaaaaaaabab aba aaa bbb ba bab babb
+
+# Optional: Worte, die akzeptiert werden sollen
+AcceptedVerifyWords:	a aba aaa bbaaba
+
+# Optional: Worte, die _nicht akzeptiert werden duerfen
+FailingVerifyWords:	b aa bba bbbbbaaaaaa bab
+
+RegularExpression:	((bb*aa*b)*(a|(a(a|b)a)*)+)
+
