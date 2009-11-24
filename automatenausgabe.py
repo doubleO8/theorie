@@ -179,7 +179,9 @@ class OPlaintextAutomat(AusgebenderAutomat):
 		return list()
 
 	def _addDelta(self):
-		out = list(['# Uebergaenge, Format :', '# Zustand, Zeichen, Zielzustand (durch whitespace getrennt)'])
+		out = list(['# Uebergaenge, Format :', '# Zustand, Zeichen, Zielzustand (durch whitespace getrennt)', 
+		'# Zeichen kann ein einzelnes Zeichen oder durch Kommas separierte Zeichenmenge sein (OHNE whitespace!)'])
+		
 		for zustand in sorted(self.delta.keys()):
 			for fzKeyset in self.delta[zustand]:
 				ziele = self.delta[zustand][fzKeyset]
@@ -395,7 +397,9 @@ class OLaTeXAutomat(AusgebenderAutomat):
 	def _TeXDeltaTable(self):
 		s = list()
 		headerLine = [r'$\delta$']
-		for zeichen in self.Sigma:
+		sortedSigma = sorted(self.Sigma)
+		
+		for zeichen in sortedSigma:
 			if zeichen == EPSILON:
 				zeichen = '$\epsilon$'
 			headerLine.append(zeichen)
@@ -407,7 +411,7 @@ class OLaTeXAutomat(AusgebenderAutomat):
 
 		for zustand in sorted(self.S):
 			line = [ (zustand in self.F and '{*}' or '') + zustand ]
-			for zeichen in self.Sigma:
+			for zeichen in sortedSigma:
 				zielZustand = self._delta__str__(zustand, zeichen)
 				line.append(self._fzTex(zielZustand))
 			s.append(r' & '.join(line))

@@ -108,12 +108,19 @@ class AutomatenLeser(object):
 						delta[zustand] = dict()
 					dd = delta[zustand]
 					
-					if dd.has_key(zeichen):
-						self.log.debug("Zustand '%s', Zeichen '%s' ist bereits in delta" % (zustand, zeichen))
+					if zeichen.find(',') != -1:
+						self.log.debug("Zeichen LISTE")
+						zListe = zeichen.split(',')
 					else:
-						dd[zeichen] = set()
+						zListe = list([zeichen])
 					
-					dd[zeichen].add(ziel)
+					for zeichen in zListe:
+						if dd.has_key(zeichen):
+							self.log.debug("Zustand '%s', Zeichen '%s' ist bereits in delta" % (zustand, zeichen))
+						else:
+							dd[zeichen] = set()
+						
+						dd[zeichen].add(ziel)
 
 		if len(failingWords) + len(acceptedWords) > 0:
 			verifyWords = dict()

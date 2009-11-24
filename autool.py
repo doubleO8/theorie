@@ -10,6 +10,11 @@ FILTER_TYPES = set(['NEA', 'DEA', 'eNDA', 'eDEA', 'eNEA'])
 # parse options et al
 parser = OptionParser()
 
+parser.add_option('-a', "--ascii",
+					action="store_true", default=False,
+					help="Output ascii representation of automaton",
+					dest="ascii")
+
 parser.add_option('-p', "--print",
 					action="store_true", default=False,
 					help="Print ASCII representation of the automaton",
@@ -100,7 +105,7 @@ for file in files:
 					print A.dump()
 	
 				if options.ascii:
-					print A
+					print A._plaintext()
 	
 				if options.dotdump:
 					print A.createDotDocument(dumpOnly=True)
