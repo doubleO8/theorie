@@ -1,0 +1,101 @@
+################################################################################
+# Automatendefinition
+Name: U6A5Hexadezimal
+Beschreibung: Automat fuer zur Erkennung von Oktalzahlen, die sich durch den Praefix 0x auszeichnen
+################################################################################
+
+
+# Alphabet definieren. Muss mit "Sigma:" beginnen, durch Whitespace getrennt.
+Sigma:	0 1 2 3 4 6 7 8 9 A B C D E F x
+
+# Startzustand definieren. Muss mit "s0:" beginnen, durch Whitespaces getrennt.
+s0:	sa
+
+# Zustaende
+S:	sa sb sc sf
+
+# Finale Zustaende definieren. Muss mit "F:" beginnen, durch Whitespace getrennt.
+F:	sc
+
+# Uebergaenge, Format :
+# Zustand, Zeichen, Zielzustand (durch whitespace getrennt)
+sa	0	sb
+sa	1	sf
+sa	2	sf
+sa	3	sf
+sa	4	sf
+sa	5	sf
+sa	6	sf
+sa	7	sf
+sa	8	sf
+sa	9	sf
+sa	A	sf
+sa	B	sf
+sa	C	sf
+sa	D	sf
+sa	E	sf
+sa	F	sf
+sa	x	sf
+
+sb	x	sc
+sb	0	sf
+sb	1	sf
+sb	2	sf
+sb	3	sf
+sb	4	sf
+sb	5	sf
+sb	6	sf
+sb	7	sf
+sb	8	sf
+sb	9	sf
+sb	A	sf
+sb	B	sf
+sb	C	sf
+sb	D	sf
+sb	E	sf
+sb	F	sf
+
+sc	0	sc
+sc	1	sc
+sc	2	sc
+sc	3	sc
+sc	4	sc
+sc	5	sc
+sc	6	sc
+sc	7	sc
+sc	8	sc
+sc	9	sc
+sc	A	sc
+sc	B	sc
+sc	C	sc
+sc	D	sc
+sc	E	sc
+sc	F	sc
+sc	x	sf
+
+sf	x	sf
+sf	0	sf
+sf	1	sf
+sf	2	sf
+sf	3	sf
+sf	4	sf
+sf	5	sf
+sf	6	sf
+sf	7	sf
+sf	8	sf
+sf	9	sf
+sf	A	sf
+sf	B	sf
+sf	C	sf
+sf	D	sf
+sf	E	sf
+sf	F	sf
+
+# Testworte. Muss mit "TestWords:" beginnen, durch Whitespace getrennt.
+TestWords:	0 1 02 03 04 000004 x0 90 0010001x01 0x100 0xAF 0x0x
+
+# Optional: Worte, die akzeptiert werden sollen
+AcceptedVerifyWords:	0x 0x1 0x2 0x1A
+
+# Optional: Worte, die _nicht akzeptiert werden duerfen
+FailingVerifyWords:	1 8 x 01x 111 0xZZjsks
