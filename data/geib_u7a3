@@ -1,0 +1,44 @@
+################################################################################
+# Automatendefinition
+Name: U7A3
+Beschreibung: Automat fuer die Erkennung der Sprache aller Wörter mit gerade vielen Einsen und gerade vielen Nullen
+################################################################################
+
+
+# Alphabet definieren. Muss mit "Sigma:" beginnen, durch Whitespace getrennt.
+Sigma:	0 1
+
+# Startzustand definieren. Muss mit "s0:" beginnen, durch Whitespaces getrennt.
+s0:	s0
+
+# Zustaende
+S:	s0 s1 s2 s3 s4
+
+# Finale Zustaende definieren. Muss mit "F:" beginnen, durch Whitespace getrennt.
+F:	s0
+
+# Uebergaenge, Format :
+# Zustand, Zeichen, Zielzustand (durch whitespace getrennt)
+s0	0	s1
+s0	1	s3
+
+s1	0	s0
+s1	1	s2
+
+s2	0	s3
+s2	1	s1
+
+s3	0	s4
+s3	1	s0
+
+s4	0	s3
+s4	1	s1
+
+# Optional: Worte, die akzeptiert werden sollen
+AcceptedVerifyWords:	11 00 1100 0101 0011
+
+# Optional: Worte, die _nicht akzeptiert werden duerfen
+FailingVerifyWords:	1 0 01 101
+
+#RegularExpression:	((bb*aa*b)*(a|(a(a|b)a)*)+)
+
