@@ -15,15 +15,15 @@ parser.add_option('-a', "--ascii",
 					help="Output ascii representation of automaton",
 					dest="ascii")
 
-parser.add_option('-p', "--print",
-					action="store_true", default=False,
-					help="Print ASCII representation of the automaton",
-					dest="ascii")
-
 parser.add_option('-d', "--dump",
 					action="store_true", default=False,
 					help="Print raw data",
 					dest="dump")
+
+parser.add_option('-e', "--epsilonfree",
+					action="store_true", default=False,
+					help="remove epsilon transitions",
+					dest="epsilon")
 
 parser.add_option('-f', "--filter",
 					default=False,
@@ -36,6 +36,11 @@ parser.add_option('-g', "--grammar",
 					action="store_true", default=False,
 					help="Try to create a Grammar for Automata",
 					dest="grammar")
+
+parser.add_option('-p', "--print",
+					action="store_true", default=False,
+					help="Print ASCII representation of the automaton",
+					dest="ascii")
 
 parser.add_option('-v', "--verify",
 					action="store_true", default=False,
@@ -90,6 +95,12 @@ for file in files:
 	if not file.endswith("~"):
 		try:
 			A = AutomatenLeser(filename=file, log=logger).automat()
+			
+			# Epsilon frei machen
+			if options.epsilon:
+				logger.warn("Epsilonfrei machen")
+				A = A.EpsilonFrei()
+
 			epsilon = isinstance(A, EpsilonAutomat) and True or False
 			deterministisch = A.istDEA()
 			automatenTyp = '%s%s' % ((epsilon and 'e' or ''), (deterministisch and 'DEA' or 'NEA'))
