@@ -332,7 +332,8 @@ class NichtDeterministischerAutomat(automatenausgabe.OAsciiAutomat, automatenaus
 		if testWords:
 			self.testWords = self._toList(testWords)
 		else:
-			self.testWords = list()
+			self.testWords = None
+			self.log.warning("No testwords provided.")
 		self.verifyWords = verifyWords
 		self.verifyRegExp = verifyRegExp
 		self.beschreibung = beschreibung
@@ -905,6 +906,8 @@ class EpsilonAutomat(NichtDeterministischerAutomat):
 				eZiele = self._delta__str__(zustand, EpsilonAutomat.EPSILON)
 				if self.F.intersection(eZiele) != frozenset([]):
 					neuF = neuF.union(frozenset([zustand]))
+
+		#print neuDelta
 		return NichtDeterministischerAutomat(self.S, self.s0, neuF, self.Sigma.difference(fzEpsilon), neuDelta, 
 				'eFrei ' + self.name, self.beschreibung, self.testWords, self.verifyWords,
 				self.verifyRegExp)
