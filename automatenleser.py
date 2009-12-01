@@ -55,10 +55,10 @@ class AutomatenLeser(object):
 		verifyRegExp = None
 		failingWords = list()
 		acceptedWords = list()
-		
+
 		#: Regular Expression, die Doppelpunkte von Whitespace um sich herum befreit
 		doppelPunkt = re.compile( r'\s+:\s+')
-		
+
 		for line in lines:
 			line = doppelPunkt.sub(':', line.lstrip(), count=1)
 			if line.startswith("Sigma:"):
@@ -96,7 +96,7 @@ class AutomatenLeser(object):
 			else:
 				splatter = line.split()
 				if len(splatter) != 3:
-					self.log.warning("%s: [%s] Konnte Ueberfuehrungsdefinition nicht aus '%s' lesen" % (description, name,line))
+					self.log.warning("%s: [%s] Konnte Ueberfuehrungsdefinition nicht aus '%s' lesen" % (description, name, line))
 				else:
 					(zustand, zeichen, ziel) = splatter
 					S.add(zustand)
@@ -107,13 +107,13 @@ class AutomatenLeser(object):
 					else:
 						delta[zustand] = dict()
 					dd = delta[zustand]
-					
+
 					if zeichen.find(',') != -1:
-						self.log.debug("Zeichen LISTE")
+						#self.log.debug("Zeichen LISTE")
 						zListe = zeichen.split(',')
 					else:
 						zListe = list([zeichen])
-					
+
 					for zeichen in zListe:
 						if dd.has_key(zeichen):
 							self.log.debug("Zustand '%s', Zeichen '%s' ist bereits in delta" % (zustand, zeichen))
