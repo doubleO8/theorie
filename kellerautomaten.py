@@ -177,8 +177,8 @@ class DeterministischerKellerautomat(automaten.Automat):
 	def _delta(self, Zustand, Zeichen, Kellerzeichen):
 		logmessage = "(%s, %s, %s) => " % (Zustand, Zeichen, Kellerzeichen)
 		
-		if Zeichen == '#':
-			self.log.warning("#")
+		if Zeichen == DeterministischerKellerautomat.DELIMITER:
+			self.log.warning("Delimiter '%s'!" % DeterministischerKellerautomat.DELIMITER)
 
 		if self.delta[Zustand].has_key( (Zeichen, Kellerzeichen) ):
 			(zustandStrich, kellerzeichenStrich) = self.delta[Zustand][(Zeichen, Kellerzeichen)]
