@@ -1,0 +1,39 @@
+################################################################################
+# Kellerautomatendefinition
+Name: U10A1
+Beschreibung: Deterministischer Kellerautomat fuer a^n b^n
+################################################################################
+
+# Optional: Automat Typ
+Type:	pushdown
+
+
+# Alphabet definieren. Muss mit "Sigma:" beginnen, durch Whitespace getrennt.
+Sigma:	a b
+
+# Startzustand definieren. Muss mit "s0:" beginnen, durch Whitespaces getrennt.
+s0:	s0
+
+# Zustaende
+S:	s0 s1
+
+# Finale Zustaende definieren. Muss mit "F:" beginnen, durch Whitespace getrennt.
+F:	s1
+
+# Endliche Menge der Kellerzeichen k. Muss mit "K:" beginnen, durch Whitespace getrennt
+K:	k0 a
+
+# Uebergaenge, Format :
+# Zustand, Zeichen, Kellerzeichen, Zielzustand, Kellerzeichen(push) (durch whitespace getrennt)
+# Mehrere (push) Kellerzeichen muessen durch + getrennt werden
+s0	a	k0	s0	a+k0
+s0	a	a	s0	a+a
+s0	b	a	s1	EPSILON
+s1	b	a	s1	EPSILON
+
+# Optional: Worte, die akzeptiert werden sollen
+AcceptedVerifyWords:	aabb
+
+# Optional: Worte, die _nicht akzeptiert werden duerfen
+FailingVerifyWords:	aaabb aabbb abab
+

@@ -1,0 +1,37 @@
+################################################################################
+# Kellerautomatendefinition
+Name: PDA51Barth
+Beschreibung: Deterministischer Kellerautomat fuer a^n b^n
+################################################################################
+
+
+# Alphabet definieren. Muss mit "Sigma:" beginnen, durch Whitespace getrennt.
+Sigma:	a b
+
+# Startzustand definieren. Muss mit "s0:" beginnen, durch Whitespaces getrennt.
+s0:	s0
+
+# Zustaende
+S:	s0 s1 s2 s3 s4
+
+# Finale Zustaende definieren. Muss mit "F:" beginnen, durch Whitespace getrennt.
+F:	s0 s3
+
+# Endliche Menge der Kellerzeichen k. Muss mit "K:" beginnen, durch Whitespace getrennt
+K:	k0 a
+
+# Uebergaenge, Format :
+# Zustand, Zeichen, Kellerzeichen, Zielzustand, Kellerzeichen(push) (durch whitespace getrennt)
+# Mehrere (push) Kellerzeichen muessen durch + getrennt werden
+s0	a	k0	s1	a+k0
+s1	a	a	s1	a+a
+s1	b	a	s2	EPSILON
+s2	b	a	s2	EPSILON
+s2	EPSILON	k0	s3	k0
+
+# Optional: Worte, die akzeptiert werden sollen
+AcceptedVerifyWords:	aabb aaabbb
+
+# Optional: Worte, die _nicht akzeptiert werden duerfen
+FailingVerifyWords:	a aab ba
+
