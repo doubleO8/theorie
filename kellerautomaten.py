@@ -138,6 +138,8 @@ class DeterministischerKellerautomat(automaten.Automat):
 		"""
 		Zeichen auf den Keller schmeissen
 		"""
+		if len(items) == 1:
+			items = list(items)
 		items = list(reversed(items))
 		if items != [DeterministischerKellerautomat.EPSILON]:
 			#self.log.debug("Pushing: %s" % repr(items))
@@ -297,7 +299,7 @@ class DeterministischerKellerautomat(automaten.Automat):
 				except Exception, e:
 					self.log.debug("Ueberfuehrung MIT Zeichen schlug fehl: %s" % e)
 
-			if (zustandStrich, kellerzeichenStrich) == (None, None):
+			if ((zustandStrich, kellerzeichenStrich) == (None, None)) and not self._bandEmpty():
 				if doRaise:
 					raise automaten.NoRuleForStateException(self.zustand, explanation='hat keine definierten Regeln fuer (%s, %s)' % (Zeichen, head))
 				#self.log.debug("Don't go breaking my heart ..")
