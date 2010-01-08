@@ -13,7 +13,7 @@ def test():
 	failed, total = doctest.testmod()
 	print("doctest: %d/%d tests failed." % (failed, total))
 
-class DeterministischerKellerautomat(automaten.Automat):
+class DeterministischerKellerautomat(automatenausgabe.OPlaintextKellerAutomat, automaten.Automat):
 	EPSILON = 'EPSILON'
 	DELIMITER = '#'
 
@@ -37,6 +37,10 @@ class DeterministischerKellerautomat(automaten.Automat):
 		self.name = name
 		self.beschreibung = beschreibung
 		self.verifyWords = verifyWords
+		self.testWords = testWords
+		
+		#: Automatentyp
+		self.type = 'pushdown'
 		
 		#: Bandinhalt
 		self.band = list()
@@ -138,8 +142,6 @@ class DeterministischerKellerautomat(automaten.Automat):
 		"""
 		Zeichen auf den Keller schmeissen
 		"""
-		if len(items) == 1:
-			items = list(items)
 		items = list(reversed(items))
 		if items != [DeterministischerKellerautomat.EPSILON]:
 			#self.log.debug("Pushing: %s" % repr(items))
@@ -215,6 +217,7 @@ class DeterministischerKellerautomat(automaten.Automat):
 		*HEREBEDRAGONS*
 		"""
 		if Zeichen == DeterministischerKellerautomat.DELIMITER:
+			self.log.warning("_fixZeichen %s -> %s" % (DeterministischerKellerautomat.DELIMITER, DeterministischerKellerautomat.EPSILON))
 			Zeichen = DeterministischerKellerautomat.EPSILON
 		return Zeichen
 
@@ -298,8 +301,13 @@ class DeterministischerKellerautomat(automaten.Automat):
 					(zustandStrich, kellerzeichenStrich) = self._delta(self.zustand, Zeichen, head)
 				except Exception, e:
 					self.log.debug("Ueberfuehrung MIT Zeichen schlug fehl: %s" % e)
+					# Spezialfall: Band leer, letzten Ableitungsschritt dokumentieren.
+					if self._bandEmpty():
+						self.log.warning("band empty condition")
+						self.ableitung.append(self._getStateVerbose(read))
 
-			if ((zustandStrich, kellerzeichenStrich) == (None, None)) and not self._bandEmpty():
+
+			if (zustandStrich, kellerzeichenStrich) == (None, None):
 				if doRaise:
 					raise automaten.NoRuleForStateException(self.zustand, explanation='hat keine definierten Regeln fuer (%s, %s)' % (Zeichen, head))
 				#self.log.debug("Don't go breaking my heart ..")

@@ -148,6 +148,11 @@ class OPlaintextAutomat(AusgebenderAutomat):
 		out.append("Name: %s" % self.name)
 		if self.beschreibung:
 			out.append("Beschreibung: %s" % self.beschreibung)
+		try:
+			if self.type:
+				out.append("Type: %s" % self.type)
+		except Exception, e:
+			pass
 		return out
 
 	def _addSigma(self):
@@ -160,8 +165,8 @@ class OPlaintextAutomat(AusgebenderAutomat):
 		return ['# Finale Zustaende definieren. Muss mit "F:" beginnen, durch Whitespace getrennt.', "F:\t" + ' '.join(sorted(list(self.F))) ]
 
 	def _addS(self):
-		return ['# Optional: Zustaende definieren.', 
-			'# Falls nicht definiert, werden Zustaende aus den Uebergaengen zusammengestellt.',
+		return ['# (NEA, DEA: Optional) Zustaende definieren.', 
+			'# (NEA,DEA: Falls nicht definiert, werden Zustaende aus den Uebergaengen zusammengestellt.)',
 			'# Muss mit "S:" beginnen, durch Whitespace getrennt.',
 			"S:\t" + ' '.join(sorted(list(self.S))) ]
 
@@ -494,6 +499,54 @@ class OLaTeXAutomat(AusgebenderAutomat):
 				self.log.error("Kein dotgraph")
 
 		return s
+
+class OPlaintextKellerAutomat(AusgebenderAutomat):
+	def _addVerifyRegExp(self):
+		return list()
+
+	def _addS0(self):
+		return ['# Startzustand definieren. Muss mit "s0:" beginnen, durch Whitespaces getrennt.', 
+				"s0:\t%s" % self.s0 ]
+
+	def _addK0(self):
+		return ['# Initialer Kellerinhalt. Muss mit "k0:" beginnen, durch Whitespaces getrennt.', 
+				"k0:\t%s" % self.k0 ]
+
+	def _addK(self):
+		return ['# Endliche Menge der Kellerzeichen k. Muss mit "K:" beginnen, durch Whitespace getrennt', "K:\t" + ' '.join(sorted(list(self.K))) ]
+
+	def _plaintext(self, joiner="\n", pretty=True):
+		LINE = ['#' * 80]
+		SPACER = ['']
+
+		specialK = list()
+
+		specialK += self._addK0()
+		if pretty:
+			specialK += SPACER
+		specialK += self._addK()
+
+		return OPlaintextAutomat._plaintext(self) + joiner.join(specialK)
+
+	def _addDelta(self):
+		out = list(['# Uebergaenge, Format :', 
+		'# Zustand, Zeichen, Kellerzeichen, Zielzustand, Kellerzeichen(push) (durch whitespace getrennt)',
+		'# Mehrere (push) Kellerzeichen muessen durch + getrennt werden])'])
+		
+		#self.delta[zustand][(bandzeichen, kellerzeichen)] = (zustandStrich, kellerzeichenStrich)
+
+		for zustand in sorted(self.delta.keys()):
+			for (bandzeichen, kellerzeichen) in self.delta[zustand]:
+			 	(zustandStrich, kellerzeichenStrich) = self.delta[zustand][(bandzeichen, kellerzeichen)]
+			 	kellerzeichenStrich = '+'.join(kellerzeichenStrich)
+				self.log.debug("(%s, %s, %s) = (%s, %s)" % (zustand, bandzeichen, kellerzeichen, zustandStrich, kellerzeichenStrich))
+				out.append("%s\t%s\t%s\t%s\t%s" % (zustand, bandzeichen, kellerzeichen, zustandStrich, kellerzeichenStrich))
+		return out
+
+class OAsciiKellerAutomat(AusgebenderAutomat):
+	def _getAsciiArtDeltaTable(self, prefix=' '):
+		pass
+
 
 class LaTeXBinder(AusgebenderAutomat):
 	def __init__(self, template=None, finalFileBase='AutomatBinder', WORKINGDIR=None, TEMPLATESDIR=None):

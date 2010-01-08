@@ -343,6 +343,7 @@ class NichtDeterministischerAutomat(automatenausgabe.OAsciiAutomat, automatenaus
 		self.beschreibung = beschreibung
 		self.ableitungsPfad = list()
 
+		self.type = 'finite'
 		if self.testWords == None:
 			self.log.debug("Adding Test Words")
 			self.testWords = self.testWorteGenerator()
