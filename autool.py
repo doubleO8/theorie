@@ -6,7 +6,8 @@ from automatenleser import *
 import traceback
 from optparse import OptionParser
 
-FILTER_TYPES = set(['NEA', 'DEA', 'eNDA', 'eDEA', 'eNEA'])
+FILTER_TYPES = set(['NEA', 'DEA', 'eNDA', 'eDEA', 'eNEA', 'finite', 'pushdown', 'turing'])
+
 # parse options et al
 parser = OptionParser()
 
@@ -84,6 +85,7 @@ parser.add_option("--log-warning",
 # Logging init
 logger = AutomatLogger(options.loglevel).log
 autoFilter = FILTER_TYPES
+
 if options.filter:
 	try:
 		autoFilter = set(options.filter.split(',')).intersection(FILTER_TYPES)
@@ -93,23 +95,41 @@ if options.filter:
 automaten = list()
 for file in files:
 	if not file.endswith("~"):
+		ignore = True
+		
 		try:
-			A = AutomatenLeser(filename=file, log=logger).automat()
+			L = AutomatenLeser(filename=file, log=logger)
+			automatenTyp = L.type
+			A = L.automat()
 			
-			# Epsilon frei machen
-			if options.epsilon:
-				logger.warn("Epsilonfrei machen")
-				A = A.EpsilonFrei()
+			# NEA/DEA et al
+			if L.type == 'finite':
+				
+				# Epsilon frei machen
+				if options.epsilon:
+					logger.warn("Epsilonfrei machen")
+					A = A.EpsilonFrei()
+	
+				epsilon = isinstance(A, EpsilonAutomat) and True or False
+				deterministisch = A.istDEA()
+				automatenTyp = '%s%s' % ((epsilon and 'e' or ''), (deterministisch and 'DEA' or 'NEA'))
+				
+				logger.debug("[%s] class:%s epsilon:%s deterministisch: %s" % (automatenTyp, repr(A), epsilon, deterministisch))
 
-			epsilon = isinstance(A, EpsilonAutomat) and True or False
-			deterministisch = A.istDEA()
-			automatenTyp = '%s%s' % ((epsilon and 'e' or ''), (deterministisch and 'DEA' or 'NEA'))
-			
-			logger.debug("[%s] class:%s epsilon:%s deterministisch: %s" % (automatenTyp, repr(A), epsilon, deterministisch))
+			# Kellerautomaten
+			elif L.type == 'pushdown':
+				pass
 
-			if not automatenTyp in autoFilter:
-				logger.warn("Ignoriere %s. %s nicht in %s" % (A.name, automatenTyp, ', '.join(autoFilter)))
+			# Turingmaschinen ..
 			else:
+				raise NotImplementedError("Type '%s' not implemented .. YET" % L.type)
+
+			if automatenTyp in autoFilter:
+				ignore = False
+			else:
+				logger.warn("Ignoriere %s. %s nicht in %s" % (A.name, automatenTyp, ', '.join(autoFilter)))
+
+			if not ignore:
 				automaten.append(A)
 	
 				if options.dump:
@@ -123,8 +143,18 @@ for file in files:
 	
 				if options.verify:
 					A.verify()
-					A.verifyByRegExp()
-	
+					try:
+						A.verifyByRegExp()
+					except Exception, e:
+						if options.loglevel == logging.DEBUG:
+							logger.debug(e)
+
+					try:
+						A.verifyVerbose()
+					except Exception, e:
+						if options.loglevel == logging.DEBUG:
+							logger.debug(e)
+
 				if options.grammar:
 					try:
 						print A.Grammatik()

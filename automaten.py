@@ -89,12 +89,16 @@ class NoAcceptingStateException(AutomatException):
 		AutomatException.__init__(self, value, validSet, 'ist nicht Teil der Menge der moeglichen Endzustaende', ableitungspfad)
 
 class NoRuleForStateException(AutomatException):
-	def __init__(self, value, statesWithRules=list(), ableitungspfad=list()):
-		AutomatException.__init__(self, value, frozenset(statesWithRules), 'hat keine definierten Regeln.', ableitungspfad)
+	def __init__(self, value, statesWithRules=list(), ableitungspfad=list(), explanation='hat keine definierten Regeln.'):
+		AutomatException.__init__(self, value, frozenset(statesWithRules), explanation , ableitungspfad)
 
 class EmptyStateException(AutomatException):
 	def __init__(self, value, statesWithRules=list(), ableitungspfad=list()):
 		AutomatException.__init__(self, value, frozenset(statesWithRules), 'Leere Zustandsmenge', ableitungspfad)
+
+class NotInKException(AutomatException):
+	def __init__(self, value, validSet=frozenset(), hint=None, ableitungspfad=list()):
+		AutomatException.__init__(self, value, validSet, 'ist nicht Teil der Menge der Kellerzeichen', hint, ableitungspfad)
 
 def test():
 	"""
@@ -619,6 +623,9 @@ class NichtDeterministischerAutomat(automatenausgabe.OAsciiAutomat, automatenaus
 			return False
 		return True
 
+	def checkVerbose(self,  Wort, doRaise=False):
+		raise NotImplementedError("checkVerbose not implemented")
+
 	def checkWords(self, words, silence=False):
 		resultset = list()
 		words = self._toList(words)
@@ -683,6 +690,31 @@ class NichtDeterministischerAutomat(automatenausgabe.OAsciiAutomat, automatenaus
 		for word in vWords:
 			expectation = vWords[word]
 			result = self.check(word)
+			self.log.debug("[VERIFY] %-10s expecting: %-5s, got: %-5s" % (word, expectation, result))
+			if expectation != result:
+				self.log.warning("%s: '%s' verification failed! (expected: %s)" % (self.name, word, expectation))
+				self.log.debug(self.ableitungsPfad)
+				verified = False
+
+		logmessage = "Automat '%s' %sverifiziert%s" % (self.name, (not verified and 'NICHT ') or '', (usingRegExp and ' (via RE)') or '')
+		if verified:
+			self.log.info(logmessage)
+		else:
+			self.log.warning(logmessage)
+		return verified
+
+	def verifyVerbose(self, vWords=None, usingRegExp=False):
+		verified = True
+		if vWords == None:
+			vWords = self.verifyWords
+		
+		if vWords == None or (isinstance(vWords, dict) and len(vWords) == 0):
+			self.log.warning("%s: Will not be verified. (No words to check)" % self.name)
+			return
+
+		for word in vWords:
+			expectation = vWords[word]
+			result = self.checkVerbose(word)
 			self.log.debug("[VERIFY] %-10s expecting: %-5s, got: %-5s" % (word, expectation, result))
 			if expectation != result:
 				self.log.warning("%s: '%s' verification failed! (expected: %s)" % (self.name, word, expectation))
