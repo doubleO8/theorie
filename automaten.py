@@ -337,7 +337,7 @@ class NichtDeterministischerAutomat(automatenausgabe.OAsciiAutomat, automatenaus
 			self.testWords = self._toList(testWords)
 		else:
 			self.testWords = None
-			self.log.warning("No testwords provided.")
+			self.log.warning("[%s] No testwords provided." % self.name)
 		self.verifyWords = verifyWords
 		self.verifyRegExp = verifyRegExp
 		self.beschreibung = beschreibung
