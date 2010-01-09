@@ -137,7 +137,7 @@ for file in files:
 			if automatenTyp in autoFilter:
 				ignore = False
 			else:
-				logger.warn("Ignoriere %s. %s nicht in %s" % (A.name, automatenTyp, ', '.join(autoFilter)))
+				logger.info("Ignoriere %s. '%s' nicht in {%s}" % (A.name, automatenTyp, ', '.join(autoFilter)))
 
 			if not ignore:
 				automaten.append(A)
