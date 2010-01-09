@@ -627,6 +627,9 @@ class NichtDeterministischerAutomat(automatenausgabe.OAsciiAutomat, automatenaus
 	def checkVerbose(self,  Wort, doRaise=False):
 		raise NotImplementedError("checkVerbose not implemented")
 
+	def checkStepByStep(self,  Wort, doRaise=False):
+		raise NotImplementedError("checkStepByStep not implemented")
+
 	def checkWords(self, words, silence=False):
 		resultset = list()
 		words = self._toList(words)
@@ -693,7 +696,7 @@ class NichtDeterministischerAutomat(automatenausgabe.OAsciiAutomat, automatenaus
 			result = self.check(word)
 			self.log.debug("[VERIFY] %-10s expecting: %-5s, got: %-5s" % (word, expectation, result))
 			if expectation != result:
-				self.log.warning("%s: '%s' verification failed! (expected: %s)" % (self.name, word, expectation))
+				self.log.warning("%s '%s' Verification FAILED! (expected: %s)" % (self.name, word, expectation))
 				self.log.debug(self.ableitungsPfad)
 				verified = False
 
@@ -721,6 +724,10 @@ class NichtDeterministischerAutomat(automatenausgabe.OAsciiAutomat, automatenaus
 				self.log.warning("%s: '%s' verification failed! (expected: %s)" % (self.name, word, expectation))
 				self.log.debug(self.ableitungsPfad)
 				verified = False
+			try:
+				self.checkStepByStep(word)
+			except Exception, e:
+				pass
 
 		logmessage = "Automat '%s' %sverifiziert%s" % (self.name, (not verified and 'NICHT ') or '', (usingRegExp and ' (via RE)') or '')
 		if verified:

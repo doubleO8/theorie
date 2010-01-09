@@ -13,13 +13,27 @@ def test():
 	failed, total = doctest.testmod()
 	print("doctest: %d/%d tests failed." % (failed, total))
 
-class DeterministischerKellerautomat(automatenausgabe.OPlaintextKellerAutomat, automaten.Automat):
+class DeterministischerKellerautomat(automatenausgabe.OAsciiKellerAutomat, automatenausgabe.OPlaintextKellerAutomat, automaten.Automat):
 	EPSILON = 'EPSILON'
 	DELIMITER = '#'
+	
+	ACCEPT_BY_FINALSTATE_AND_EMPTYSTACK = 0
+	ACCEPT_BY_FINALSTATE = 1
+	ACCEPT_BY_EMPTYSTACK = 2
+	ACCEPT_BY_ALL = 3
+	
+	#: Beschreibung des Verfahrens zum Akzeptieren eines Wortes
+	ACCEPT_DESCRIPTION = ['Finaler Zustand + leerer Keller', 'Erreichen eines finalen Zustandes', 'Leerer Keller', 'Finaler Zustand, Keller + Band leer']
 
+	#: strict mode: Warnung bei DELIMITER <=> EPSILON Austausch etc.
+	strict = False
+
+	#: Ueberfuehrung ohne Zeichen versuchen
+	epsilonTransition = False
+	
 	def __init__(self, S, s0, F, Sigma, K, k0='k0', delta=None, 
 				name="EinDPDA", beschreibung='', 
-				testWords=None, verifyWords=None, verifyRegExp=None):
+				testWords=None, verifyWords=None, verifyRegExp=None, accept=0):
 		self._initLogging()
 		
 		# Umwandeln von Listen und Stringinhalte (whitespace-getrennt) in frozenset-Mengen
@@ -39,6 +53,9 @@ class DeterministischerKellerautomat(automatenausgabe.OPlaintextKellerAutomat, a
 		self.verifyWords = verifyWords
 		self.testWords = testWords
 		
+		#: Verfahren, das angewendet werden soll, um zu bestimmen, ob ein Wort akzeptiert wird oder nicht
+		self.accept = accept
+		
 		#: Automatentyp
 		self.type = 'pushdown'
 		
@@ -47,7 +64,7 @@ class DeterministischerKellerautomat(automatenausgabe.OPlaintextKellerAutomat, a
 		
 		#: Ableitungspfad
 		self.ableitung = list()
-		
+
 		self.rulesCounter = 1
 		#: Dict mit den Ableitungsregeln, so dass 
 		# Ableitungsregeln wie folgt aufgelistet werden koennen ..
@@ -184,7 +201,21 @@ class DeterministischerKellerautomat(automatenausgabe.OPlaintextKellerAutomat, a
 		self.zustand = zustandStrich
 
 	def __str__(self):
-		return "Deterministischer Kellerautomat"
+		s = "Deterministischer Kellerautomat '%s'" % (self.name)
+		s += "\n"
+		if self.beschreibung:
+			s += " %s\n" % self.beschreibung
+		s += " Anfangszustand                          : %s\n" % self.s0
+		s += " Endliche Menge der möglichen Zustände S : %s\n" % self._fzString(self.S)
+		s += " Menge der Endzustände F                 : %s\n" % self._fzString(self.F)
+		s += " Endliche Menge der Eingabezeichen Σ     : %s\n" % self._fzString(self.Sigma)
+		s += " Endliche Menge der Kellerzeichen k      : %s\n" % self._fzString(self.K)
+		s += " Kellerstartzeichen                      : %s\n" % self.k0
+
+		if '_getAsciiArtDeltaTable' in dir(self):
+			s += self._getAsciiArtDeltaTable()
+
+		return s
 
 	def _getStateVerbose(self, read):
 		"""
@@ -193,13 +224,6 @@ class DeterministischerKellerautomat(automatenausgabe.OPlaintextKellerAutomat, a
 		repraesentiert.
 		"""
 		return "(%s, %s, %s)" % (self.zustand, read, ''.join(reversed(self.keller)))
-
-	def _logStateInfo(self, Zeichen, prefix=''):
-		"""
-		Logging des aktuellen Zustandes mit aktuell gelesenem Zeichen
-		"""
-		self.log.debug("%s[%-2s] %-7s Keller: %s" % (prefix, self.zustand, Zeichen, ','.join(self.keller)))
-		
 
 	def _fixWord(self, Wort):
 		"""
@@ -217,9 +241,63 @@ class DeterministischerKellerautomat(automatenausgabe.OPlaintextKellerAutomat, a
 		*HEREBEDRAGONS*
 		"""
 		if Zeichen == DeterministischerKellerautomat.DELIMITER:
-			self.log.warning("_fixZeichen %s -> %s" % (DeterministischerKellerautomat.DELIMITER, DeterministischerKellerautomat.EPSILON))
+			if DeterministischerKellerautomat.strict:
+				self.log.warning("_fixZeichen %s -> %s" % (DeterministischerKellerautomat.DELIMITER, DeterministischerKellerautomat.EPSILON))
 			Zeichen = DeterministischerKellerautomat.EPSILON
 		return Zeichen
+
+	def accepted(self, condition=None):
+		"""
+		>>> S2 = ['s0', 's1', 's2']
+		>>> Sigma2 = ['a', 'b']
+		>>> F2 = ['s2']
+		>>> k0 = 'k0'
+		>>> K2 = [k0, 'b']
+		>>> s02 = 's0'
+		>>> PDA2 = DeterministischerKellerautomat(S2, s02, F2, Sigma2, K2, k0)
+		>>> PDA2.addRule('s0', 'a', 'k0', 's0', 'b+k0')
+		True
+		>>> PDA2.addRule('s0', 'b', 'k0', 's1', 'b+k0')
+		True
+		>>> PDA2.addRule('s0', 'b', 'b', 's1', 'b+b')
+		True
+		>>> PDA2.addRule('s0', 'a', 'b', 's0', 'b+b')
+		True
+		>>> PDA2.addRule('s1', 'b', 'b', 's1', 'b+b')
+		True
+		>>> PDA2.addRule('s1', 'EPSILON', 'b', 's2', 'b')
+		True
+		>>> PDA2.accept = DeterministischerKellerautomat.ACCEPT_BY_FINALSTATE
+		>>> PDA2.check("abb")
+		True
+		>>> PDA2.accept = DeterministischerKellerautomat.ACCEPT_BY_EMPTYSTACK
+		>>> PDA2.check("abb")
+		False
+		>>> PDA2.accept = DeterministischerKellerautomat.ACCEPT_BY_ALL
+		>>> PDA2.check("abb")
+		False
+		"""
+		result = False
+		
+		if not self.accept in range(len(DeterministischerKellerautomat.ACCEPT_DESCRIPTION)):
+			self.accept = 0
+			self.log.error("!! self.accept not in range, fallen back to '%d' (%s)" % (self.accept, DeterministischerKellerautomat.ACCEPT_DESCRIPTION[self.accept]))
+
+		if condition == None:
+			condition = self.accept
+		
+		if condition == DeterministischerKellerautomat.ACCEPT_BY_FINALSTATE_AND_EMPTYSTACK:
+			result = (self.zustand in self.F) and self._stackEmpty()
+		elif condition == DeterministischerKellerautomat.ACCEPT_BY_FINALSTATE:
+			result = (self.zustand in self.F)
+		elif condition == DeterministischerKellerautomat.ACCEPT_BY_EMPTYSTACK:
+			result =  self._stackEmpty()
+		elif condition == DeterministischerKellerautomat.ACCEPT_BY_ALL:
+			result = ((self.zustand in self.F) and self._stackEmpty() and self._bandEmpty())
+
+		self.log.debug("ACCEPTED: %s (%s)" % (result, DeterministischerKellerautomat.ACCEPT_DESCRIPTION[condition]))
+		return result
+
 
 	def checkVerbose(self, Wort):
 		"""
@@ -227,7 +305,70 @@ class DeterministischerKellerautomat(automatenausgabe.OPlaintextKellerAutomat, a
 		"""
 		return self.check(Wort, doItVerbose=True)
 
-	def check(self, Wort, doRaise=False, doItVerbose=False):
+	def checkStepByStep(self,  Wort, doRaise=False):
+		return self.check(Wort, stepByStep=True)
+
+	def stepper(self, immediateOutput=None):
+		if immediateOutput == None:
+			immediateOutput = self.stepByStepImmediateOutput
+
+		bandWidth = 12
+		wordLength = len(self.CHK_Word)
+		lines = list()
+		if  wordLength > bandWidth:
+			bandWidth = wordLength + 2
+
+		fmt = ['%7s', '%7s', '%' + str(bandWidth) + 's', '%' + str(bandWidth) + 's', '%7s', '%s']
+		fmtKonfiguration = ['(%2s, ', '%' + str(wordLength) + 's, ', '%s)' ]
+		
+		# Header hinzufuegen
+		if self.stepCount == 0:
+			parts = list()
+			desc = ['Schritt', 'GI(...)','Eingabeband', 'Kellerband', 'Zustand', 'Konfiguration']
+			for (f, s) in zip(fmt, desc):
+				parts.append(f % s)
+			lines += [' | '.join(parts), "-" * 80]
+
+		markedWord = self.CHK_Word
+		if self.CHK_Index >= 0:
+			newWord = ''
+			i = 0
+			for c in markedWord:
+				if i == self.CHK_Index:
+					newWord += '[%s]' % c
+				else:
+					newWord += c
+				i+=1
+			markedWord = newWord
+
+		kfgList = [self.zustand, self.CHK_Word[self.CHK_Index:],  ''.join(reversed(self.keller)) ]
+		konfiguration = ''
+		for (f, s) in zip(fmtKonfiguration, kfgList):
+			konfiguration += f % s
+
+		# add Ableitung
+		self.ableitung.append(konfiguration)
+		
+		msg = list()
+		msg.append(self.stepCount)
+		msg.append((self.CHK_Rule >= 0 and self.CHK_Rule or ' '))
+		msg.append(markedWord)
+		msg.append(''.join(reversed(self.keller)))
+		msg.append(self.zustand)
+		msg.append(konfiguration)
+
+		parts = list()
+		for(f, s) in zip(fmt, msg):
+			parts.append(f % s)
+
+		lines.append(' | '.join(parts))
+		self.stepCount += 1
+
+		self.stepByStepOutput += lines
+		if immediateOutput:
+			print "\n".join(lines)
+
+	def check(self, Wort, doRaise=False, doItVerbose=False, stepByStep=False):
 		"""
 		>>> S = ['s0', 's1', 's2', 's3']
 		>>> Sigma = ['a', 'b']
@@ -251,11 +392,17 @@ class DeterministischerKellerautomat(automatenausgabe.OPlaintextKellerAutomat, a
 		>>> PDA.check("aaabb", True)
 		Traceback (most recent call last):
 		...
-		NoRuleForStateException: 's2' hat keine definierten Regeln fuer (EPSILON, a) 
+		NoAcceptingStateException: 's2' ist nicht Teil der Menge der moeglichen Endzustaende [s0,s3]
 		>>> PDA.check("a")
 		False
 		>>> PDA.check("aaaaaab")
 		False
+		>>> PDA.checkVerbose("aaabbb")
+		True
+		>>> PDA.accept = DeterministischerKellerautomat.ACCEPT_BY_EMPTYSTACK
+		>>> PDA.checkVerbose("aaabbb")
+		True
+		>>> PDA.accept = DeterministischerKellerautomat.ACCEPT_BY_FINALSTATE
 		>>> PDA.checkVerbose("aaabbb")
 		True
 		"""
@@ -263,61 +410,85 @@ class DeterministischerKellerautomat(automatenausgabe.OPlaintextKellerAutomat, a
 		accepted = False
 		Wort = self._fixWord(Wort)
 
-		self.ableitung.append(self._getStateVerbose(Wort))
+		# ein paar Meta-Variablen
+		self.CHK_Word = Wort
+		self.CHK_Rule = -1
+		self.CHK_Index = 0
 
+		# "Step" Meta-Werte
+		self.stepCount = 0
+		self.stepByStepOutput = list()
+		self.stepByStepImmediateOutput = False
+
+		self.stepper()
+
+		transitionFailure = True
+		
 		for i in range(len(Wort)):
 			(zustandStrich, kellerzeichenStrich) = (None, None)
-			Zeichen = self._fixZeichen(Wort[i])
+			transitionFailure = True
+			#Zeichen = self._fixZeichen(Wort[i])
+			Zeichen = Wort[i]
+
+			# Index erhoehen
+			self.CHK_Index = i+1
+			
+			# Oberstes Kellerzeichen lesen (ohne pop())
+			head = self.keller[-1]
+
 			read = Wort[i:]
 			self.band.append(Zeichen)
-			
-			self._logStateInfo(Zeichen, prefix='> ')
 
-			# Oberstes Kellerzeichen herausfinden (ohne pop() !)
-			try:
-				head = self.keller[-1]
-			except Exception, e:
-				if doRaise:
-					raise
-				return False
+			# Spezialfall: Wortende-Zeichen gelesen
+			if Zeichen == DeterministischerKellerautomat.DELIMITER:
+				#self.log.warning("Wortende")
+				transitionFailure = False
+				try:
+					(zustandStrich, kellerzeichenStrich) = self._delta(self.zustand, DeterministischerKellerautomat.EPSILON, head)
+					self.log.debug("Wortende: Versuche Ueberfuehrung ohne Zeichen !")
+					self.step((zustandStrich, kellerzeichenStrich))
+					self.band.pop()
+				except Exception, e:
+					pass
+				break
 
-			self.log.debug("Kellerzeichen     : %s" % head)
-			#self.log.debug(">" * 80)
+			if DeterministischerKellerautomat.epsilonTransition:
+				#self.log.warning("UEBERFUEHRUNG OHNE ZEICHEN VERSUCHEN")
+				# Ueberfuehrung ohne Zeichen (siehe Barth, Kap. 5.2., Seite 58)
+				try:
+					(zustandStrich, kellerzeichenStrich) = self._delta(self.zustand, DeterministischerKellerautomat.EPSILON, head)
+					self.log.debug("Ueberfuehrung ohne Zeichen !")
+					transitionFailure = False
+				except Exception, e:
+					self.log.debug("Ueberfuehrung ohne Zeichen: %s" % e)
 
-#			# Ueberfuehrung ohne Zeichen (siehe Barth, Kap. 5.2., Seite 58)
-#			try:
-#				(zustandStrich, kellerzeichenStrich) = self._delta(self.zustand, DeterministischerKellerautomat.EPSILON, head)
-#				self.log.debug("Ueberfuehrung ohne Zeichen !")
-#			except Exception, e:
-#				#self.log.debug("Ueberfuehrung ohne Zeichen: %s" % e)
-#				pass
-#			if (zustandStrich, kellerzeichenStrich) != (None, None):
-#				self.log.warning("===%-50s===" % 'HARRRRRR')
-#				self.log.warning("===%-50s===" % ("%s,%s" % (zustandStrich, kellerzeichenStrich)))
+				if (zustandStrich, kellerzeichenStrich) != (None, None):
+					self.log.debug("===%-50s===" % 'HARRRRRR')
+					self.log.debug("===%-50s===" % ("%s,%s" % (zustandStrich, kellerzeichenStrich)))
 
 			if (zustandStrich, kellerzeichenStrich) == (None, None):
 				# Ueberfuehrung mit Zeichen
 				try:
 					(zustandStrich, kellerzeichenStrich) = self._delta(self.zustand, Zeichen, head)
+					transitionFailure = False
 				except Exception, e:
 					self.log.debug("Ueberfuehrung MIT Zeichen schlug fehl: %s" % e)
-					# Spezialfall: Band leer, letzten Ableitungsschritt dokumentieren.
-					if self._bandEmpty():
-						self.log.warning("band empty condition")
-						self.ableitung.append(self._getStateVerbose(read))
-
+					
+					## Spezialfall: Band leer, letzten Ableitungsschritt dokumentieren.
+					#if self._bandEmpty():
+					#	if DeterministischerKellerautomat.strict:
+					#		self.log.warning("band empty condition")
 
 			if (zustandStrich, kellerzeichenStrich) == (None, None):
 				if doRaise:
 					raise automaten.NoRuleForStateException(self.zustand, explanation='hat keine definierten Regeln fuer (%s, %s)' % (Zeichen, head))
-				#self.log.debug("Don't go breaking my heart ..")
+					#self.log.debug("Don't go breaking my heart ..")
 				break
 			else:
 				self.step((zustandStrich, kellerzeichenStrich))
 				self.band.pop()
-				self.ableitung.append(self._getStateVerbose(read))
 
-			self._logStateInfo(Zeichen, prefix='< ')
+			self.stepper()
 
 		self.log.debug(" = Zustand      : %-40s (Final: %s)" % (self.zustand, (self.zustand in self.F)))
 		self.log.debug(" = Band         : %-40s (Leer : %s)" % (','.join(self.band), self._bandEmpty()))
@@ -325,15 +496,22 @@ class DeterministischerKellerautomat(automatenausgabe.OPlaintextKellerAutomat, a
 		self.log.debug("-" * 80)
 		self.log.debug("")
 
-		if (self.zustand in self.F) and self._stackEmpty() and self._bandEmpty():
+		if transitionFailure and doRaise:
+			raise NoRuleForStateException(self.zustand)
+			
+		if (transitionFailure == False) and self.accepted():
 			accepted = True
 		elif doRaise:
-			raise NoAcceptingStateException(self.zustand, self.S)
+			raise automaten.NoAcceptingStateException(self.zustand, self.F)
+
+		# Print Step By Step Table
+		if stepByStep and (self.stepByStepImmediateOutput == False):
+			print "\n".join(self.stepByStepOutput)
 
 		if doItVerbose:
-			self.log.info("%-10s: %s => %sKZEPTIERT." % ( ("'%s'" % Wort), ' |- '.join(self.ableitung), (accepted and 'A' or 'NICHT A')))
+			self.log.info("%-10s: %-105s => %sKZEPTIERT." % ( ("'%s'" % Wort), ' |- '.join(self.ableitung), (accepted and 'A' or 'NICHT A')))
 		else:
-			self.log.info("Wort '%s' : %skzeptiert." % ( Wort[:-1], (accepted and "A" or "Nicht a") ))
+			self.log.info("Wort '%s' : %skzeptiert. (%s)" % ( Wort[:-1], (accepted and "A" or "Nicht a"), DeterministischerKellerautomat.ACCEPT_DESCRIPTION[self.accept] ))
 
 		return accepted
 
@@ -347,6 +525,7 @@ class DeterministischerKellerautomat(automatenausgabe.OPlaintextKellerAutomat, a
 			(zustandStrich, kellerzeichenStrich) = self.delta[Zustand][(Zeichen, Kellerzeichen)]
 			logmessage += "(%s, %s)" % (zustandStrich, ''.join(kellerzeichenStrich))
 			rNum = self.rulesDict[(Zustand, Zeichen, Kellerzeichen, zustandStrich, ''.join(kellerzeichenStrich))]
+			self.CHK_Rule = rNum
 			logmessage = '#%-2d %s' % (rNum, logmessage) 
 			self.log.debug(logmessage)
 			return self.delta[Zustand][(Zeichen, Kellerzeichen)]

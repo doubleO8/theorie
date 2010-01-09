@@ -41,12 +41,22 @@ parser.add_option('-g', "--grammar",
 parser.add_option('-p', "--print",
 					action="store_true", default=False,
 					help="Print ASCII representation of the automaton",
-					dest="ascii")
+					dest="printIt")
 
 parser.add_option('-v', "--verify",
 					action="store_true", default=False,
 					help="Verify automaton",
 					dest="verify")
+
+parser.add_option('-z', "--verbose",
+					action="store_true", default=False,
+					help="Be verbose",
+					dest="verbose")
+
+parser.add_option('-s', "--step-by-step",
+					action="store_true", default=False,
+					help="Step By Step Verification",
+					dest="step")
 
 parser.add_option('-t', "--test-words",
 					default=False,
@@ -137,23 +147,42 @@ for file in files:
 	
 				if options.ascii:
 					print A._plaintext()
-	
+
+				if options.printIt:
+					print A
+
 				if options.dotdump:
 					print A.createDotDocument(dumpOnly=True)
 	
 				if options.verify:
-					A.verify()
+					if not options.verbose:
+						A.verify()
+					else:
+						try:
+							A.verifyVerbose()
+						except Exception, e:
+							if options.loglevel == logging.DEBUG:
+								logger.debug(e)
+
 					try:
 						A.verifyByRegExp()
 					except Exception, e:
 						if options.loglevel == logging.DEBUG:
 							logger.debug(e)
 
-					try:
-						A.verifyVerbose()
-					except Exception, e:
-						if options.loglevel == logging.DEBUG:
-							logger.debug(e)
+				if options.step:
+					if not options.testWords:
+						logger.error("No testwords ?!")
+					else:
+						if not options.printIt:
+							print str(A) + "\n" * 2
+						try:
+							for word in options.testWords.split():
+								A.checkStepByStep(word)
+								print
+						except Exception, e:
+							if options.loglevel == logging.DEBUG:
+								logger.debug(e)
 
 				if options.grammar:
 					try:
@@ -162,7 +191,7 @@ for file in files:
 						print "Grammaaaatik"
 						pass
 	
-				if options.testWords:
+				if options.testWords and not options.step:
 					words = options.testWords.split()
 					A.checkWords(words)
 					A.verifyByRegExp(words)

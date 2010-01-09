@@ -330,7 +330,8 @@ class KellerautomatLeser(AutomatenLeser):
 		for line in lines:
 			line = AutomatenLeser.doppelPunkt.sub(':', line.lstrip(), count=1)
 			if self._parseLineSimple(line):
-				self.log.debug("(line parsed)")
+				#self.log.debug("(line parsed)")
+				pass
 
 			elif line.startswith("Name:"):
 				data = self._teileOderJaule(line, 'Name')

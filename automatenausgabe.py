@@ -545,8 +545,32 @@ class OPlaintextKellerAutomat(AusgebenderAutomat):
 
 class OAsciiKellerAutomat(AusgebenderAutomat):
 	def _getAsciiArtDeltaTable(self, prefix=' '):
-		pass
-
+		lines = list()
+		
+		for zustand in sorted(self.delta.keys()):
+			# geordnete Bandzeichen- und Kellerzeichenlisten
+			bandzeichenListe = set()
+			kellerzeichenListe = set()
+			for (b, k) in self.delta[zustand].keys():
+				bandzeichenListe.add(b)
+				kellerzeichenListe.add(k)
+			bandzeichenListe = sorted(list(bandzeichenListe))
+			kellerzeichenListe = sorted(list(kellerzeichenListe))
+			
+			rulesHash = dict()
+			for bandzeichen in bandzeichenListe:
+				for kellerzeichen in kellerzeichenListe:
+					if self.delta[zustand].has_key((bandzeichen, kellerzeichen)):
+						(zustandStrich, kellerzeichenStrich) = self.delta[zustand][(bandzeichen, kellerzeichen)]
+						rNum = self.rulesDict[(zustand, bandzeichen, kellerzeichen, zustandStrich, ''.join(kellerzeichenStrich))]
+						rulesHash[rNum] = "%s#%d %s(%s, %s, %-2s) = (%s, %s)" % (prefix + ' ' * 4, rNum, 'δ', zustand, bandzeichen, kellerzeichen, zustandStrich, ''.join(kellerzeichenStrich))
+			for k in sorted(rulesHash.keys()):
+				lines.append(rulesHash[k])
+		if len(lines) > 0:
+			lines = [ prefix + 'Überführungsregeln                      :'] + lines
+		else:
+			lines = ['HMM .. KEINE Regeln definiert ??']
+		return "\n".join(lines)
 
 class LaTeXBinder(AusgebenderAutomat):
 	def __init__(self, template=None, finalFileBase='AutomatBinder', WORKINGDIR=None, TEMPLATESDIR=None):
