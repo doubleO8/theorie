@@ -13,7 +13,8 @@ parser = OptionParser()
 
 parser.add_option('-a', "--ascii",
 					action="store_true", default=False,
-					help="Output ascii representation of automaton",
+					help="Output ASCII representation of automaton\
+					(as used in automata definition files)",
 					dest="ascii")
 
 parser.add_option('-d', "--dump",
