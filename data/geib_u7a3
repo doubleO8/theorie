@@ -40,5 +40,6 @@ AcceptedVerifyWords:	11 00 1100 0101 0011
 # Optional: Worte, die _nicht akzeptiert werden duerfen
 FailingVerifyWords:	1 0 01 101
 
+TestWords:	1 01 0011 1001 a01
 #RegularExpression:	((bb*aa*b)*(a|(a(a|b)a)*)+)
 
