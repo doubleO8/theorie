@@ -1,7 +1,7 @@
 ################################################################################
 # Kellerautomatendefinition
 Name: U10A1
-Beschreibung: Deterministischer Kellerautomat fuer a^n b^n
+Beschreibung: Deterministischer Kellerautomat für $a^{n} b^{n}$
 ################################################################################
 
 # Optional: Automat Typ
