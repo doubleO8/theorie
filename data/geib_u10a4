@@ -1,0 +1,52 @@
+################################################################################
+# Kellerautomatendefinition
+Name: U10A4
+Beschreibung: Deterministischer Kellerautomat fuer vmv' (v' = Umkehrung des Wortes v)
+################################################################################
+
+# Optional: Automat Typ
+Type:	pushdown
+
+
+# Alphabet definieren. Muss mit "Sigma:" beginnen, durch Whitespace getrennt.
+Sigma:	0 1 m
+
+# Startzustand definieren. Muss mit "s0:" beginnen, durch Whitespaces getrennt.
+s0:	s0
+
+# Zustaende
+S:	s0 s1 s2
+
+# Finale Zustaende definieren. Muss mit "F:" beginnen, durch Whitespace getrennt.
+F:	s2
+
+# Endliche Menge der Kellerzeichen k. Muss mit "K:" beginnen, durch Whitespace getrennt
+K:	k0 0 1
+
+# Uebergaenge, Format :
+# Zustand, Zeichen, Kellerzeichen, Zielzustand, Kellerzeichen(push) (durch whitespace getrennt)
+# Mehrere (push) Kellerzeichen muessen durch + getrennt werden
+
+s0	0	k0	s0	0+k0
+s0	1	k0	s0	1+k0
+s0	m	k0	s1	k0
+
+s0	0	0	s0	0+0
+s0	0	1	s0	0+1
+s0	1	0	s0	1+0
+s0	1	1	s0	1+1
+
+s0	m	0	s1	0
+s0	m	1	s1	1
+
+s1	0	0	s1	EPSILON
+s1	1	1	s1	EPSILON
+
+s1	EPSILON	k0	s2	k0
+
+# Optional: Worte, die akzeptiert werden sollen
+AcceptedVerifyWords:	0m0 10m01 101m101 m
+
+# Optional: Worte, die _nicht akzeptiert werden duerfen
+FailingVerifyWords:	0m 00m m00 0000
+
