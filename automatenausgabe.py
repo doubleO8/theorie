@@ -8,6 +8,15 @@ PDFLATEX_BIN = 'pdflatex'
 OUTPUTDIR = os.path.join(WORKINGDIR, 'texOutput')
 EPSILON = 'EPSILON'
 
+def test():
+	"""
+	doctest (unit testing)
+	"""
+	import doctest, automaten, logging
+	automaten.AutomatLogger(logging.DEBUG).log
+	failed, total = doctest.testmod()
+	print("doctest: %d/%d tests failed." % (failed, total))
+
 class SelfRemovingTempdir(object):
 	def __init__(self, workDir=None, removeAtExit=True, log = None):
 		self.workDir = workDir
@@ -100,19 +109,6 @@ class AusgebenderAutomat(object):
 		if len(what) == 0:
 			return '-'
 		return '{%s}' % ','.join(sorted(what))
-
-	def _fzTex(self, what):
-		"""
-		String-Representation einer Menge (frozenset).
-			*	Falls Menge aus nur einem Element besteht, wird dieses als String zurueckgegeben,
-			*	falls Menge leer, wird '' zurueckgegeben, 
-			*	andernfalls ein String der Form a, b, c, d, e, f
-		"""
-		if len(what) == 1:
-			return list(what)[0]
-		if len(what) == 0:
-			return '-'
-		return ', '.join(sorted(what))
 
 	def _readTemplate(self, template):
 		if not os.path.isfile(template):
@@ -371,9 +367,73 @@ class ODotAutomat(AusgebenderAutomat):
 		return returnValue
 
 class OLaTeXAutomat(AusgebenderAutomat):
+	"""
+	>>> o = OLaTeXAutomat()
+	>>> o._mangleState("hihi")
+	'hihi'
+	>>> o._mangleState("s0")
+	'{s_0}'
+	>>> o._mangleState("s_0")
+	'{s_0}'
+	"""
+	import re
+	statePattern = r'([a-zA-Z]+)(_?)(\d+)'
+	stateRegexp = re.compile(statePattern)
+
+	def _fzTex(self, what):
+		"""
+		String-Representation einer Menge (frozenset).
+			*	Falls Menge aus nur einem Element besteht, wird dieses als String zurueckgegeben,
+			*	falls Menge leer, wird '' zurueckgegeben, 
+			*	andernfalls ein String der Form a, b, c, d, e, f
+		"""
+		if len(what) == 1:
+			return list(what)[0]
+		if len(what) == 0:
+			return '-'
+		return ', '.join(sorted(what))
+
+	def _fzTexM(self, what):
+		"""
+		String-Representation einer Menge (frozenset).
+			*	Falls Menge aus nur einem Element besteht, wird dieses als String zurueckgegeben,
+			*	falls Menge leer, wird '' zurueckgegeben, 
+			*	andernfalls ein String der Form a, b, c, d, e, f
+		Diese Methode sorgt zusaetzlich noch fuer eine "mathematische" Repraesentation von 
+		Zustaenden, also wird aus s0 "ein s mit einer tiefgestellten 0".
+		"""
+		if len(what) == 1:
+			return self._mangleState(list(what)[0])
+			#return list(what)[0]
+		if len(what) == 0:
+			return '-'
+		mangled = list()
+		for item in sorted(what):
+			mangled.append(self._mangleState(item))
+		return ', '.join(mangled)
+		#return ', '.join(sorted(what))
+
 	def _mangleName(self, name):
 		return name.replace("_", ' ')
-	
+
+	def _mangleState(self, state):
+		m = OLaTeXAutomat.stateRegexp.match(state)
+		if m:
+			state = '{%s_%s}' % (m.group(1), m.group(3))
+		return state
+
+	def _TeXIncludeFigure(self, file, caption=None, label=None):
+		label = label and (r'\label{%s}' % label) or ''
+		caption = caption and (r'\caption{%s}' % caption) or ''
+		return """
+		\\begin{figure}[ht!]
+		\\centering
+		\\includegraphics[width=1.0\linewidth]{%s}
+		%s
+		%s
+		\\end{figure}
+		""" % (file, caption, label)
+
 	def _TeXSpecification(self):
 		s = list()
 		aTyp = "(%seterministischer) Automat" % ((self.istDEA() and 'D' or 'Nichtd'))
@@ -428,17 +488,6 @@ class OLaTeXAutomat(AusgebenderAutomat):
 
 		return "\n".join(s)
 
-	def _TeXIncludeFigure(self, file, caption=None, label=None):
-		label = label and (r'\label{%s}' % label) or ''
-		caption = caption and (r'\caption{%s}' % caption) or ''
-		return """
-		\\begin{figure}[ht!]
-		\\centering
-		\\includegraphics[width=1.0\linewidth]{%s}
-		%s
-		%s
-		\\end{figure}
-		""" % (file, caption, label)
 	
 	def _TeXResults(self):
 		s = ''
@@ -496,8 +545,7 @@ class OLaTeXAutomat(AusgebenderAutomat):
 				caption = 'Automat %s' % aName
 				s = s.replace('%%__DOT_GRAPH__', r'\subsection{Graph}' + self._TeXIncludeFigure(dotgraph, caption, label))
 			else:
-				self.log.error("Kein dotgraph")
-
+				self.log.debug("Es konnte kein DOT Graph hinzugefuegt werden.")
 		return s
 
 class OPlaintextKellerAutomat(AusgebenderAutomat):
@@ -543,9 +591,41 @@ class OPlaintextKellerAutomat(AusgebenderAutomat):
 				out.append("%s\t%s\t%s\t%s\t%s" % (zustand, bandzeichen, kellerzeichen, zustandStrich, kellerzeichenStrich))
 		return out
 
-class OAsciiKellerAutomat(AusgebenderAutomat):
+class AusgebenderKellerAutomat(AusgebenderAutomat):
+	def _getRulesHash(self):
+		rulesHash = dict()
+
+		for zustand in sorted(self.delta.keys()):
+			# geordnete Bandzeichen- und Kellerzeichenlisten
+			bandzeichenListe = set()
+			kellerzeichenListe = set()
+			for (b, k) in self.delta[zustand].keys():
+				bandzeichenListe.add(b)
+				kellerzeichenListe.add(k)
+			bandzeichenListe = sorted(list(bandzeichenListe))
+			kellerzeichenListe = sorted(list(kellerzeichenListe))
+			
+			for bandzeichen in bandzeichenListe:
+				for kellerzeichen in kellerzeichenListe:
+					if self.delta[zustand].has_key((bandzeichen, kellerzeichen)):
+						(zustandStrich, kellerzeichenStrich) = self.delta[zustand][(bandzeichen, kellerzeichen)]
+						rNum = self.rulesDict[(zustand, bandzeichen, kellerzeichen, zustandStrich, ''.join(kellerzeichenStrich))]
+						rulesHash[rNum] = (zustand, bandzeichen, kellerzeichen, zustandStrich, kellerzeichenStrich)
+
+		return rulesHash
+
+class OAsciiKellerAutomat(AusgebenderKellerAutomat):
 	def _getAsciiArtDeltaTable(self, prefix=' '):
 		lines = list()
+		rulesHash = self._getRulesHash()
+		for k in sorted(rulesHash.keys()):
+			(zustand, bandzeichen, kellerzeichen, zustandStrich, kellerzeichenStrich) = rulesHash[k]
+			lines.append("%s#%d %s(%s, %s, %-2s) = (%s, %s)" % (prefix + ' ' * 4, k, 'δ', zustand, bandzeichen, kellerzeichen, zustandStrich, ''.join(kellerzeichenStrich)))
+		if len(lines) > 0:
+			lines = [ prefix + 'Überführungsregeln                      :'] + lines
+		else:
+			lines = ['HMM .. KEINE Regeln definiert ??']
+		return "\n".join(lines)
 		
 		for zustand in sorted(self.delta.keys()):
 			# geordnete Bandzeichen- und Kellerzeichenlisten
@@ -571,6 +651,90 @@ class OAsciiKellerAutomat(AusgebenderAutomat):
 		else:
 			lines = ['HMM .. KEINE Regeln definiert ??']
 		return "\n".join(lines)
+
+class OLaTeXKellerAutomat(AusgebenderKellerAutomat, OLaTeXAutomat):
+	def createDotDocument(self, dot_template=None):
+		return False
+
+	def _TeXSpecification(self):
+		s = list()
+		aTyp = "Deterministischer Kellerautomat"
+		name = self._mangleName(self.name)
+
+		s.append(r'\textbf{%s \emph{%s}}' % (aTyp, name))
+
+		if self.beschreibung :
+			s.append(r"\newline \emph{%s}" % self.beschreibung)
+		s.append(r"\begin{itemize}")
+		s.append(r'\item[] Endliche Menge der möglichen Zustände $S = \{%s\}$' % self._fzTexM(self.S))
+		s.append(r"\item[] $%s$ ist Anfangszustand" % self._mangleState(self.s0))
+		s.append(r"\item[] Menge der Endzustände $F = \{%s\}$" % self._fzTexM(self.F))
+		s.append(r"\item[] Menge der Kellerzeichen $K = \{%s\}$" % self._fzTexM(self.K))
+		s.append(r"\item[] $%s$ ist Kellerstartzeichen" % self._mangleState(self.k0))
+		s.append(r"\item[] Endliche Menge der Eingabezeichen $\Sigma = \{%s\}$" % self._fzTex(self.Sigma))
+		s.append(r'\end{itemize}')
+		return "\n".join(s)
+
+	def _TeXDeltaTable(self):
+		s = list()
+		s.append(r"\begin{itemize}")
+
+		rulesHash = self._getRulesHash()
+		for rNum in sorted(rulesHash.keys()):
+			(zustand, bandzeichen, kellerzeichen, zustandStrich, kellerzeichenStrich) = rulesHash[rNum]
+			kellerzeichenStrichString = ''
+			zustand = self._mangleState(zustand)
+			zustandStrich = self._mangleState(zustandStrich)
+			if bandzeichen == EPSILON:
+					bandzeichen = r'\varepsilon'
+			for kellerzeichen in kellerzeichenStrich:
+				if kellerzeichen == EPSILON:
+					kellerzeichen = r'\varepsilon'
+				else:
+					kellerzeichen = self._mangleState(kellerzeichen)
+				kellerzeichenStrichString += kellerzeichen
+			s.append(r"\item[(%s)] $\delta(%s, %s, %s) = (%s, %s)$" % (rNum, zustand, bandzeichen, kellerzeichen, zustandStrich, kellerzeichenStrichString))
+
+		s.append(r'\end{itemize}')
+		return "\n".join(s)
+	
+	def X_TeXResults(self):
+		s = ''
+		return s
+		if self.testWords:
+			testResults = [ r'\subsection{Test}', r'\begin{longtable}{lll}' ]
+			testResults.append(r'Erfolg & Wort & Ergebnis\\')
+			testResults.append(r'\hline')
+			for (word, successful, result) in self.checkWords(self.testWords):
+				t = list()
+				t.append(r'{\small %s}' % (successful and "OK" or r'\textbf{KO}'))
+				t.append(r'{\small %s}' % word)
+				t.append(r'{\small \emph{%s}}' % result)
+				testResults.append(' & '.join(t) + r'\\')
+			testResults.append(r'\end{longtable}')
+			s = "\n".join(testResults)
+		return s
+
+	def X_TeXVerify(self):
+		s = ''
+		return s
+		if self.verifyWords:
+			testResults = [ r'\subsection{Verifikationstests}', r'\begin{longtable}{llll}' ]
+			testResults.append(r'Wort & Erwartungswert & Ergebnis & Verifiziert\\')
+			testResults.append(r'\hline')
+			for word in self.verifyWords:
+				expected = self.verifyWords[word]
+				
+			for (word, successful, result) in self.checkWords(self.verifyWords.keys()):
+				t = list()
+				t.append(r'{\small %s}' % word)
+				t.append(r'{\small %s}' % self.verifyWords[word])
+				t.append(r'{\small \emph{%s, %s}}' % (successful, result))
+				t.append(r'{\small %s}' % ((self.verifyWords[word] == successful) and "ja" or r'\textbf{NEIN}'))
+				testResults.append(' & '.join(t) + r'\\')
+			testResults.append(r'\end{longtable}')
+			s = "\n".join(testResults)
+		return s
 
 class LaTeXBinder(AusgebenderAutomat):
 	def __init__(self, template=None, finalFileBase='AutomatBinder', WORKINGDIR=None, TEMPLATESDIR=None):
@@ -670,3 +834,6 @@ def automatenReport(automaten, finalFileBase='AutomatReport',
 
 	b.appendContent(content)
 	b.write()
+
+if __name__ == '__main__':
+	test()
