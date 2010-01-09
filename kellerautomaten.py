@@ -13,7 +13,7 @@ def test():
 	failed, total = doctest.testmod()
 	print("doctest: %d/%d tests failed." % (failed, total))
 
-class DeterministischerKellerautomat(automatenausgabe.OAsciiKellerAutomat, automatenausgabe.OPlaintextKellerAutomat, automaten.Automat):
+class DeterministischerKellerautomat(automatenausgabe.OLaTeXKellerAutomat, automatenausgabe.OAsciiKellerAutomat, automatenausgabe.OPlaintextKellerAutomat, automaten.Automat):
 	EPSILON = 'EPSILON'
 	DELIMITER = '#'
 	
