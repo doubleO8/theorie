@@ -413,6 +413,24 @@ class OLaTeXAutomat(AusgebenderAutomat):
 		return ', '.join(mangled)
 		#return ', '.join(sorted(what))
 
+	def _listTexM(self, what):
+		"""
+		String-Representation einer Menge (frozenset).
+			*	Falls Menge aus nur einem Element besteht, wird dieses als String zurueckgegeben,
+			*	falls Menge leer, wird '' zurueckgegeben, 
+			*	andernfalls ein String der Form a, b, c, d, e, f
+		Diese Methode sorgt zusaetzlich noch fuer eine "mathematische" Repraesentation von 
+		Zustaenden, also wird aus s0 "ein s mit einer tiefgestellten 0".
+		"""
+		if len(what) == 1:
+			return self._mangleState(list(what)[0])
+		if len(what) == 0:
+			return '-'
+		mangled = list()
+		for item in what:
+			mangled.append(self._mangleState(item))
+		return ''.join(mangled)
+
 	def _mangleName(self, name):
 		return name.replace("_", ' ')
 
@@ -705,34 +723,59 @@ class OLaTeXKellerAutomat(AusgebenderKellerAutomat, OLaTeXAutomat):
 			testResults = [ r'\subsection{Test}', r'\begin{longtable}{lll}' ]
 			testResults.append(r'Erfolg & Wort & Ergebnis\\')
 			testResults.append(r'\hline')
-			for (word, successful, result) in self.checkWords(self.testWords):
+			testMitPfadListe = list()
+			
+			for (word, successful, result, pfad) in self.checkWordsX(self.testWords):
 				t = list()
 				t.append(r'{\small %s}' % (successful and "OK" or r'\textbf{KO}'))
 				t.append(r'{\small %s}' % word)
 				t.append(r'{\small \emph{%s}}' % result)
 				testResults.append(' & '.join(t) + r'\\')
+				testMitPfadListe.append((word, pfad))
 			testResults.append(r'\end{longtable}')
+			
+			testResults.append(r'\subsubsection{Ableitungspfade}')
+			testResults.append(r"\begin{itemize}")
+			for (word, pfad) in testMitPfadListe:
+				testResults.append(r'\item[%s] %s' % (word, r' \vdash '.join(pfad)))
+			testResults.append(r'\end{itemize}')
 			s = "\n".join(testResults)
 		return s
 
-	def X_TeXVerify(self):
+	def _TeXVerify(self):
 		s = ''
-		return s
 		if self.verifyWords:
 			testResults = [ r'\subsection{Verifikationstests}', r'\begin{longtable}{llll}' ]
-			testResults.append(r'Wort & Erwartungswert & Ergebnis & Verifiziert\\')
+			testResults.append(r'Wort & Erwartung & Ergebnis & Verifiziert\\')
 			testResults.append(r'\hline')
 			for word in self.verifyWords:
 				expected = self.verifyWords[word]
-				
-			for (word, successful, result) in self.checkWords(self.verifyWords.keys()):
+
+			wpList = list()
+			
+			for (word, successful, result, pfad) in self.checkWordsX(self.verifyWords.keys()):
 				t = list()
 				t.append(r'{\small %s}' % word)
 				t.append(r'{\small %s}' % self.verifyWords[word])
 				t.append(r'{\small \emph{%s, %s}}' % (successful, result))
 				t.append(r'{\small %s}' % ((self.verifyWords[word] == successful) and "ja" or r'\textbf{NEIN}'))
 				testResults.append(' & '.join(t) + r'\\')
+				wpList.append((word, pfad, successful))
 			testResults.append(r'\end{longtable}')
+
+			testResults.append(r'\subsubsection{Ableitungspfade}')
+			testResults.append(r"\begin{itemize}")
+
+			for (word, pfad, successful) in wpList:
+				parts = list()
+				for item in pfad:
+					(zustand, band, keller) = item
+					band = band.replace("#", "\#")
+					parts.append("(%s, %s, %s)" % (self._mangleState(zustand), band, self._listTexM(keller) ))
+				cesar = r'%s $%s L(KA)$' % (word, successful and r'\in' or r'\notin')
+				testResults.append(r'\item[%s] $%s$\newline %s' % (word, r' \vdash '.join(parts), cesar))
+			testResults.append(r'\end{itemize}')
+
 			s = "\n".join(testResults)
 		return s
 

@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 import logging, logging.config, os, sys, re
+import copy
 import automatenausgabe, automatenleser
 
 if 'USED_LOGLEVEL' not in dir():
@@ -341,7 +342,9 @@ class NichtDeterministischerAutomat(automatenausgabe.OAsciiAutomat, automatenaus
 		self.verifyWords = verifyWords
 		self.verifyRegExp = verifyRegExp
 		self.beschreibung = beschreibung
-		self.ableitungsPfad = list()
+
+		#: "Roh"-Daten des Ableitungspfades
+		self.raw_ableitung = list()
 
 		self.type = 'finite'
 		if self.testWords == None:
@@ -349,6 +352,24 @@ class NichtDeterministischerAutomat(automatenausgabe.OAsciiAutomat, automatenaus
 			self.testWords = self.testWorteGenerator()
 		# Automat zuruecksetzen (aktuellen Zustand auf s0 setzen)
 		self.reset()
+
+	def _ableitungAppend(self, items):
+		self.raw_ableitung.append(copy.deepcopy(items))
+		#self.log.error("// %s" % self.raw_ableitung[-1])
+
+	def _ableitungReset(self):
+		self.raw_ableitung = list()
+
+	def _ableitungToString(self):
+		return str(self.raw_ableitung)
+
+	def _ableitungsPfad__str__(self):
+		if len(self.ableitungsPfad) == 0:
+			return ''
+		items = list()
+		for item in self.ableitungsPfad:
+			items.append('{%s}' % ','.join(sorted(item)))
+		return " Ableitung:\n %s" % ' -> '.join(items)
 
 	def __str__(self):
 		s = "%seterministischer Automat '%s'" % ((self.istDEA() and 'D' or 'Nichtd'), self.name)
@@ -377,19 +398,12 @@ class NichtDeterministischerAutomat(automatenausgabe.OAsciiAutomat, automatenaus
 				l.append(" %-10s : %s" % (repr(zeichenMenge), repr(zielMenge)))
 		return "\n".join(l)
 
-	def _ableitungsPfad__str__(self):
-		if len(self.ableitungsPfad) == 0:
-			return ''
-		items = list()
-		for item in self.ableitungsPfad:
-			items.append('{%s}' % ','.join(sorted(item)))
-		return " Ableitung:\n %s" % ' -> '.join(items)
-
 	def reset(self):
 		"""
 		Setzt den Automaten zurueck
 		"""
 		self.Zustand = self.s0
+		self._ableitungReset()
 		self.ableitungsPfad = list()
 
 	def istDEA(self):
@@ -682,7 +696,7 @@ class NichtDeterministischerAutomat(automatenausgabe.OAsciiAutomat, automatenaus
 		
 		return self.verify(vWords, True)
 		
-	def verify(self, vWords=None, usingRegExp=False):
+	def verify(self, vWords=None, usingRegExp=False, doItVerbose=False):
 		verified = True
 		if vWords == None:
 			vWords = self.verifyWords
@@ -699,8 +713,15 @@ class NichtDeterministischerAutomat(automatenausgabe.OAsciiAutomat, automatenaus
 				self.log.warning("%s '%s' Verification FAILED! (expected: %s)" % (self.name, word, expectation))
 				self.log.debug(self.ableitungsPfad)
 				verified = False
+			if doItVerbose:
+				try:
+					self.checkStepByStep(word)
+				except Exception, e:
+					pass
 
-		logmessage = "Automat '%s' %sverifiziert%s" % (self.name, (not verified and 'NICHT ') or '', (usingRegExp and ' (via RE)') or '')
+		logmessage = "Automat '%s' %sverifiziert%s. ('verifiziert' bedeutet: Erwartungen zumindest erfuellt!)." % (self.name, 
+					(not verified and 'NICHT ') or '',
+					(usingRegExp and ' (via RE)') or '')
 		if verified:
 			self.log.info(logmessage)
 		else:
@@ -708,37 +729,11 @@ class NichtDeterministischerAutomat(automatenausgabe.OAsciiAutomat, automatenaus
 		return verified
 
 	def verifyVerbose(self, vWords=None, usingRegExp=False):
-		verified = True
-		if vWords == None:
-			vWords = self.verifyWords
-		
-		if vWords == None or (isinstance(vWords, dict) and len(vWords) == 0):
-			self.log.warning("%s: Will not be verified. (No words to check)" % self.name)
-			return
-
-		for word in vWords:
-			expectation = vWords[word]
-			result = self.checkVerbose(word)
-			self.log.debug("[VERIFY] %-10s expecting: %-5s, got: %-5s" % (word, expectation, result))
-			if expectation != result:
-				self.log.warning("%s: '%s' verification failed! (expected: %s)" % (self.name, word, expectation))
-				self.log.debug(self.ableitungsPfad)
-				verified = False
-			try:
-				self.checkStepByStep(word)
-			except Exception, e:
-				pass
-
-		logmessage = "Automat '%s' %sverifiziert%s" % (self.name, (not verified and 'NICHT ') or '', (usingRegExp and ' (via RE)') or '')
-		if verified:
-			self.log.info(logmessage)
-		else:
-			self.log.warning(logmessage)
-		return verified
+		return verify(vWords, usingRegExp, True)
 
 	def EpsilonFrei(self):
 		return self
-	
+
 	def Grammatik(self):
 		if not self.istDEA:
 			raise NotImplemented

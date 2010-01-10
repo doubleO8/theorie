@@ -1,8 +1,8 @@
 # Automatendefinition
 # Uebungsblatt 10, Aufgabe 1)
 
-Name: U10A1
-Beschreibung: Ein zu minimierender Automat
+Name: U10A1(Barth)
+Beschreibung: Ein zu minimierender Automat()
 
 # Alphabet definieren, muss mit Sigma: beginnen, durch whitespace getrennt
 Sigma: a b
@@ -41,5 +41,9 @@ s0: 0
 
 8	a	0
 8	b	4
+
+AcceptedVerifyWords:	ab aa
+
+FailingVerifyWords:	a
 
 TestWords:	a b ab aa bb aab aabb

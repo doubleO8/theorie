@@ -32,7 +32,7 @@ s0	b	a	s1	EPSILON
 s1	b	a	s1	EPSILON
 
 # Optional: Worte, die akzeptiert werden sollen
-AcceptedVerifyWords:	aabb
+AcceptedVerifyWords:	aaabbb aabb ab
 
 # Optional: Worte, die _nicht akzeptiert werden duerfen
 FailingVerifyWords:	aaabb aabbb abab

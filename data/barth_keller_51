@@ -1,7 +1,7 @@
 ################################################################################
 # Kellerautomatendefinition
 Name: PDA51Barth
-Beschreibung: Deterministischer Kellerautomat fuer a^n b^n
+Beschreibung: Deterministischer Kellerautomat fuer $a^{n} b^{n}$
 Type: pushdown
 ################################################################################
 
@@ -31,7 +31,7 @@ s2	b	a	s2	EPSILON
 s2	EPSILON	k0	s3	k0
 
 # Optional: Worte, die akzeptiert werden sollen
-AcceptedVerifyWords:	aabb aaabbb
+AcceptedVerifyWords:	aabb aaabbb ab
 
 # Optional: Worte, die _nicht akzeptiert werden duerfen
 FailingVerifyWords:	a aab ba
