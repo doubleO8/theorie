@@ -23,13 +23,10 @@ class DeterministischerKellerautomat(automatenausgabe.OLaTeXKellerAutomat, autom
 	ACCEPT_BY_ALL = 3
 	
 	#: Beschreibung des Verfahrens zum Akzeptieren eines Wortes
-	ACCEPT_DESCRIPTION = ['Finaler Zustand + leerer Keller', 'Erreichen eines finalen Zustandes', 'Leerer Keller', 'Finaler Zustand, Keller + Band leer']
+	ACCEPT_DESCRIPTION = ['Finaler Zustand und leerer Keller', 'Erreichen eines finalen Zustandes', 'Leerer Keller', 'Finaler Zustand, Keller und Band leer']
 
 	#: strict mode: Warnung bei DELIMITER <=> EPSILON Austausch etc.
 	strict = True
-
-	#: Ueberfuehrung ohne Zeichen versuchen
-	epsilonTransition = False
 	
 	def __init__(self, S, s0, F, Sigma, K, k0='k0', delta=None, 
 				name="EinDPDA", beschreibung='', 
@@ -126,6 +123,14 @@ class DeterministischerKellerautomat(automatenausgabe.OLaTeXKellerAutomat, autom
 				(altZustandStrich, altKellerzeichenStrich) = self.delta[zustand][(bandzeichen, kellerzeichen)]
 				self.log.debug("Overriding rule: delta(%s, %s, %s) = (%s, %s)" % (zustand, bandzeichen, kellerzeichen, altZustandStrich, altKellerzeichenStrich))
 				self.log.debug("           with: delta(%s, %s, %s) = (%s, %s)" % (zustand, bandzeichen, kellerzeichen, zustandStrich, kellerzeichenStrich))
+
+			if self.delta[zustand].has_key((DeterministischerKellerautomat.EPSILON, kellerzeichen)):
+				self.log.error("Schon EPSILON-Uebergang definiert: delta(%s, %s, %s) = (%s, %s)" % (zustand, DeterministischerKellerautomat.EPSILON, kellerzeichen, zustandStrich, kellerzeichenStrich))
+				raise automaten.NonDeterministicKellerautomatRule(zustand, bandzeichen, kellerzeichen, DeterministischerKellerautomat.EPSILON)
+			elif bandzeichen == DeterministischerKellerautomat.EPSILON:
+				for zeichen in self.Sigma:
+					if self.delta[zustand].has_key((zeichen, kellerzeichen)):
+						raise automaten.NonDeterministicKellerautomatRule(zustand, DeterministischerKellerautomat.EPSILON, kellerzeichen, zeichen)
 		else:
 			self.delta[zustand] = dict()
 
@@ -235,19 +240,9 @@ class DeterministischerKellerautomat(automatenausgabe.OLaTeXKellerAutomat, autom
 			Wort += DeterministischerKellerautomat.DELIMITER
 		return Wort
 
-	def _fixZeichen(self, Zeichen):
-		"""
-		Veraendert ggf. Bandende-Zeichen in Epsilon-Zeichen
-		*HEREBEDRAGONS*
-		"""
-		if Zeichen == DeterministischerKellerautomat.DELIMITER:
-			if DeterministischerKellerautomat.strict:
-				self.log.warning("_fixZeichen %s -> %s" % (DeterministischerKellerautomat.DELIMITER, DeterministischerKellerautomat.EPSILON))
-			Zeichen = DeterministischerKellerautomat.EPSILON
-		return Zeichen
-
 	def accepted(self, condition=None):
 		"""
+		doctest ist etwas sinnfrei .. HEREBEDRAGONS
 		>>> S2 = ['s0', 's1', 's2']
 		>>> Sigma2 = ['a', 'b']
 		>>> F2 = ['s2']
@@ -269,7 +264,7 @@ class DeterministischerKellerautomat(automatenausgabe.OLaTeXKellerAutomat, autom
 		True
 		>>> PDA2.accept = DeterministischerKellerautomat.ACCEPT_BY_FINALSTATE
 		>>> PDA2.check("abb")
-		True
+		False
 		>>> PDA2.accept = DeterministischerKellerautomat.ACCEPT_BY_EMPTYSTACK
 		>>> PDA2.check("abb")
 		False
@@ -381,6 +376,9 @@ class DeterministischerKellerautomat(automatenausgabe.OLaTeXKellerAutomat, autom
 				result = "Kein finaler Zustand erreicht."
 			except automaten.NoRuleForStateException, e:
 				result = "Kein finaler Zustand erreicht (Keine Regel definiert für '%s')." % e.value
+			except Exception, e:
+				result = str(e)
+				self.log.error(e)
 			resultset.append((word, successful, result, self.raw_ableitung))
 			if not silence:
 				self.log.info("%-20s [%s] %-5s : %s" % (self.name, (successful and "SUCCESS" or "FAILURE"), word, result))
@@ -411,7 +409,7 @@ class DeterministischerKellerautomat(automatenausgabe.OLaTeXKellerAutomat, autom
 		>>> PDA.check("aaabb", True)
 		Traceback (most recent call last):
 		...
-		NoAcceptingStateException: 's2' ist nicht Teil der Menge der moeglichen Endzustaende [s0,s3]
+		NoKellerautomatRule: Keine Ueberfuehrungsregel (s2, #, a)
 		>>> PDA.check("a")
 		False
 		>>> PDA.check("aaaaaab")
@@ -440,71 +438,54 @@ class DeterministischerKellerautomat(automatenausgabe.OLaTeXKellerAutomat, autom
 		self.stepByStepImmediateOutput = False
 
 		self.stepper()
-		transitionFailure = True
 		
-		for i in range(len(Wort)):
+		n = len(Wort)
+		i = 0
+		
+		while i <= n:
 			(zustandStrich, kellerzeichenStrich) = (None, None)
-			transitionFailure = True
-			Zeichen = Wort[i]
+			bandzeichen = Wort[i]
+
+			self.log.debug("--- Step # %2d ---" % (self.stepCount))
+			self.log.debug("%s%s%s" % (Wort[:i], Wort[i], Wort[i+1:]) )
+			self.log.debug("%s%s" % (" " * i, '^') )
 
 			# Index erhoehen
 			self.CHK_Index = i+1
 			
 			# Oberstes Kellerzeichen lesen (ohne pop())
-			head = self.keller[-1]
+			kellerzeichen = self.keller[-1]
 
-			# Spezialfall: Wortende-Zeichen gelesen
-			if Zeichen == DeterministischerKellerautomat.DELIMITER:
-				#self.log.warning("Wortende")
-				transitionFailure = False
-				try:
-					(zustandStrich, kellerzeichenStrich) = self._delta(self.zustand, DeterministischerKellerautomat.EPSILON, head)
-					self.log.warning("[%s] Wortende: Versuche Ueberfuehrung ohne Zeichen !" % self.name)
-					self.step((zustandStrich, kellerzeichenStrich))
-					#self.stepper()
-				except Exception, e:
-					pass
-				break
-
-			if DeterministischerKellerautomat.epsilonTransition:
-				self.log.warning("UEBERFUEHRUNG OHNE ZEICHEN VERSUCHEN")
+			if self.validDelta(self.zustand, DeterministischerKellerautomat.EPSILON, kellerzeichen):
 				# Ueberfuehrung ohne Zeichen (siehe Barth, Kap. 5.2., Seite 58)
-				try:
-					(zustandStrich, kellerzeichenStrich) = self._delta(self.zustand, DeterministischerKellerautomat.EPSILON, head)
-					self.log.debug("Ueberfuehrung ohne Zeichen !")
-					transitionFailure = False
-				except Exception, e:
-					self.log.debug("Ueberfuehrung ohne Zeichen: %s" % e)
-
-				if (zustandStrich, kellerzeichenStrich) != (None, None):
-					self.log.debug("===%-50s===" % 'HARRRRRR')
-					self.log.debug("===%-50s===" % ("%s,%s" % (zustandStrich, kellerzeichenStrich)))
-
-			if (zustandStrich, kellerzeichenStrich) == (None, None):
-				# Ueberfuehrung mit Zeichen
-				try:
-					(zustandStrich, kellerzeichenStrich) = self._delta(self.zustand, Zeichen, head)
-					transitionFailure = False
-				except Exception, e:
-					self.log.debug("Ueberfuehrung MIT Zeichen schlug fehl: %s" % e)
-
-			if (zustandStrich, kellerzeichenStrich) == (None, None):
-				if doRaise:
-					raise automaten.NoRuleForStateException(self.zustand, explanation='hat keine definierten Regeln fuer (%s, %s)' % (Zeichen, head))
-					#self.log.debug("Don't go breaking my heart ..")
-				break
+				bandzeichen = DeterministischerKellerautomat.EPSILON
+				self.log.debug("== Ueberfuehrung OHNE Zeichen (mit '%s') ==" % bandzeichen)
+			elif self.validDelta(self.zustand, bandzeichen, kellerzeichen):
+				self.log.debug("== Ueberfuehrung MIT Zeichen  ==")
+				i += 1
 			else:
-				self.step((zustandStrich, kellerzeichenStrich))
+				self.log.debug("== Ueberfuehrung nicht mehr definiert  ==")
+				if doRaise and (bandzeichen != DeterministischerKellerautomat.DELIMITER):
+					self.log.debug("Das Bandzeichen ist '%s'. (Wir werfen jetzt eine NoKellerautomatRule-Exception ..)" % bandzeichen)
+					raise automaten.NoKellerautomatRule(self.zustand, bandzeichen, kellerzeichen)
+				else:
+					self.log.debug("Das Bandzeichen ist DELIMITER '%s'. (Wortende erreicht)" % DeterministischerKellerautomat.DELIMITER)
+				self.log.debug("")
+				break
 
-			#self.stepper()
-
-		if transitionFailure and doRaise:
-			raise NoRuleForStateException(self.zustand)
-			
-		if (transitionFailure == False) and self.accepted():
-			accepted = True
-		elif doRaise:
-			raise automaten.NoAcceptingStateException(self.zustand, self.F)
+			(zustandStrich, kellerzeichenStrich) = self._delta(self.zustand, bandzeichen, kellerzeichen)
+			self.step((zustandStrich, kellerzeichenStrich))
+			self.log.debug("")
+		
+		if Wort[i] != DeterministischerKellerautomat.DELIMITER :
+			self.log.error("[%s] Wortende von '%s' nicht erreicht. (i=%d/%d), Wort[i]='%s'" % (self.name, Wort, i, n, Wort[i]))
+			if doRaise:
+				raise automaten.EndOfWordKellerautomatException(i, Wort)
+		else:
+			if self.accepted():
+				accepted = True
+			elif doRaise:
+				raise automaten.NoAcceptingStateException(self.zustand, self.F)
 
 		# Print Step By Step Table
 		if stepByStep and (self.stepByStepImmediateOutput == False):
@@ -517,13 +498,18 @@ class DeterministischerKellerautomat(automatenausgabe.OLaTeXKellerAutomat, autom
 
 		return accepted
 
+	def validDelta(self, zustand, zeichen, kellerzeichen):
+		if self.delta.has_key(zustand):
+			return self.delta[zustand].has_key( (zeichen, kellerzeichen) )
+		return False
+
 	def _delta(self, Zustand, Zeichen, Kellerzeichen):
 		"""
 		Ueberfuehrungsfunktion
 		"""
 		logmessage = "(%s, %s, %s) = " % (Zustand, Zeichen, Kellerzeichen)
 
-		if self.delta[Zustand].has_key( (Zeichen, Kellerzeichen) ):
+		if self.validDelta(Zustand, Zeichen, Kellerzeichen):
 			(zustandStrich, kellerzeichenStrich) = self.delta[Zustand][(Zeichen, Kellerzeichen)]
 			logmessage += "(%s, %s)" % (zustandStrich, ''.join(kellerzeichenStrich))
 			# Regel-Nummer herausfinden:

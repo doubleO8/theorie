@@ -101,6 +101,28 @@ class NotInKException(AutomatException):
 	def __init__(self, value, validSet=frozenset(), hint=None, ableitungspfad=list()):
 		AutomatException.__init__(self, value, validSet, 'ist nicht Teil der Menge der Kellerzeichen', hint, ableitungspfad)
 
+class NoKellerautomatRule(Exception):
+	def __init__(self, zustand, bandzeichen, kellerzeichen, hint="Keine Ueberfuehrungsregel"):
+		self.zustand = zustand
+		self.bandzeichen = bandzeichen
+		self.kellerzeichen = kellerzeichen
+		self.hint = hint
+
+	def __str__(self):
+		return "%s (%s, %s, %s)" % (self.hint, self.zustand, self.bandzeichen, self.kellerzeichen)
+
+class NonDeterministicKellerautomatRule(NoKellerautomatRule):
+	def __init__(self, zustand, bandzeichen, kellerzeichen, other):
+		NoKellerautomatRule.__init__(self, zustand, '%s<>%s' % (bandzeichen, other), kellerzeichen, "Nicht deterministische Ueberfuehrungsregel")
+
+class EndOfWordKellerautomatException(Exception):
+	def __init__(self, index, word):
+		self.index = index
+		self.word = word
+
+	def __str__(self):
+		return "Wir sind nur bis  Zeichen # %d von '%s' gekommen (%s)." % (self.index, self.word, self.word[:self.index])
+
 def test():
 	"""
 	doctest (unit testing)

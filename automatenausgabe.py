@@ -690,6 +690,7 @@ class OLaTeXKellerAutomat(AusgebenderKellerAutomat, OLaTeXAutomat):
 		s.append(r"\item[] Menge der Kellerzeichen $K = \{%s\}$" % self._fzTexM(self.K))
 		s.append(r"\item[] $%s$ ist Kellerstartzeichen" % self._mangleState(self.k0))
 		s.append(r"\item[] Endliche Menge der Eingabezeichen $\Sigma = \{%s\}$" % self._fzTex(self.Sigma))
+		s.append(r"\item[] Akzeptieren durch: \emph{%s}" % self.ACCEPT_DESCRIPTION[self.accept])
 		s.append(r'\end{itemize}')
 		return "\n".join(s)
 

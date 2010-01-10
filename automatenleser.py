@@ -270,7 +270,7 @@ class KellerautomatLeser(AutomatenLeser):
 		>>> len(K._data) > 0
 		True
 		>>> a = K.automat()
-		>>> a.check("aaabbb", True)
+		>>> a.check("aaabbb", False)
 		True
 		>>> a.check("aabbb")
 		False
