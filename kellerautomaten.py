@@ -25,6 +25,9 @@ class DeterministischerKellerautomat(automatenausgabe.OLaTeXKellerAutomat, autom
 	#: Beschreibung des Verfahrens zum Akzeptieren eines Wortes
 	ACCEPT_DESCRIPTION = ['Finaler Zustand und leerer Keller', 'Erreichen eines finalen Zustandes', 'Leerer Keller', 'Finaler Zustand, Keller und Band leer']
 
+	#: Uebergaenge mit Epsilon hinzufuegen fuer bereits definierte Regeln erlauben ?
+	ALLOW_EPSILON_RULES = True
+	
 	#: strict mode: Warnung bei DELIMITER <=> EPSILON Austausch etc.
 	strict = True
 	
@@ -124,13 +127,14 @@ class DeterministischerKellerautomat(automatenausgabe.OLaTeXKellerAutomat, autom
 				self.log.debug("Overriding rule: delta(%s, %s, %s) = (%s, %s)" % (zustand, bandzeichen, kellerzeichen, altZustandStrich, altKellerzeichenStrich))
 				self.log.debug("           with: delta(%s, %s, %s) = (%s, %s)" % (zustand, bandzeichen, kellerzeichen, zustandStrich, kellerzeichenStrich))
 
-			if self.delta[zustand].has_key((DeterministischerKellerautomat.EPSILON, kellerzeichen)):
-				self.log.error("Schon EPSILON-Uebergang definiert: delta(%s, %s, %s) = (%s, %s)" % (zustand, DeterministischerKellerautomat.EPSILON, kellerzeichen, zustandStrich, kellerzeichenStrich))
-				raise automaten.NonDeterministicKellerautomatRule(zustand, bandzeichen, kellerzeichen, DeterministischerKellerautomat.EPSILON)
-			elif bandzeichen == DeterministischerKellerautomat.EPSILON:
-				for zeichen in self.Sigma:
-					if self.delta[zustand].has_key((zeichen, kellerzeichen)):
-						raise automaten.NonDeterministicKellerautomatRule(zustand, DeterministischerKellerautomat.EPSILON, kellerzeichen, zeichen)
+			if not DeterministischerKellerautomat.ALLOW_EPSILON_RULES:
+				if self.delta[zustand].has_key((DeterministischerKellerautomat.EPSILON, kellerzeichen)):
+					self.log.error("Schon EPSILON-Uebergang definiert: delta(%s, %s, %s) = (%s, %s)" % (zustand, DeterministischerKellerautomat.EPSILON, kellerzeichen, zustandStrich, kellerzeichenStrich))
+					raise automaten.NonDeterministicKellerautomatRule(zustand, bandzeichen, kellerzeichen, DeterministischerKellerautomat.EPSILON)
+				elif bandzeichen == DeterministischerKellerautomat.EPSILON:
+					for zeichen in self.Sigma:
+						if self.delta[zustand].has_key((zeichen, kellerzeichen)):
+							raise automaten.NonDeterministicKellerautomatRule(zustand, DeterministischerKellerautomat.EPSILON, kellerzeichen, zeichen)
 		else:
 			self.delta[zustand] = dict()
 
@@ -456,13 +460,17 @@ class DeterministischerKellerautomat(automatenausgabe.OLaTeXKellerAutomat, autom
 			# Oberstes Kellerzeichen lesen (ohne pop())
 			kellerzeichen = self.keller[-1]
 
-			if self.validDelta(self.zustand, DeterministischerKellerautomat.EPSILON, kellerzeichen):
+# 			if self.validDelta(self.zustand, DeterministischerKellerautomat.EPSILON, kellerzeichen):
+# 				# Ueberfuehrung ohne Zeichen (siehe Barth, Kap. 5.2., Seite 58)
+# 				bandzeichen = DeterministischerKellerautomat.EPSILON
+# 				self.log.debug("== Ueberfuehrung OHNE Zeichen (mit '%s') ==" % bandzeichen)
+			if self.validDelta(self.zustand, bandzeichen, kellerzeichen):
+				self.log.debug("== Ueberfuehrung MIT Zeichen  ==")
+				i += 1
+			elif self.validDelta(self.zustand, DeterministischerKellerautomat.EPSILON, kellerzeichen):
 				# Ueberfuehrung ohne Zeichen (siehe Barth, Kap. 5.2., Seite 58)
 				bandzeichen = DeterministischerKellerautomat.EPSILON
 				self.log.debug("== Ueberfuehrung OHNE Zeichen (mit '%s') ==" % bandzeichen)
-			elif self.validDelta(self.zustand, bandzeichen, kellerzeichen):
-				self.log.debug("== Ueberfuehrung MIT Zeichen  ==")
-				i += 1
 			else:
 				self.log.debug("== Ueberfuehrung nicht mehr definiert  ==")
 				if doRaise and (bandzeichen != DeterministischerKellerautomat.DELIMITER):
