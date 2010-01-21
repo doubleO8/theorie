@@ -651,7 +651,11 @@ class NichtDeterministischerAutomat(automatenausgabe.OAsciiAutomat, automatenaus
 				self.log.error("Empty state ..")
 				if doRaise:
 					raise
-				return False	
+				return False
+			except Exception, e:
+				self.log.error("Sonstiger Fehler: %s" % e)
+				if doRaise:
+					raise
 
 		if len(self.Zustand.intersection(self.F)) == 0:
 			self.log.debug("Kein Endzustand erreicht.")
@@ -669,12 +673,13 @@ class NichtDeterministischerAutomat(automatenausgabe.OAsciiAutomat, automatenaus
 	def checkWords(self, words, silence=False):
 		resultset = list()
 		words = self._toList(words)
+
 		for word in words:
 			result = 'OUCH'
 			successful = False
 			try:
 				self.check(word, True)
-				result = 'Akzeptiert.'
+				result = "Akzeptiert."
 				successful = True
 			except NotInSigmaException, e:
 				result = "'%s' ist nicht im Alphabet." % e.value
@@ -684,7 +689,10 @@ class NichtDeterministischerAutomat(automatenausgabe.OAsciiAutomat, automatenaus
 				result = "Kein finaler Zustand erreicht."
 			except NoRuleForStateException, e:
 				result = "Kein finaler Zustand erreicht (Keine Regel definiert für '%s')." % e.value
+			except Exception, e:
+				result = "oh-oh, sonstiger Fehler .. '%s'" % e
 			resultset.append((word, successful, result))
+
 			if not silence:
 				self.log.info("%-20s [%s] %-5s : %s" % (self.name, (successful and "SUCCESS" or "FAILURE"), word, result))
 				self.log.debug(self._ableitungsPfad__str__())

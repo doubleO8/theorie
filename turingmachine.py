@@ -339,6 +339,7 @@ class TuringMachine(automatenausgabe.OAsciiTuringmachine, automaten.Automat):
 			self.band.right()
 		else:
 			raise ValueError("aktion=%s !" % aktion)
+
 		self.zustand = zustandStrich
 		self.stepper()
 

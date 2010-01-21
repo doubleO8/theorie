@@ -146,6 +146,15 @@ for file in files:
 
 			if not ignore:
 				automaten.append(A)
+
+				localTestWords = list()
+				if A.testWords:
+					localTestWords += A.testWords
+				if A.verifyWords:
+					localTestWords += A.verifyWords.keys()
+				if options.testWords:
+					localTestWords += options.testWords.split()
+				localTestWords = sorted(set(localTestWords))
 	
 				if options.dump:
 					print A.dump()
@@ -176,30 +185,30 @@ for file in files:
 							logger.debug(e)
 
 				if options.step:
-					if not options.testWords:
-						logger.error("No testwords ?!")
-					else:
-						if not options.printIt:
-							print str(A) + "\n" * 2
-						try:
-							for word in options.testWords.split():
-								A.checkStepByStep(word)
-								print
-						except Exception, e:
-							if options.loglevel == logging.DEBUG:
-								logger.debug(e)
+					if not options.printIt:
+						print str(A) + "\n" * 2
+					try:
+						for word in localTestWords:
+							A.checkStepByStep(word)
+							print
+					except Exception, e:
+						if options.loglevel == logging.DEBUG:
+							logger.debug(e)
 
 				if options.grammar:
 					try:
 						print A.Grammatik()
 					except Exception, e:
-						print "Grammaaaatik"
-						pass
-	
+						print "Grammatik."
+
 				if options.testWords and not options.step:
-					words = options.testWords.split()
-					A.checkWords(words)
-					A.verifyByRegExp(words)
+					A.checkWords(localTestWords)
+					try:
+						A.verifyByRegExp(localTestWords)
+					except Exception, e:
+						if options.loglevel == logging.DEBUG:
+							logger.debug(e)
+
 		except Exception, e:
 			logger.error("[EXCEPTION] '%s' %s" % (file, e))
 			traceback.print_exc(file=sys.stdout)
