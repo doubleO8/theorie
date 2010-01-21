@@ -1,0 +1,72 @@
+################################################################################
+# Turingmaschinendefinition
+Name: U12A4
+Beschreibung: Turingmaschine, die ... (kopiert)
+################################################################################
+
+# Optional: Automat Typ
+Type:	turing
+
+
+# Alphabet definieren. Muss mit "Sigma:" beginnen, durch Whitespace getrennt.
+Sigma:	0 1
+
+# Startzustand definieren. Muss mit "s0:" beginnen, durch Whitespaces getrennt.
+s0:	s0
+
+# Zustaende
+S:	s0 s1 s2 s3 s4 s5 s6
+
+# Finale Zustaende definieren. Muss mit "F:" beginnen, durch Whitespace getrennt.
+F:	s0
+
+# Endliche Menge der Bandzeichen B. Muss mit "B:" beginnen, durch Whitespace getrennt
+B:	* 0 1 a b
+
+# Uebergaenge, Format :
+# Zustand, Bandzeichen, Zielzustand, Neues Bandzeichen, Lesekopfbewegung (durch whitespace getrennt)
+
+s0	*	s1	*	r
+
+s1	*	s0	*	h
+s1	0	s2	a	r
+s1	1	s4	b	r
+s1	a	s0	a	h
+s1	b	s0	b	h
+
+s2	*	s3	*	r
+s2	0	s2	0	r
+s2	1	s2	1	r
+s2	a	s0	a	h
+s2	b	s0	b	h
+
+s3	*	s6	0	l
+s3	0	s3	0	r
+s3	1	s3	1	r
+s3	a	s0	a	h
+s3	b	s0	b	h
+
+s4	*	s5	*	r
+s4	0	s4	0	r
+s4	1	s4	1	r
+s4	a	s0	a	h
+s4	b	s0	b	h
+
+s5	*	s6	1	l
+s5	0	s5	0	r
+s5	1	s5	1	r
+s5	a	s0	a	h
+s5	b	s0	b	h
+
+s6	*	s6	*	l
+s6	0	s6	0	l
+s6	1	s6	1	l
+s6	a	s1	0	r
+s6	b	s1	1	r
+
+# Optional: Worte, die akzeptiert werden sollen
+AcceptedVerifyWords:	01
+
+# Optional: Worte, die _nicht akzeptiert werden duerfen
+#FailingVerifyWords:	0101 001 1 10 0 00
+

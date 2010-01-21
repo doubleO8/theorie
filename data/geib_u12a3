@@ -1,0 +1,48 @@
+################################################################################
+# Turingmaschinendefinition
+Name: U12A3
+Beschreibung: Turingmaschine, die $L(TM) = { 0^{n}1^{n} | n = 1,2,3 }$ akzeptiert
+################################################################################
+
+# Optional: Automat Typ
+Type:	turing
+
+
+# Alphabet definieren. Muss mit "Sigma:" beginnen, durch Whitespace getrennt.
+Sigma:	0 1
+
+# Startzustand definieren. Muss mit "s0:" beginnen, durch Whitespaces getrennt.
+s0:	s0
+
+# Zustaende
+S:	s0 s1 sn sr sn1 sf
+
+# Finale Zustaende definieren. Muss mit "F:" beginnen, durch Whitespace getrennt.
+F:	sf
+
+# Endliche Menge der Bandzeichen B. Muss mit "B:" beginnen, durch Whitespace getrennt
+B:	* 0 1
+
+# Uebergaenge, Format :
+# Zustand, Bandzeichen, Zielzustand, Neues Bandzeichen, Lesekopfbewegung (durch whitespace getrennt)
+
+s0	*	s1	*	r
+
+s1	*	sf	*	h
+s1	0	sn	*	r
+
+sn	*	sn1	*	l
+sn	0	sn	0	r
+sn	1	sn	1	r
+sn1	1	sr	*	l
+
+sr	*	s1	*	r
+sr	0	sr	0	l
+sr	1	sr	1	l
+
+# Optional: Worte, die akzeptiert werden sollen
+AcceptedVerifyWords:	01 0011 000111 00001111
+
+# Optional: Worte, die _nicht akzeptiert werden duerfen
+FailingVerifyWords:	0101 001 1 10 0 00
+

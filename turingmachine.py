@@ -30,6 +30,7 @@ class InfiniteBand(object):
 		"""
 		self.pos = 0
 		self._band = list(InfiniteBand.BLANK)
+		self.log = automaten.AutomatLogger().log
 		
 		if content != None:
 			if isinstance(content, basestring):
@@ -50,6 +51,8 @@ class InfiniteBand(object):
 		return self._band[self.pos]
 
 	def write(self, char):
+		if self.pos >= len(self._band)-1:
+			self._band.append(InfiniteBand.BLANK)
 		self._band[self.pos] = char
 		return self.read()
 
@@ -63,10 +66,6 @@ class InfiniteBand(object):
 
 	def __str__(self):
 		return ''.join(self._band)
-
-	def __str_extended__(self):
-		sb = ''.join(self._band)
-		return "%s\n%s^" % (sb, ' ' * self.pos)
 
 class TuringMachine(automatenausgabe.OAsciiTuringmachine, automaten.Automat):
 	HALT = 0
@@ -197,8 +196,6 @@ class TuringMachine(automatenausgabe.OAsciiTuringmachine, automaten.Automat):
 		True
 		>>> tm.addRule('s1', '0', 'sn', '*', TuringMachine.RIGHT)
 		True
-		>>> tm.addRule('s1', '1', 'se', '*', TuringMachine.RIGHT)
-		True
 		
 		>>> tm.addRule('sn', '*', 'sn1', '*', TuringMachine.LEFT)
 		True
@@ -229,22 +226,18 @@ class TuringMachine(automatenausgabe.OAsciiTuringmachine, automaten.Automat):
 		
 		>>> tm.check("01", doRaise=True)
 		True
-		>>> tm.check("0101", doRaise=True)
+		>>> tm.check("0101", doRaise=False)
 		False
 		"""
 		self.reset()
 		self.band = InfiniteBand(Wort)
-
-		# ein paar Meta-Variablen
-		self.CHK_Word = Wort
-		self.CHK_Rule = -1
-		self.CHK_Index = 0
 
 		# "Step" Meta-Werte
 		self.stepCount = 0
 		self.stepByStepOutput = list()
 		self.stepByStepImmediateOutput = False
 
+		# Initialen Zustand merken
 		self.stepper()
 
 		while not self.halted:
@@ -351,29 +344,4 @@ class TuringMachine(automatenausgabe.OAsciiTuringmachine, automaten.Automat):
 		raise NotImplementedError("Verify By Regular Expression: not applicable.")
 
 if __name__ == '__main__':
-	#test()
-	w = '01'
-	S = 's0 s1 sn sn1 se se1 sr sf'
-	F = 'sf'
-	Sigma = '0 1'
-	B = '0 1 *'
-	s0 = 's0'
-	tm = TuringMachine(S, s0, F, Sigma, B)
-	tm.addRule('s0', '*', 's1', '*', TuringMachine.RIGHT)
-	tm.addRule('s1', '*', 'sf', '*', TuringMachine.HALT)
-	tm.addRule('s1', '0', 'sn', '*', TuringMachine.RIGHT)
-	tm.addRule('s1', '1', 'se', '*', TuringMachine.RIGHT)
-	tm.addRule('sn', '*', 'sn1', '*', TuringMachine.LEFT)
-	tm.addRule('sn', '0', 'sn', '0', TuringMachine.RIGHT)
-	tm.addRule('sn', '1', 'sn', '1', TuringMachine.RIGHT)
-	tm.addRule('sn1', '1', 'sr', '*', TuringMachine.LEFT)
-	tm.addRule('se', '*', 'se1', '*', TuringMachine.LEFT)
-	tm.addRule('se', '0', 'se', '0', TuringMachine.RIGHT)
-	tm.addRule('se', '1', 'se', '1', TuringMachine.RIGHT)
-	tm.addRule('se1', '0', 'sr', '*', TuringMachine.LEFT)
-	tm.addRule('sr', '*', 's1', '*', TuringMachine.RIGHT)
-	tm.addRule('sr', '0', 'sr', '0', TuringMachine.LEFT)
-	tm.addRule('sr', '1', 'sr', '1', TuringMachine.LEFT)
-	tm.checkStepByStep("01", doRaise=True)
-	tm.checkStepByStep("0101", doRaise=True)
-	tm.checkStepByStep("001", doRaise=False)
+	test()

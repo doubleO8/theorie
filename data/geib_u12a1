@@ -1,0 +1,42 @@
+################################################################################
+# Turingmaschinendefinition
+Name: U12A1
+Beschreibung: Turingmaschine, die Woerter mit mindestens 2 a akzeptiert
+################################################################################
+
+# Optional: Automat Typ
+Type:	turing
+
+
+# Alphabet definieren. Muss mit "Sigma:" beginnen, durch Whitespace getrennt.
+Sigma:	a b
+
+# Startzustand definieren. Muss mit "s0:" beginnen, durch Whitespaces getrennt.
+s0:	s0
+
+# Zustaende
+S:	s0 s1 s2 sf
+
+# Finale Zustaende definieren. Muss mit "F:" beginnen, durch Whitespace getrennt.
+F:	sf
+
+# Endliche Menge der Bandzeichen B. Muss mit "B:" beginnen, durch Whitespace getrennt
+B:	* a b
+
+# Uebergaenge, Format :
+# Zustand, Bandzeichen, Zielzustand, Neues Bandzeichen, Lesekopfbewegung (durch whitespace getrennt)
+
+s0	*	s1	*	r
+
+s1	a	s2	*	r
+s1	b	s1	*	r
+
+s2	a	sf	*	h
+s2	b	s2	*	r
+
+# Optional: Worte, die akzeptiert werden sollen
+AcceptedVerifyWords:	aa baa aba
+
+# Optional: Worte, die _nicht akzeptiert werden duerfen
+FailingVerifyWords:	bb b a bbbbbbbabbbbbbbbbbbb
+
