@@ -27,6 +27,22 @@ class InfiniteBand(object):
 		Traceback (most recent call last):
 		...
 		ValueError: No Tape's Land. Versuchte, ueber den Bandanfang hinaus zu lesen!
+		>>> b2 = InfiniteBand()
+		>>> b2.right('y')
+		>>> str(b2) == InfiniteBand.BLANK + 'y' + InfiniteBand.BLANK
+		True
+		>>> b3 = InfiniteBand()
+		>>> print b3
+		*
+		>>> print b3.right()
+		*
+		>>> print b3.read()
+		*
+		>>> print b3
+		***
+		>>> b4 = InfiniteBand("hallo")
+		>>> print b4
+		*hallo*
 		"""
 		self.pos = 0
 		self._band = list(InfiniteBand.BLANK)
@@ -56,11 +72,15 @@ class InfiniteBand(object):
 		self._band[self.pos] = char
 		return self.read()
 
-	def left(self):
+	def left(self, char=None):
+		if char:
+			self.write(char)
 		self.pos -= 1
 		return self.read()
 
-	def right(self):
+	def right(self, char=None):
+		if char:
+			self.write(char)
 		self.pos += 1
 		return self.read()
 
