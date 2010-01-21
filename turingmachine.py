@@ -263,6 +263,7 @@ class TuringMachine(automatenausgabe.OAsciiTuringmachine, automaten.Automat):
 		"""
 		self.reset()
 		self.band = InfiniteBand(Wort)
+		accepted = False
 
 		# "Step" Meta-Werte
 		self.stepCount = 0
@@ -289,10 +290,14 @@ class TuringMachine(automatenausgabe.OAsciiTuringmachine, automaten.Automat):
 			print "\n".join(self.stepByStepOutput)
 
 		if self.halted and self.zustand in self.F:
-			self.log.info("'%s' akzeptiert." % Wort)
-			return True
+			accepted = True
 
-		return False
+		if doItVerbose:
+			self.log.info("%-10s: %-105s => %sKZEPTIERT." % ( ("'%s'" % Wort), self._ableitungToString(), (accepted and 'A' or 'NICHT A')))
+		else:
+			self.log.info("Wort '%s' : %skzeptiert." % ( Wort, (accepted and "A" or "Nicht a")))
+
+		return accepted
 
 	def checkVerbose(self, Wort):
 		"""

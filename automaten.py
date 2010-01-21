@@ -751,7 +751,7 @@ class NichtDeterministischerAutomat(automatenausgabe.OAsciiAutomat, automatenaus
 		return verified
 
 	def verifyVerbose(self, vWords=None, usingRegExp=False):
-		return verify(vWords, usingRegExp, True)
+		return self.verify(vWords, usingRegExp, True)
 
 	def EpsilonFrei(self):
 		return self
