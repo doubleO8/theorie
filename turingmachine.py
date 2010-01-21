@@ -23,14 +23,19 @@ class InfiniteBand(object):
 		'*'
 		>>> b.read()
 		'*'
+		>>> str(b) == InfiniteBand.BLANK
+		True
 		>>> b.left()
 		Traceback (most recent call last):
 		...
 		ValueError: No Tape's Land. Versuchte, ueber den Bandanfang hinaus zu lesen!
 		>>> b2 = InfiniteBand()
 		>>> b2.right('y')
-		>>> str(b2) == InfiniteBand.BLANK + 'y' + InfiniteBand.BLANK
+		'*'
+		>>> str(b2) == 'y' + InfiniteBand.BLANK
 		True
+		>>> str(b2)
+		'y*'
 		>>> b3 = InfiniteBand()
 		>>> print b3
 		*
@@ -39,10 +44,17 @@ class InfiniteBand(object):
 		>>> print b3.read()
 		*
 		>>> print b3
-		***
+		**
 		>>> b4 = InfiniteBand("hallo")
 		>>> print b4
 		*hallo*
+		>>> b5 = InfiniteBand()
+		>>> b5.right()
+		'*'
+		>>> b5.right()
+		'*'
+		>>> str(b5)
+		'***'
 		"""
 		self.pos = 0
 		self._band = list(InfiniteBand.BLANK)
@@ -62,7 +74,7 @@ class InfiniteBand(object):
 	def read(self):
 		if self.pos < 0:
 			raise ValueError("No Tape's Land. Versuchte, ueber den Bandanfang hinaus zu lesen!")
-		elif self.pos == len(self._band) + 1:
+		elif self.pos > len(self._band) - 1:
 			self._band.append(InfiniteBand.BLANK)
 		return self._band[self.pos]
 
@@ -268,7 +280,7 @@ class TuringMachine(automatenausgabe.OAsciiTuringmachine, automaten.Automat):
 			except Exception, e:
 				if doRaise:
 					raise
-				self.log.error(e)
+				self.log.debug(e)
 				self.halted = True
 			self.log.debug("")
 
