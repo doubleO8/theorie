@@ -13,29 +13,27 @@ Sigma:	a b
 s0:	s0
 
 # Zustaende
-S:	s0 s1 s2 s3 s4
+S:	s0 s1 s2 s3
 
 # Finale Zustaende definieren. Muss mit "F:" beginnen, durch Whitespace getrennt.
-F:	s1
+F:	s1 s3
 
 # Endliche Menge der Kellerzeichen k. Muss mit "K:" beginnen, durch Whitespace getrennt
-K:	a b k0 X Y
+K:	a k0
 
 # Uebergaenge, Format :
 # Zustand, Zeichen, Kellerzeichen, Zielzustand, Kellerzeichen(push) (durch whitespace getrennt)
 # Mehrere (push) Kellerzeichen muessen durch + getrennt werden
-s0	a	k0	s1	X+k0
+s0	a	k0	s1	k0
 
-s1	a	X	s1	a+X
+s1	a	k0	s1	a+k0
 s1	a	a	s1	a+a
 
-s1	b	a	s2	X
-s2	b	X	s2	X
+s1	b	a	s2	EPSILON
+s2	b	a	s2	EPSILON
 
-#s1	b	X	s1	Y
-#s1	b	k0	s2	X+k0
-
-#s2	EPSILON	X	s4 EPSILON
+s2	EPSILON	a	s2 EPSILON
+s2	EPSILON	k0	s3	k0
 
 # Optional: Worte, die akzeptiert werden sollen
 AcceptedVerifyWords:	aab

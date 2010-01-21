@@ -178,6 +178,9 @@ class AutomatenLeser(object):
 		elif self.type == 'pushdown':
 			tmp = KellerautomatLeser(self.filename, contentList=self.lines, log = self.log, parentInit=False)
 			return tmp.automat()
+		elif self.type == 'turing':
+			tmp = TuringLeser(self.filename, contentList=self.lines, log = self.log, parentInit=False)
+			return tmp.automat()
 		else:
 			raise NotImplementedError("Unknown Type '%s'" % self.type)
 
@@ -350,6 +353,108 @@ class KellerautomatLeser(AutomatenLeser):
 				else:
 					(zustand, bandZeichen, kellerZeichen, zustandStrich, kellerStrich) = splatter
 					self._data['rules'].append((zustand, bandZeichen, kellerZeichen, zustandStrich, kellerStrich))
+
+		if len(self._data['FailingVerifyWords']) + len(self._data['AcceptedVerifyWords']) > 0:
+			self._data['verifyWords'] = dict()
+			for fail in self._data['FailingVerifyWords']:
+				self._data['verifyWords'][fail] = False
+			for accept in self._data['AcceptedVerifyWords']:
+				self._data['verifyWords'][accept] = True
+
+		# s0 darf keine liste sein..
+		if isinstance(self._data['s0'], list):
+			self._data['s0'] = self._data['s0'][0]
+
+		for keyword in sorted(self.supportedKeywords + ['name', 'beschreibung', 'rules']):
+			if self._data.has_key(keyword):
+				self.log.debug("%s: %s" % (keyword, repr(self._data[keyword])))
+			else:
+				self.log.debug("%s: n/a" % keyword)
+
+class TuringLeser(AutomatenLeser):
+	def __init__(self, filename=None, contentList=None, data=None, dataDelimiter="\n", log=None, parentInit=True):
+		if parentInit:
+			AutomatenLeser.__init__(self,  filename, contentList, data, dataDelimiter, log)
+		else:
+			# Daten wurden schon gelesen, geparst, also: Nur im Objekt speichern und logging einrichten.
+			self.filename = filename
+			self.lines = contentList
+			self._initLogging(log)
+		self.supportedKeywords = ['Sigma', 'S', 'F', 'B', 's0', 'AcceptedVerifyWords', 'FailingVerifyWords']
+		self._data = dict()
+
+	def automat(self):
+		"""
+		>>> TL = TuringLeser('data/geib_u12a3')
+		>>> TL.parsePlaintext()
+		>>> len(TL._data) > 0
+		True
+		>>> a = TL.automat()
+		>>> a.check("01", False)
+		True
+		>>> a.check("001")
+		False
+		>>> a.verify()
+		True
+		"""
+		import turingmachine
+		self.parsePlaintext()
+
+		a = turingmachine.TuringMachine(
+				self._data['S'], 
+				self._data['s0'],
+				self._data['F'],
+				self._data['Sigma'], 
+				self._data['B'],
+				name = self._data['name'],
+				beschreibung = self._data['beschreibung'],
+				verifyWords = self._data['verifyWords'],
+				)
+		for rule in self._data['rules']:
+			(zustand, bandzeichen, zustandStrich, bandzeichenStrich, aktion) = rule
+			a.addRule(zustand, bandzeichen, zustandStrich, bandzeichenStrich, aktion)
+		return a
+
+	def parsePlaintext(self, lines=None, description='<Lines>'):
+		"""
+		"""
+		self._data = {
+						'rules' : list(),
+						'FailingVerifyWords' : list(),
+						'AcceptedVerifyWords': list(),
+						'name' : 'SomeTM',
+						'beschreibung' : '',
+						'verifyWords' : None
+					}
+		
+		if lines == None:
+			lines = self.lines
+		if self.filename:
+			description = '<File> %s' % self.filename
+
+		for line in lines:
+			line = AutomatenLeser.doppelPunkt.sub(':', line.lstrip(), count=1)
+			if self._parseLineSimple(line):
+				#self.log.debug("(line parsed)")
+				pass
+
+			elif line.startswith("Name:"):
+				data = self._teileOderJaule(line, 'Name')
+				if data:
+					self._data['name'] = ' '.join(data).lstrip()
+			elif line.startswith("Beschreibung:"):
+				data = self._teileOderJaule(line, 'Beschreibung')
+				if data:
+					self._data['beschreibung'] = ' '.join(data).lstrip()
+			elif line.startswith("Type"):
+				pass
+			else:
+				splatter = line.split()
+				if len(splatter) != 5:
+					self.log.warning("%s: [%s] Konnte Ueberfuehrungsdefinition nicht aus '%s' lesen" % (description, self._data['name'], line))
+				else:
+					(zustand, bandzeichen, zustandStrich, bandzeichenStrich, aktion) = splatter
+					self._data['rules'].append((zustand, bandzeichen, zustandStrich, bandzeichenStrich, aktion))
 
 		if len(self._data['FailingVerifyWords']) + len(self._data['AcceptedVerifyWords']) > 0:
 			self._data['verifyWords'] = dict()

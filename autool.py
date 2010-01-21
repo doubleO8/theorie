@@ -132,6 +132,10 @@ for file in files:
 				pass
 
 			# Turingmaschinen ..
+			elif L.type == 'turing':
+				pass
+			
+			# Sonstiges ..
 			else:
 				raise NotImplementedError("Type '%s' not implemented .. YET" % L.type)
 

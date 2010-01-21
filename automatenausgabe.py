@@ -780,6 +780,59 @@ class OLaTeXKellerAutomat(AusgebenderKellerAutomat, OLaTeXAutomat):
 			s = "\n".join(testResults)
 		return s
 
+class OAsciiTuringmachine(AusgebenderAutomat):
+	def _getAsciiArtDeltaTable(self, prefix=' '):
+		pfxLen = len(prefix)
+		rows = list([prefix + "Maschinentafel:"])
+		
+		#: Beschreibungsfeldinhalt
+		descField = ' S \ B'
+		
+		#: Maximale Laenge der Zustandnamen
+		zustandMaxLength = len(descField)
+
+		#: Sortierte Bandzeichenmenge
+		sortedB = sorted(self.B)
+		
+		for zustand in self.S:
+			zLength = len(str(zustand))
+			if  zLength > zustandMaxLength:
+				zustandMaxLength = zLength
+
+		#: Feldbreite
+		fieldWidth = zustandMaxLength + 1 + 2 + 2 +2
+		# Bandzeichenlaenge(1) + maximale Laenge der Zustandnamen(?) + Kommas(2) + Blanks(2) + Klammern(2)
+		
+		fmtStringZustand = '%-' + str(zustandMaxLength) + 's'
+		fmtStringField = '%-' + str(fieldWidth) + 's'
+
+		# Header generieren ..
+		headParts = [fmtStringZustand % descField]
+		for bandzeichen in sortedB:
+			headParts.append(fmtStringField % bandzeichen)
+		rows.append(prefix + ' | '.join(headParts))
+
+		# Striche 
+		strichZustand = '-' * zustandMaxLength
+		strich = '-' * fieldWidth
+		strichParts = list([fmtStringZustand % strichZustand]) + [(fmtStringField % strich)] * (len(headParts)-1)
+		rows.append(prefix + "-+-".join(strichParts) + '-')
+
+		for zustand in sorted(self.S):
+			rowParts = [(fmtStringZustand % zustand)]
+			rowPrefix = (zustand in self.F and '*' * len(prefix) or prefix)
+			
+			for zeichen in sortedB:
+				sZustand = '-'
+				if self.validDelta(zustand, zeichen):
+					(zustandStrich, bandzeichenStrich, aktion) = self.delta[zustand][zeichen]
+					sZustand = '(%s, %s, %s)' % ( zustandStrich, bandzeichenStrich, self.AKTION_DESCRIPTION[aktion])
+
+				rowParts.append(fmtStringField % sZustand)
+			rows.append(rowPrefix + ' | '.join(rowParts))
+
+		return "\n".join(rows) + "\n"
+
 class LaTeXBinder(AusgebenderAutomat):
 	def __init__(self, template=None, finalFileBase='AutomatBinder', WORKINGDIR=None, TEMPLATESDIR=None):
 		if not WORKINGDIR:

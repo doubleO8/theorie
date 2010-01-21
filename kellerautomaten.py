@@ -222,8 +222,8 @@ class DeterministischerKellerautomat(automatenausgabe.OLaTeXKellerAutomat, autom
 	def _ableitungToString(self):
 		pfad = list()
 		wordLength=len(self.CHK_Word)
-		for kfgList in self.raw_ableitung:
-			pfad.append(self._getKonfiguration(kfgList, wordLength))
+		for kfgList in self.raw_ableitung[:-1]:
+			pfad.append(self._getKonfiguration(kfgList[:3], wordLength))
 		return " |- ".join(pfad)
 
 	def _getKonfiguration(self, kfgList, wordLength=12):
@@ -338,7 +338,8 @@ class DeterministischerKellerautomat(automatenausgabe.OLaTeXKellerAutomat, autom
 				i+=1
 			markedWord = newWord
 
-		kfgList = [self.zustand, self.CHK_Word[self.CHK_Index:],  list(reversed(self.keller)) ]
+		kfgList = [self.zustand, self.CHK_Word[self.CHK_Index:],  list(reversed(self.keller)), self.CHK_Rule]
+		# Ableitung sichern
 		self._ableitungAppend(kfgList)
 		
 		konfiguration = self._getKonfiguration(kfgList, wordLength)
@@ -503,7 +504,8 @@ class DeterministischerKellerautomat(automatenausgabe.OLaTeXKellerAutomat, autom
 			self.log.info("%-10s: %-105s => %sKZEPTIERT." % ( ("'%s'" % Wort), self._ableitungToString(), (accepted and 'A' or 'NICHT A')))
 		else:
 			self.log.info("Wort '%s' : %skzeptiert. (%s)" % ( Wort[:-1], (accepted and "A" or "Nicht a"), DeterministischerKellerautomat.ACCEPT_DESCRIPTION[self.accept] ))
-
+		self.log.debug(self._ableitungToString())
+		
 		return accepted
 
 	def validDelta(self, zustand, zeichen, kellerzeichen):
