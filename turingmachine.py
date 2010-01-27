@@ -279,7 +279,7 @@ class TuringMachine(automatenausgabe.OAsciiTuringmachine, automaten.Automat):
 			try:
 				self.step(self.zustand, bandzeichen)
 			except Exception, e:
-				if doRaise:
+				if doRaise and (self.zustand not in self.F):
 					raise
 				self.log.debug(e)
 				self.halted = True
@@ -293,7 +293,7 @@ class TuringMachine(automatenausgabe.OAsciiTuringmachine, automaten.Automat):
 			accepted = True
 
 		if doItVerbose:
-			self.log.info("%-10s: %-105s => %sKZEPTIERT." % ( ("'%s'" % Wort), self._ableitungToString(), (accepted and 'A' or 'NICHT A')))
+			self.log.info("%-10s: Zustand: %3s | Bandinhalt: %s | Akt. Bandzeichen: '%s' => %sKZEPTIERT." % ( ("'%s'" % Wort), self.zustand, self.band, self.band.read(), (accepted and 'A' or 'NICHT A')))
 		else:
 			self.log.info("Wort '%s' : %skzeptiert." % ( Wort, (accepted and "A" or "Nicht a")))
 
@@ -305,8 +305,8 @@ class TuringMachine(automatenausgabe.OAsciiTuringmachine, automaten.Automat):
 		"""
 		return self.check(Wort, doItVerbose=True)
 
-	def checkStepByStep(self,  Wort, doRaise=False):
-		return self.check(Wort, stepByStep=True)
+	def checkStepByStep(self, Wort, doRaise=False, doItVerbose=False):
+		return self.check(Wort, stepByStep=True, doItVerbose=doItVerbose)
 
 	def stepper(self, immediateOutput=None):
 		if immediateOutput == None:
@@ -365,6 +365,7 @@ class TuringMachine(automatenausgabe.OAsciiTuringmachine, automaten.Automat):
 			return self.delta[zustand][bandzeichen]
 		else:
 			logmessage += "(?!, ?!, ?!)"
+			self.log.debug(logmessage)
 			if not self.delta.has_key(zustand):
 				raise automaten.NoSuchStateException(zustand, self.S)
 
