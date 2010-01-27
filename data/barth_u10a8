@@ -1,0 +1,53 @@
+################################################################################
+# Turingmaschinendefinition
+Name: U10A8_Barth
+Beschreibung: Turingmaschine, die Sprache $L(TM) = { a^{n}b^{m}a^{n} | n,m >= 0 }$
+################################################################################
+
+# Optional: Automat Typ
+Type:	turing
+
+
+# Alphabet definieren. Muss mit "Sigma:" beginnen, durch Whitespace getrennt.
+Sigma:	a b
+
+# Startzustand definieren. Muss mit "s0:" beginnen, durch Whitespaces getrennt.
+s0:	s0
+
+# Zustaende
+S:	s0 s1 sa sa1 sar sb sf
+
+# Finale Zustaende definieren. Muss mit "F:" beginnen, durch Whitespace getrennt.
+F:	sf
+
+# Endliche Menge der Bandzeichen B. Muss mit "B:" beginnen, durch Whitespace getrennt
+B:	* a b
+
+# Uebergaenge, Format :
+# Zustand, Bandzeichen, Zielzustand, Neues Bandzeichen, Lesekopfbewegung (durch whitespace getrennt)
+
+s0	*	s1	*	r
+
+s1	*	sf	*	h
+s1	a	sa	*	r
+s1	b	sb	*	r
+
+sa	*	sa1	*	l
+sa	a	sa	a	r
+sa	b	sa	b	r
+
+sa1	a	sar	*	l
+
+sar	*	s1	*	r
+sar	a	sar	a	l
+sar	b	sar	b	l
+
+sb	*	sf	*	h
+sb	b	sb	*	r
+
+# Optional: Worte, die akzeptiert werden sollen
+AcceptedVerifyWords:	b aba aabbaa aa aaaa
+
+# Optional: Worte, die _nicht akzeptiert werden duerfen
+FailingVerifyWords:	ab ba bbaa ba aaa
+

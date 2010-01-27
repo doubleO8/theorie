@@ -1,0 +1,56 @@
+################################################################################
+# Turingmaschinendefinition
+Name: U14A3
+Beschreibung: Turingmaschine, die ...
+################################################################################
+
+# Optional: Automat Typ
+Type:	turing
+
+
+# Alphabet definieren. Muss mit "Sigma:" beginnen, durch Whitespace getrennt.
+Sigma:	0 1
+
+# Startzustand definieren. Muss mit "s0:" beginnen, durch Whitespaces getrennt.
+s0:	s0
+
+# Zustaende
+S:	s0 s1 s2 s3 s4 s5 s6
+
+# Finale Zustaende definieren. Muss mit "F:" beginnen, durch Whitespace getrennt.
+F:	s6
+
+# Endliche Menge der Bandzeichen B. Muss mit "B:" beginnen, durch Whitespace getrennt
+B:	* 0 1
+
+# Uebergaenge, Format :
+# Zustand, Bandzeichen, Zielzustand, Neues Bandzeichen, Lesekopfbewegung (durch whitespace getrennt)
+
+s0	*	s1	*	r
+
+s1	0	s5	0	r
+s1	1	s2	*	r
+s1	*	s5	1	r
+
+s2	0	s2	0	r
+s2	1	s2	1	r
+s2	*	s3	*	l
+
+s3	0	s4	*	l
+s3	1	s5	0	r
+s3	*	s5	0	r
+
+s4	0	s4	0	l
+s4	1	s4	1	l
+s4	*	s1	*	r
+
+s5	0	s6	*	l
+s5	1	s6	*	l
+s5	*	s6	*	l
+
+# Optional: Worte, die akzeptiert werden sollen
+AcceptedVerifyWords:	0 1 10 11 100 101 110 111
+
+# Optional: Worte, die _nicht akzeptiert werden duerfen
+#FailingVerifyWords:	ab ba bbaa ba aaa
+
