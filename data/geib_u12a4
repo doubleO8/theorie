@@ -65,8 +65,4 @@ s6	a	s1	0	r
 s6	b	s1	1	r
 
 # Optional: Worte, die akzeptiert werden sollen
-AcceptedVerifyWords:	01
-
-# Optional: Worte, die _nicht akzeptiert werden duerfen
-#FailingVerifyWords:	0101 001 1 10 0 00
-
+AcceptedVerifyWords:	01 10 110 010

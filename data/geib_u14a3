@@ -1,7 +1,7 @@
 ################################################################################
 # Turingmaschinendefinition
 Name: U14A3
-Beschreibung: Turingmaschine, die ...
+Beschreibung: Turingmaschine, die bei Bandzeichen ''1`` stehenbleibt für Woerter \begin{equation} L(TM) = \{ w \in \Sigma^{*} \; | \; w = 1^{n}0^{n} \; | \; n \geq 0 \} \end{equation} 
 ################################################################################
 
 # Optional: Automat Typ
@@ -49,8 +49,5 @@ s5	1	s6	*	l
 s5	*	s6	*	l
 
 # Optional: Worte, die akzeptiert werden sollen
-AcceptedVerifyWords:	0 1 10 11 100 101 110 111
-
-# Optional: Worte, die _nicht akzeptiert werden duerfen
-#FailingVerifyWords:	ab ba bbaa ba aaa
+AcceptedVerifyWords:	0 1 10 11 100 101 110 111 1100 111000
 
