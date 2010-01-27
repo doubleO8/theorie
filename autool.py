@@ -22,10 +22,10 @@ parser.add_option('-d', "--dump",
 					help="Print raw data",
 					dest="dump")
 
-parser.add_option('-e', "--epsilonfree",
-					action="store_true", default=False,
-					help="remove epsilon transitions",
-					dest="epsilon")
+#parser.add_option('-e', "--epsilonfree",
+#					action="store_true", default=False,
+#					help="remove epsilon transitions",
+#					dest="epsilon")
 
 parser.add_option('-f', "--filter",
 					default=False,
@@ -34,10 +34,10 @@ parser.add_option('-f', "--filter",
 					%s" % ', '.join(sorted(FILTER_TYPES)),
 					dest="filter")
 
-parser.add_option('-g', "--grammar",
-					action="store_true", default=False,
-					help="Try to create a Grammar for Automata",
-					dest="grammar")
+#parser.add_option('-g', "--grammar",
+#					action="store_true", default=False,
+#					help="Try to create a Grammar for Automata",
+#					dest="grammar")
 
 parser.add_option('-p', "--print",
 					action="store_true", default=False,
@@ -64,12 +64,17 @@ parser.add_option('-t', "--test-words",
 					help="Test words (seperated by whitespace)",
 					dest="testWords")
 
+parser.add_option( "--test-words-append",
+					action="store_true", default=False,
+					help="Append given testwords to already defined list of testwords",
+					dest="testWordsAppend")
+
 parser.add_option("--dot-dump",
 					action="store_true", default=False,
 					help="Dump DOT source",
 					dest="dotdump")
 
-parser.add_option('-w', "--write-pdf",
+parser.add_option('-w', '-o', "--write-pdf",
 					default=False,
 					help="Write report to PDF",
 					dest="pdf")
@@ -116,21 +121,19 @@ for file in files:
 			# NEA/DEA et al
 			if L.type == 'finite':
 				
-				# Epsilon frei machen
-				if options.epsilon:
-					logger.warn("Epsilonfrei machen")
-					A = A.EpsilonFrei()
+				## Epsilon frei machen
+				#if options.epsilon:
+				#	logger.warn("Epsilonfrei machen")
+				#	A = A.EpsilonFrei()
 	
 				epsilon = isinstance(A, EpsilonAutomat) and True or False
 				deterministisch = A.istDEA()
 				automatenTyp = '%s%s' % ((epsilon and 'e' or ''), (deterministisch and 'DEA' or 'NEA'))
 				
 				logger.debug("[%s] class:%s epsilon:%s deterministisch: %s" % (automatenTyp, repr(A), epsilon, deterministisch))
-
 			# Kellerautomaten
 			elif L.type == 'pushdown':
 				pass
-
 			# Turingmaschinen ..
 			elif L.type == 'turing':
 				pass
@@ -152,7 +155,9 @@ for file in files:
 					localTestWords += A.testWords
 				if A.verifyWords:
 					localTestWords += A.verifyWords.keys()
-				if options.testWords:
+				if options.testWords and not options.testWordsAppend:
+					localTestWords = options.testWords.split()
+				elif options.testWords and options.testWordsAppend:
 					localTestWords += options.testWords.split()
 				localTestWords = sorted(set(localTestWords))
 	
@@ -167,7 +172,7 @@ for file in files:
 
 				if options.dotdump:
 					print A.createDotDocument(dumpOnly=True)
-	
+
 				if options.verify:
 					if not options.verbose:
 						A.verify()
@@ -189,17 +194,17 @@ for file in files:
 						print str(A) + "\n" * 2
 					try:
 						for word in localTestWords:
-							A.checkStepByStep(word)
+							A.checkStepByStep(word, doItVerbose=options.verbose)
 							print
 					except Exception, e:
 						if options.loglevel == logging.DEBUG:
 							logger.debug(e)
 
-				if options.grammar:
-					try:
-						print A.Grammatik()
-					except Exception, e:
-						print "Grammatik."
+				#if options.grammar:
+				#	try:
+				#		print A.Grammatik()
+				#	except Exception, e:
+				#		print "Grammatik."
 
 				if options.testWords and not options.step:
 					A.checkWords(localTestWords)
