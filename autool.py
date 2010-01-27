@@ -102,13 +102,16 @@ parser.add_option("--log-warning",
 logger = AutomatLogger(options.loglevel).log
 autoFilter = FILTER_TYPES
 
+# Filter ggf. setzen
 if options.filter:
 	try:
 		autoFilter = set(options.filter.split(',')).intersection(FILTER_TYPES)
 	except Exception, e:
 		pass
 
+#: Liste der Automaten, die in den Report geschrieben werden sollen
 automaten = list()
+
 for file in files:
 	if not file.endswith("~"):
 		ignore = True
@@ -120,7 +123,6 @@ for file in files:
 			
 			# NEA/DEA et al
 			if L.type == 'finite':
-				
 				## Epsilon frei machen
 				#if options.epsilon:
 				#	logger.warn("Epsilonfrei machen")
@@ -218,6 +220,7 @@ for file in files:
 			logger.error("[EXCEPTION] '%s' %s" % (file, e))
 			traceback.print_exc(file=sys.stdout)
 
+# Automaten-Report erstellen
 if options.pdf and len(automaten) > 0:
 	filebase = options.pdf
 	if options.pdf.lower().endswith('.pdf'):

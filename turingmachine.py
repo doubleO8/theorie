@@ -99,7 +99,7 @@ class InfiniteBand(object):
 	def __str__(self):
 		return ''.join(self._band)
 
-class TuringMachine(automatenausgabe.OAsciiTuringmachine, automaten.Automat):
+class TuringMachine(automatenausgabe.OLaTeXTuringmaschine, automatenausgabe.OAsciiTuringmachine, automaten.Automat):
 	HALT = 0
 	RIGHT = 1
 	LEFT = -1
@@ -299,6 +299,36 @@ class TuringMachine(automatenausgabe.OAsciiTuringmachine, automaten.Automat):
 
 		return accepted
 
+	def checkWordsX(self, words, silence=False):
+		resultset = list()
+		words = self._toList(words)
+
+		for word in words:
+			result = 'OUCH'
+			successful = False
+			band = InfiniteBand('E!')
+			try:
+				self.check(word, True)
+				result = "Akzeptiert."
+				successful = True
+				band = self.band
+			except automaten.NotInSigmaException, e:
+				result = "'%s' ist nicht im Alphabet." % e.value
+			except automaten.NoSuchStateException, e:
+				result = "Zustand '%s' ist nicht in Sigma." % e.value
+			except automaten.NoAcceptingStateException, e:
+				result = "Kein finaler Zustand erreicht."
+			except automaten.NoRuleForStateException, e:
+				result = "Kein finaler Zustand erreicht (Keine Regel definiert für '%s')." % e.value
+			except Exception, e:
+				result = "oh-oh, sonstiger Fehler .. '%s'" % e
+			resultset.append((word, successful, result, band))
+
+			if not silence:
+				self.log.info("%-20s [%s] %-5s : %s" % (self.name, (successful and "SUCCESS" or "FAILURE"), word, result))
+				self.log.debug(self._ableitungsPfad__str__())
+		return resultset
+
 	def checkVerbose(self, Wort):
 		"""
 		Ruft die check()-Funktion mit 'Geschwaetzig'-Parameter auf.
@@ -379,7 +409,7 @@ class TuringMachine(automatenausgabe.OAsciiTuringmachine, automaten.Automat):
 		self.delta = dict()
 		return len(self.delta)
 
-	def verifyByRegExp(self, testWords=None, regexp=None):
+	def verifyRegExp(self, testWords=None, regexp=None):
 		raise NotImplementedError("Verify By Regular Expression: not applicable.")
 
 if __name__ == '__main__':

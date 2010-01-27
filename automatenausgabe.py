@@ -1,6 +1,8 @@
+#!/usr/bin/env python
 # -*- coding: utf-8 -*-
 import os, sys, tempfile, shutil, random, atexit
 from subprocess import *
+import automaten
 
 WORKINGDIR = os.path.abspath('.')
 PDFLATEX_BIN = 'pdflatex'
@@ -89,6 +91,10 @@ def kuerzMenge(items, max=5):
 	return zeichen
 
 class AusgebenderAutomat(object):
+	def __init__(self):
+		self.log = automaten.AutomatLogger().log
+		#self.log.debug("I live ... again")
+
 	def kuerzMenge(self, items, max=5):
 		self.log.debug("kuerzmenge(%s, %s)" % (items, max))
 		if len(items) < max:
@@ -432,15 +438,24 @@ class OLaTeXAutomat(AusgebenderAutomat):
 		return ''.join(mangled)
 
 	def _mangleName(self, name):
+		"""
+		Einen Namen fuer LaTeX aufbereiten ('_' durch Leerzeichen ersetzen)
+		"""
 		return name.replace("_", ' ')
 
 	def _mangleState(self, state):
+		"""
+		Zustandbezeichner verschoenern
+		"""
 		m = OLaTeXAutomat.stateRegexp.match(state)
 		if m:
 			state = '{%s_%s}' % (m.group(1), m.group(3))
 		return state
 
 	def _TeXIncludeFigure(self, file, caption=None, label=None):
+		"""
+		Ein Bild einfuegen, ggf mit caption und label ..
+		"""
 		label = label and (r'\label{%s}' % label) or ''
 		caption = caption and (r'\caption{%s}' % caption) or ''
 		return """
@@ -453,6 +468,9 @@ class OLaTeXAutomat(AusgebenderAutomat):
 		""" % (file, caption, label)
 
 	def _TeXSpecification(self):
+		"""
+		Auotmaten-Spezifikation hinzufuegen
+		"""
 		s = list()
 		aTyp = "(%seterministischer) Automat" % ((self.istDEA() and 'D' or 'Nichtd'))
 
@@ -478,6 +496,9 @@ class OLaTeXAutomat(AusgebenderAutomat):
 		return "\n".join(s)
 
 	def _TeXDeltaTable(self):
+		"""
+		Ueberfuehrungsfunktions-Tabelle hinzufuegen
+		"""
 		s = list()
 		headerLine = [r'$\delta$']
 		sortedSigma = sorted(self.Sigma)
@@ -506,8 +527,10 @@ class OLaTeXAutomat(AusgebenderAutomat):
 
 		return "\n".join(s)
 
-	
 	def _TeXResults(self):
+		"""
+		Testergebnisse hinzufuegen
+		"""
 		s = ''
 		if self.testWords:
 			testResults = [ r'\subsection{Test}', r'\begin{longtable}{lll}' ]
@@ -524,6 +547,9 @@ class OLaTeXAutomat(AusgebenderAutomat):
 		return s
 
 	def _TeXVerify(self):
+		"""
+		Verifikationsergebnisse hinzufuegen
+		"""
 		s = ''
 		if self.verifyWords:
 			testResults = [ r'\subsection{Verifikationstests}', r'\begin{longtable}{llll}' ]
@@ -544,26 +570,64 @@ class OLaTeXAutomat(AusgebenderAutomat):
 		return s
 
 	def _TeXAutomatStart(self):
+		"""
+		Automatenbeschreibung und -definition beginnen
+		"""
 		return r'\section{Automat %s}' % self._mangleName(self.name)
-		
+
 	def _toTeX(self, template=None, dot_template=None):
+		"""
+		Automat definieren und beschreiben.
+		Falls eine der Komponenten (Spezifikation, Test, Ueberfuehrungstabelle ..) 
+		nicht hinzugefuegt werden konnte (also eine Exception geworfen wurde), 
+		wird dieser Fehler geloggt, aber ignoriert.
+		"""
 		s = self._readTemplate(template)
 
-		s = s.replace("%%__AUTOMAT__", self._TeXAutomatStart())
-		s = s.replace("%%__SPEC__", self._TeXSpecification())
-		s = s.replace("%%__DELTA__", self._TeXDeltaTable())
-		s = s.replace('%%__RESULTS__', self._TeXResults())
-		s = s.replace('%%__VERIFY__', self._TeXVerify())
+		try:
+			s = s.replace("%%__AUTOMAT__", self._TeXAutomatStart())
+		except Exception, e:
+			self.log.warning("calling _TeXAutomatStart() failed.")
+			self.log.warning(e)
 
-		if 'createDotDocument' in dir(self):
-			dotgraph = self.createDotDocument(dot_template)
-			if dotgraph:
-				aName = self._mangleName(self.name)
-				label = 'dot%s' % aName 
-				caption = 'Automat %s' % aName
-				s = s.replace('%%__DOT_GRAPH__', r'\subsection{Graph}' + self._TeXIncludeFigure(dotgraph, caption, label))
-			else:
-				self.log.debug("Es konnte kein DOT Graph hinzugefuegt werden.")
+		try:
+			s = s.replace("%%__SPEC__", self._TeXSpecification())
+		except Exception, e:
+			self.log.warning("calling _TeXSpecification() failed.")
+			self.log.warning(e)
+
+		try:
+			s = s.replace("%%__DELTA__", self._TeXDeltaTable())
+		except Exception, e:
+			self.log.warning("calling _TeXDeltaTable() failed.")
+			self.log.warning(e)
+
+		try:
+			s = s.replace('%%__RESULTS__', self._TeXResults())
+		except Exception, e:
+			self.log.warning("calling _TeXResults() failed.")
+			self.log.warning(e)
+
+		try:
+			s = s.replace('%%__VERIFY__', self._TeXVerify())
+		except Exception, e:
+			self.log.warning("calling _TeXVerify() failed.")
+			self.log.warning(e)
+
+		try:
+			if 'createDotDocument' in dir(self):
+				dotgraph = self.createDotDocument(dot_template)
+				if dotgraph:
+					aName = self._mangleName(self.name)
+					label = 'dot%s' % aName 
+					caption = 'Automat %s' % aName
+					s = s.replace('%%__DOT_GRAPH__', r'\subsection{Graph}' + self._TeXIncludeFigure(dotgraph, caption, label))
+				else:
+					self.log.debug("Es wurde kein DOT Graph hinzugefuegt.")
+		except Exception, e:
+			self.log.warning("calling createDotDocument() failed.")
+			self.log.warning(e)
+
 		return s
 
 class OPlaintextKellerAutomat(AusgebenderAutomat):
@@ -609,6 +673,10 @@ class OPlaintextKellerAutomat(AusgebenderAutomat):
 				out.append("%s\t%s\t%s\t%s\t%s" % (zustand, bandzeichen, kellerzeichen, zustandStrich, kellerzeichenStrich))
 		return out
 
+
+####################################################################################################
+# KELLERAUTOMATEN: ANFANG
+####################################################################################################
 class AusgebenderKellerAutomat(AusgebenderAutomat):
 	def _getRulesHash(self):
 		rulesHash = dict()
@@ -672,6 +740,9 @@ class OAsciiKellerAutomat(AusgebenderKellerAutomat):
 
 class OLaTeXKellerAutomat(AusgebenderKellerAutomat, OLaTeXAutomat):
 	def createDotDocument(self, dot_template=None):
+		"""
+		Es gibt keine dot-Graphik fuer Kellerautomaten
+		"""
 		return False
 
 	def _TeXSpecification(self):
@@ -779,7 +850,14 @@ class OLaTeXKellerAutomat(AusgebenderKellerAutomat, OLaTeXAutomat):
 
 			s = "\n".join(testResults)
 		return s
+####################################################################################################
+# KELLERAUTOMATEN: ENDE
+####################################################################################################
 
+
+####################################################################################################
+# TURINGMASCHINEN: ANFANG
+####################################################################################################
 class OAsciiTuringmachine(AusgebenderAutomat):
 	def _getAsciiArtDeltaTable(self, prefix=' '):
 		pfxLen = len(prefix)
@@ -833,6 +911,104 @@ class OAsciiTuringmachine(AusgebenderAutomat):
 
 		return "\n".join(rows) + "\n"
 
+class OLaTeXTuringmaschine(OLaTeXAutomat):
+	def _mangleAktion(self, aktion):
+		"""
+		Bandbewegungsbeschreibung fuer Menschen aufbereiten
+		"""
+		from turingmachine import TuringMachine
+		if aktion == TuringMachine.HALT:
+			return 'h'
+		elif aktion == TuringMachine.LEFT:
+			return 'l'
+		return 'r'
+
+	def createDotDocument(self, dot_template=None):
+		"""
+		Es gibt keine dot-Graphik fuer Turingmaschinen
+		"""
+		return False
+
+	def _TeXSpecification(self):
+		s = list()
+		aTyp = "Turingmaschine"
+		name = self._mangleName(self.name)
+
+		s.append(r'\textbf{%s \emph{%s}}' % (aTyp, name))
+
+		if self.beschreibung :
+			s.append(r"\newline \emph{%s}" % self.beschreibung)
+		s.append(r"\begin{itemize}")
+		s.append(r'\item[] Endliche Menge der möglichen Zustände $S = \{%s\}$' % self._fzTexM(self.S))
+		s.append(r"\item[] $%s$ ist Anfangszustand" % self._mangleState(self.s0))
+		s.append(r"\item[] Menge der Endzustände $F = \{%s\}$" % self._fzTexM(self.F))
+		s.append(r"\item[] Menge der Bandzeichen $B = \{%s\}$" % self._fzTex(self.B))
+		s.append(r"\item[] Endliche Menge der Eingabezeichen $\Sigma = \{%s\}$" % self._fzTex(self.Sigma))
+		s.append(r'\end{itemize}')
+		return "\n".join(s)
+
+	def _TeXDeltaTable(self):
+		"""
+		Ueberfuehrungsfunktions-Tabelle hinzufuegen
+		"""
+		s = list()
+		sortedSigma = sorted(self.Sigma)
+		sortedB = sorted(self.B)
+		
+		headerLine = [''] + sortedB
+		
+		s.append(r'\begin{table}[ht]')
+		s.append(r'\begin{tabular}{r|%s}' % ('c' * (len(headerLine)-1)))
+		s.append(r' & '.join(headerLine) + r' \\')
+		s.append(r'\hline')
+
+		for zustand in sorted(self.S):
+			line = [ (zustand in self.F and '{*}' or '') + '$%s$' % self._mangleState(zustand) ]
+			for bandzeichen in sortedB:
+				if self.validDelta(zustand, bandzeichen):
+					(zustandStrich, bandzeichenStrich, aktion) = self._delta(zustand, bandzeichen)
+					zielKonfiguration = '($%s$, %s, %s)' % (self._mangleState(zustandStrich), bandzeichenStrich, self._mangleAktion(aktion))
+				else:
+					zielKonfiguration = '-'
+				line.append(zielKonfiguration)
+			s.append(r' & '.join(line))
+			s.append(r' \\')
+		
+		s.append(r'\end{tabular}')
+		s.append(r'\caption{Maschinentafel für %s}' % self._mangleName(self.name))
+		s.append(r'\end{table}')
+		return "\n".join(s)
+
+	def _TeXVerify(self):
+		"""
+		Verifikationsergebnisse hinzufuegen
+		"""
+		s = ''
+		if self.verifyWords:
+			testResults = [ r'\subsection{Verifikationstests}', r'\begin{longtable}{llp{4cm}lcc}' ]
+			testResults.append(r'Wort & E-wert & Ergebnis & Bandinhalt & Chr,Idx & Verifiziert\\')
+			testResults.append(r'\hline')
+			for word in self.verifyWords:
+				expected = self.verifyWords[word]
+				
+			for (word, successful, result, band) in self.checkWordsX(self.verifyWords.keys()):
+				t = list()
+				t.append(r'{\small %s}' % word)
+				t.append(r'{\small %s}' % self.verifyWords[word])
+				t.append(r'{\small \emph{%s} \newline {\tiny %s}' % (successful, result))
+				b = str(band)
+				t.append(r'{\small %s}' % b)
+				t.append(r'{\small %s (%d)}' % (band.read(), band.pos))
+				t.append(r'{\small %s}' % ((self.verifyWords[word] == successful) and "ja" or r'\textbf{NEIN}'))
+				testResults.append(' & '.join(t) + r'\\')
+			testResults.append(r'\end{longtable}')
+			s = "\n".join(testResults)
+		return s
+####################################################################################################
+# TURINGMASCHINEN: ENDE
+####################################################################################################
+
+
 class LaTeXBinder(AusgebenderAutomat):
 	def __init__(self, template=None, finalFileBase='AutomatBinder', WORKINGDIR=None, TEMPLATESDIR=None):
 		if not WORKINGDIR:
@@ -849,45 +1025,52 @@ class LaTeXBinder(AusgebenderAutomat):
 		self.texTarget = base + '.tex'
 		self.pdfTarget = base + '.pdf'
 		self.finalFile = os.path.join(WORKINGDIR, finalFileBase + '.pdf')
+		AusgebenderAutomat.__init__(self)
 
 	def appendContent(self, content):
 		self.content += content
+
+	def _logOutput(self, out):
+		if out.strip() != '':
+			for line in out.split("\n"):
+				if line.strip() != '':
+					self.log.debug("%s %s" % ('<STDOUT>', line))
 
 	def write(self, finalFile=None):
 		if finalFile:
 			self.finalFile = finalFile
 		needSecondRun = False
-		
+
 		binder = self._readTemplate(self.template)
 		if (-1 != binder.find("listoftables") ) or (-1 != binder.find("listoffigures") ):
 			needSecondRun = True
 		binder = binder.replace("%%__CONTENT__", "\n".join(self.content))
 
 		if not self.writeContent(self.texTarget, binder):
+			self.log.error("Could not write content to texTarget '%s'. Abort." % self.texTarget)
+			return
+
+		(rc, out, err) = runCommand(PDFLATEX_BIN, ('-version'))
+		if rc != 0:
+			self.log.error("PDFLATEX missing ? PDFLATEX_BIN is '%s'. (Fix path to your 'pdflatex' binary in automatenausgabe.py or install pdflatex). Abort." % PDFLATEX_BIN)
 			return
 
 		validReturnCodes = [0, 1]
 		(rc, out, err) = runCommand(PDFLATEX_BIN, ('-interaction batchmode "%s"' % self.texTarget), workDir=self.t.tmp, validReturnCodes=validReturnCodes)
 		if not (rc in validReturnCodes):
-			print err
-			print "----------------------"
-			print out
+			self._logOutput(out)
 			self.t.removeAtExit = False
 
 		if needSecondRun:
 			(rc, out, err) = runCommand(PDFLATEX_BIN, ('-interaction batchmode "%s"' % self.texTarget), workDir=self.t.tmp, validReturnCodes=validReturnCodes)
 			if not (rc in validReturnCodes):
-				print err
-				print "----------------------"
-				print out
+				self._logOutput(out)
 				self.t.removeAtExit = False
 
 		if rc in validReturnCodes:
 			(rc, out, err) = runCommand(PDFLATEX_BIN, ('-interaction batchmode "%s"' % self.texTarget), workDir=self.t.tmp, validReturnCodes=validReturnCodes)
 			if rc != 0:
-				print err
-				print "----------------------"
-				print out
+				self._logOutput(out)
 				self.t.removeAtExit = False
 			if (rc in validReturnCodes) and os.path.isfile(self.pdfTarget):
 				shutil.move(self.pdfTarget, self.finalFile)
