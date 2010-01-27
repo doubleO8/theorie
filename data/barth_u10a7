@@ -1,7 +1,7 @@
 ################################################################################
 # Kellerautomatendefinition
 Name: U10A7Barth
-Beschreibung: Deterministischer Kellerautomat a^nb^ma^n|n,m>=0
+Beschreibung: Deterministischer Kellerautomat für \begin{equation} L(KA) = \{ w = a^{n}b^{m}a^{n} \; | \; n,m \geq 0 \} \end{equation}
 ################################################################################
 
 # Optional: Automat Typ

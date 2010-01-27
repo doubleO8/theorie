@@ -3,6 +3,7 @@
 import os, sys, tempfile, shutil, random, atexit
 from subprocess import *
 import automaten
+import traceback
 
 WORKINGDIR = os.path.abspath('.')
 PDFLATEX_BIN = 'pdflatex'
@@ -573,7 +574,17 @@ class OLaTeXAutomat(AusgebenderAutomat):
 		"""
 		Automatenbeschreibung und -definition beginnen
 		"""
-		return r'\section{Automat %s}' % self._mangleName(self.name)
+		return r'\section{Automat %s [%s]}' % (self._mangleName(self.name), self.type)
+
+	def _logTraceback(self, message, e):
+		exceptionType, exceptionValue, exceptionTraceback = sys.exc_info()
+		self.log.warning(message)
+		self.log.warning(e)
+		tbList = traceback.format_exception(exceptionType, exceptionValue, exceptionTraceback)
+		for line in tbList:
+			for part in line.strip().split("\n"):
+				if part != '':
+					self.log.debug(part)
 
 	def _toTeX(self, template=None, dot_template=None):
 		"""
@@ -587,32 +598,27 @@ class OLaTeXAutomat(AusgebenderAutomat):
 		try:
 			s = s.replace("%%__AUTOMAT__", self._TeXAutomatStart())
 		except Exception, e:
-			self.log.warning("calling _TeXAutomatStart() failed.")
-			self.log.warning(e)
+			self._logTraceback("calling _TeXAutomatStart() failed.", e)
 
 		try:
 			s = s.replace("%%__SPEC__", self._TeXSpecification())
 		except Exception, e:
-			self.log.warning("calling _TeXSpecification() failed.")
-			self.log.warning(e)
+			self._logTraceback("calling _TeXSpecification() failed.", e)
 
 		try:
 			s = s.replace("%%__DELTA__", self._TeXDeltaTable())
 		except Exception, e:
-			self.log.warning("calling _TeXDeltaTable() failed.")
-			self.log.warning(e)
+			self._logTraceback("calling _TeXDeltaTable() failed.", e)
 
 		try:
 			s = s.replace('%%__RESULTS__', self._TeXResults())
 		except Exception, e:
-			self.log.warning("calling _TeXResults() failed.")
-			self.log.warning(e)
+			self._logTraceback("calling _TeXResults() failed.", e)
 
 		try:
 			s = s.replace('%%__VERIFY__', self._TeXVerify())
 		except Exception, e:
-			self.log.warning("calling _TeXVerify() failed.")
-			self.log.warning(e)
+			self._logTraceback("calling _TeXVerify() failed.", e)
 
 		try:
 			if 'createDotDocument' in dir(self):
@@ -625,8 +631,7 @@ class OLaTeXAutomat(AusgebenderAutomat):
 				else:
 					self.log.debug("Es wurde kein DOT Graph hinzugefuegt.")
 		except Exception, e:
-			self.log.warning("calling createDotDocument() failed.")
-			self.log.warning(e)
+			self._logTraceback("calling createDotDocument() failed.", e)
 
 		return s
 
@@ -788,9 +793,8 @@ class OLaTeXKellerAutomat(AusgebenderKellerAutomat, OLaTeXAutomat):
 		s.append(r'\end{itemize}')
 		return "\n".join(s)
 	
-	def X_TeXResults(self):
+	def _TeXResults(self):
 		s = ''
-		return s
 		if self.testWords:
 			testResults = [ r'\subsection{Test}', r'\begin{longtable}{lll}' ]
 			testResults.append(r'Erfolg & Wort & Ergebnis\\')
@@ -840,12 +844,20 @@ class OLaTeXKellerAutomat(AusgebenderKellerAutomat, OLaTeXAutomat):
 
 			for (word, pfad, successful) in wpList:
 				parts = list()
+				ruleNumbers = list()
 				for item in pfad:
-					(zustand, band, keller) = item
+					(zustand, band, keller, ruleNo) = item
 					band = band.replace("#", "\#")
 					parts.append("(%s, %s, %s)" % (self._mangleState(zustand), band, self._listTexM(keller) ))
-				cesar = r'%s $%s L(KA)$' % (word, successful and r'\in' or r'\notin')
-				testResults.append(r'\item[%s] $%s$\newline %s' % (word, r' \vdash '.join(parts), cesar))
+					ruleNumbers.append(ruleNo)
+				cesar = r'$\Rightarrow$ %s $%s L(KA)$' % (word, successful and r'\in' or r'\notin')
+				
+				rules = ruleNumbers[1:] + [None]
+				ableitung = ''
+				for konfig, dash in zip(parts, rules):
+					ableitung += '%s %s ' % (konfig, (dash != None and r'\;\vdash^{(%d)}\;' % dash or ''))
+				
+				testResults.append(r'\item[%s] $%s$\newline %s' % (word, ableitung, cesar))
 			testResults.append(r'\end{itemize}')
 
 			s = "\n".join(testResults)
