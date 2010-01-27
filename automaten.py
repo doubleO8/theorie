@@ -355,6 +355,7 @@ class NichtDeterministischerAutomat(automatenausgabe.OAsciiAutomat, automatenaus
 
 		# Ein paar meta Daten ..
 		self.name = name
+		self.abbildungen = 0
 		self.ZustandIndex = dict()
 		if testWords:
 			self.testWords = self._toList(testWords)

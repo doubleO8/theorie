@@ -94,6 +94,7 @@ def kuerzMenge(items, max=5):
 class AusgebenderAutomat(object):
 	def __init__(self):
 		self.log = automaten.AutomatLogger().log
+		self.abbildungen = 0
 		#self.log.debug("I live ... again")
 
 	def kuerzMenge(self, items, max=5):
@@ -628,6 +629,7 @@ class OLaTeXAutomat(AusgebenderAutomat):
 					label = 'dot%s' % aName 
 					caption = 'Automat %s' % aName
 					s = s.replace('%%__DOT_GRAPH__', r'\subsection{Graph}' + self._TeXIncludeFigure(dotgraph, caption, label))
+					self.abbildungen += 1
 				else:
 					self.log.debug("Es wurde kein DOT Graph hinzugefuegt.")
 		except Exception, e:
@@ -1039,6 +1041,9 @@ class LaTeXBinder(AusgebenderAutomat):
 		self.finalFile = os.path.join(WORKINGDIR, finalFileBase + '.pdf')
 		AusgebenderAutomat.__init__(self)
 
+	def addAbbildungen(self, addCount):
+		self.abbildungen += addCount
+
 	def appendContent(self, content):
 		self.content += content
 
@@ -1054,6 +1059,10 @@ class LaTeXBinder(AusgebenderAutomat):
 		needSecondRun = False
 
 		binder = self._readTemplate(self.template)
+
+		if self.abbildungen > 0:
+			binder = binder.replace("%%__LISTOFFIGURES", r'\listoffigures')
+
 		if (-1 != binder.find("listoftables") ) or (-1 != binder.find("listoffigures") ):
 			needSecondRun = True
 		binder = binder.replace("%%__CONTENT__", "\n".join(self.content))
@@ -1111,12 +1120,14 @@ def automatenReport(automaten, finalFileBase='AutomatReport',
 
 	b = LaTeXBinder(BINDER_TEMPLATE, finalFileBase=finalFileBase)
 	
+	abbildungen = 0
 	contentS = ''
 	for automat in automaten:
 		try:
 			contentS += automat._toTeX(AUTOMAT_TEMPLATE, DOT_TEMPLATE)
 		except Exception, e:
 			print e
+		abbildungen += automat.abbildungen
 	content = list()
 	
 	for line in contentS.split("\n"):
@@ -1125,6 +1136,7 @@ def automatenReport(automaten, finalFileBase='AutomatReport',
 			content.append(line)
 
 	b.appendContent(content)
+	b.addAbbildungen(abbildungen)
 	b.write()
 
 if __name__ == '__main__':

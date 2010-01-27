@@ -52,6 +52,8 @@ class DeterministischerKellerautomat(automatenausgabe.OLaTeXKellerAutomat, autom
 		self.beschreibung = beschreibung
 		self.verifyWords = verifyWords
 		self.testWords = testWords
+
+		self.abbildungen = 0
 		
 		#: Verfahren, das angewendet werden soll, um zu bestimmen, ob ein Wort akzeptiert wird oder nicht
 		self.accept = accept

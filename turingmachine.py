@@ -155,6 +155,7 @@ class TuringMachine(automatenausgabe.OLaTeXTuringmaschine, automatenausgabe.OAsc
 		self.halted = False
 		#: Automatentyp
 		self.type = 'turing'
+		self.abbildungen = 0
 
 		self.rulesCounter = 1
 		#: Dict mit den Ableitungsregeln, so dass 
