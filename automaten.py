@@ -378,7 +378,7 @@ class NichtDeterministischerAutomat(automatenausgabe.OAsciiAutomat, automatenaus
 
 	def _ableitungAppend(self, items):
 		self.raw_ableitung.append(copy.deepcopy(items))
-		#self.log.error("// %s" % self.raw_ableitung[-1])
+		#self.log.error("// + _ableitungAppend(%s)" % self.raw_ableitung[-1])
 
 	def _ableitungReset(self):
 		self.raw_ableitung = list()

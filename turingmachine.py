@@ -3,6 +3,7 @@
 import logging, logging.config, os, sys, re
 import automaten
 import automatenausgabe, automatenleser
+import copy
 
 def test():
 	"""
@@ -16,7 +17,7 @@ def test():
 class InfiniteBand(object):
 	BLANK = '*'
 
-	def __init__(self, content=None):
+	def __init__(self, content=None, pos=0, band=None):
 		"""
 		>>> b = InfiniteBand()
 		>>> b.read()
@@ -56,8 +57,10 @@ class InfiniteBand(object):
 		>>> str(b5)
 		'***'
 		"""
-		self.pos = 0
-		self._band = list(InfiniteBand.BLANK)
+		self.pos = pos
+		if band == None:
+			band = list(InfiniteBand.BLANK)
+		self._band = band
 		self.log = automaten.AutomatLogger().log
 		
 		if content != None:
@@ -95,6 +98,29 @@ class InfiniteBand(object):
 			self.write(char)
 		self.pos += 1
 		return self.read()
+
+	def __copy__(self):
+		#print "__copy__()"
+		return InfiniteBand(band=self._band, pos=self.pos)
+
+	def __deepcopy__(self, memo):
+		#print "__deepcopy__(%s)" % repr(memo)
+		return InfiniteBand(pos=copy.deepcopy(self.pos), band=copy.deepcopy(self._band, memo))
+
+	def __len__(self):
+		return len(self._band)
+
+	def __iter__(self):
+		return self._band.__iter__()
+
+	def fillup(self, items):
+		delta = items - len(self._band)
+		if delta > 0:
+			self._band += list(InfiniteBand.BLANK * delta)
+		return delta
+
+	def __repr__(self):
+		return ''.join(self._band)
 
 	def __str__(self):
 		return ''.join(self._band)
@@ -323,7 +349,8 @@ class TuringMachine(automatenausgabe.OLaTeXTuringmaschine, automatenausgabe.OAsc
 				result = "Kein finaler Zustand erreicht (Keine Regel definiert für '%s')." % e.value
 			except Exception, e:
 				result = "oh-oh, sonstiger Fehler .. '%s'" % e
-			resultset.append((word, successful, result, band))
+
+			resultset.append((word, successful, result, band, self.raw_ableitung))
 
 			if not silence:
 				self.log.info("%-20s [%s] %-5s : %s" % (self.name, (successful and "SUCCESS" or "FAILURE"), word, result))
@@ -354,6 +381,11 @@ class TuringMachine(automatenausgabe.OLaTeXTuringmaschine, automatenausgabe.OAsc
 		lines.append(desc)
 		lines.append("")
 		
+		kfgList = [self.zustand, self.band]
+
+		# Ableitung sichern
+		self._ableitungAppend(kfgList)
+
 		self.stepByStepOutput += lines
 
 		if immediateOutput:

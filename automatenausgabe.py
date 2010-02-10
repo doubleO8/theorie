@@ -1004,19 +1004,50 @@ class OLaTeXTuringmaschine(OLaTeXAutomat):
 			testResults.append(r'\hline')
 			for word in self.verifyWords:
 				expected = self.verifyWords[word]
-				
-			for (word, successful, result, band) in self.checkWordsX(self.verifyWords.keys()):
+			
+			testMitPfadListe = list()
+			for (word, successful, result, band, ableitung) in self.checkWordsX(self.verifyWords.keys()):
 				t = list()
 				t.append(r'{\small %s}' % word)
 				t.append(r'{\small %s}' % self.verifyWords[word])
-				t.append(r'{\small \emph{%s} \newline {\tiny %s}' % (successful, result))
+				t.append(r'{\small \emph{%s}} \newline {\tiny %s}' % (successful, result))
 				b = str(band)
 				t.append(r'{\small %s}' % b)
 				t.append(r'{\small %s (%d)}' % (band.read(), band.pos))
 				t.append(r'{\small %s}' % ((self.verifyWords[word] == successful) and "ja" or r'\textbf{NEIN}'))
 				testResults.append(' & '.join(t) + r'\\')
+				testMitPfadListe.append((word, ableitung))
 			testResults.append(r'\end{longtable}')
 			s = "\n".join(testResults)
+
+			testResults.append(r'\pagebreak')
+			testResults.append(r'\subsubsection{Ableitungspfade}')
+			
+			for (word, ableitung) in testMitPfadListe:
+				maxLen = 0
+				#print "Ableitungslaenge: %d" % len(ableitung)
+				# maximale Laenge des Bandes herausfinden ..
+				for (zustand, band) in ableitung:
+					#print "%s, %s" % (zustand, band)
+					if maxLen < len(band):
+						maxLen = len(band)
+
+				testResults.append(r'\begin{longtable}{|%s|}' % '|'.join('c' * maxLen))
+				testResults.append(r'\hline')
+				# .. damit wir alle Baender auf gleiche Laenge auffuellen koennen
+				for (zustand, band) in ableitung:
+					band.fillup(maxLen)
+					descParts = list(' ' * maxLen)
+					descParts[band.pos] = r'$\uparrow %s$' % self._mangleState(zustand)
+					testResults.append(r' & '.join(band).replace("*", "{*}") + r' \\')
+					testResults.append(r'\hline')
+					testResults.append(r' & '.join(descParts) + r' \\')
+					testResults.append(r'\hline')
+				testResults.append(r'\caption{Ableitung für w = \emph{%s}}' % word.replace("*", "{*}"))
+				testResults.append(r'\end{longtable}')
+
+			s = "\n".join(testResults)
+			#print s
 		return s
 ####################################################################################################
 # TURINGMASCHINEN: ENDE
