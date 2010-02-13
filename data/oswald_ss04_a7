@@ -1,0 +1,45 @@
+################################################################################
+# Kellerautomatendefinition
+Name: SS04A7(Oswald)
+Beschreibung: Deterministischer Kellerautomat fuer $a^{n}b^{m}c^{m}$
+Type: pushdown
+################################################################################
+
+
+# Alphabet definieren. Muss mit "Sigma:" beginnen, durch Whitespace getrennt.
+Sigma:	a b c
+
+# Startzustand definieren. Muss mit "s0:" beginnen, durch Whitespaces getrennt.
+s0:	s0
+
+# Zustaende
+S:	s0 s1 s2 s3
+
+# Finale Zustaende definieren. Muss mit "F:" beginnen, durch Whitespace getrennt.
+F:	s3
+
+# Endliche Menge der Kellerzeichen k. Muss mit "K:" beginnen, durch Whitespace getrennt
+K:	a b k0
+
+# Uebergaenge, Format :
+# Zustand, Zeichen, Kellerzeichen, Zielzustand, Kellerzeichen(push) (durch whitespace getrennt)
+# Mehrere (push) Kellerzeichen muessen durch + getrennt werden
+s0	a	k0	s1	a+k0
+
+s1	a	a	s1	a+a
+
+s1	b	a	s2	b+a
+s2	b	b	s2	b+b
+
+s2	c	b	s3	EPSILON
+
+s3	c	b	s3	EPSILON
+
+s3	EPSILON	a	s3	EPSILON
+
+# Optional: Worte, die akzeptiert werden sollen
+AcceptedVerifyWords:	abc abbcc
+
+# Optional: Worte, die _nicht akzeptiert werden duerfen
+FailingVerifyWords:	bc abbc
+

@@ -1,0 +1,36 @@
+################################################################################
+# Automatendefinition
+Name: SS04A3(Oswald)
+Beschreibung: Nichtdeterministischer Automat fuer Worte ueber {a,b} die mit a beginnen und bbb enden
+Type: finite
+################################################################################
+
+
+# Alphabet definieren. Muss mit "Sigma:" beginnen, durch Whitespace getrennt.
+Sigma:	a b
+
+# Startzustand definieren. Muss mit "s0:" beginnen, durch Whitespaces getrennt.
+s0:	0
+
+# Zustaende
+S:	0 1 2 3 4
+
+# Finale Zustaende definieren. Muss mit "F:" beginnen, durch Whitespace getrennt.
+F:	4
+
+# Uebergaenge, Format :
+# Zustand, Zeichen, Zielzustand (durch whitespace getrennt)
+0	a	1
+
+1	a	1
+1	b	1
+1	b	2
+
+2	b	3
+
+3	b	4
+
+# Testworte. Muss mit "TestWords:" beginnen, durch Whitespace getrennt.
+TestWords:	abbb aaaaaaaaaaaabbb abb
+
+RegularExpression: ^a(a|b)*bbb$

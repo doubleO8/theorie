@@ -1,0 +1,50 @@
+################################################################################
+# Turingmaschinendefinition
+Name: SS04A8(Oswald)
+Beschreibung: Turingmaschine, die ..
+################################################################################
+
+# Optional: Automat Typ
+Type:	turing
+
+
+# Alphabet definieren. Muss mit "Sigma:" beginnen, durch Whitespace getrennt.
+Sigma:	a b c
+
+# Startzustand definieren. Muss mit "s0:" beginnen, durch Whitespaces getrennt.
+s0:	s0
+
+# Zustaende
+S:	s0 s1 s2 s3 s4 s5 sf
+
+# Finale Zustaende definieren. Muss mit "F:" beginnen, durch Whitespace getrennt.
+F:	sf
+
+# Endliche Menge der Bandzeichen B. Muss mit "B:" beginnen, durch Whitespace getrennt
+B:	* a b c
+
+# Uebergaenge, Format :
+# Zustand, Bandzeichen, Zielzustand, Neues Bandzeichen, Lesekopfbewegung (durch whitespace getrennt)
+
+s0	*	s1	*	r
+
+s1	a	s1	*	r
+s1	b	s2	*	r
+s1	*	sf	*	h
+
+s2	b	s2	b	r
+s2	c	s3	c	r
+
+s3	c	s3	c	r
+s3	*	s4	*	l
+
+s4	c	s5	*	l
+
+s5	b	s5	b	l
+s5	c	s5	c	l
+s5	*	s1	*	r
+
+# Optional: Worte, die akzeptiert werden sollen
+#AcceptedVerifyWords:	1100 110
+
+FailingVerifyWords:	abbccc

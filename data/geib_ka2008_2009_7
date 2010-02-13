@@ -1,0 +1,41 @@
+################################################################################
+# Turingmaschinendefinition
+Name: GeibKA08_09_7
+Beschreibung: Turingmaschine, die das 1er-Komplement von binaerzahlen berechnet
+################################################################################
+
+# Optional: Automat Typ
+Type:	turing
+
+
+# Alphabet definieren. Muss mit "Sigma:" beginnen, durch Whitespace getrennt.
+Sigma:	0 1
+
+# Startzustand definieren. Muss mit "s0:" beginnen, durch Whitespaces getrennt.
+s0:	s0
+
+# Zustaende
+S:	s0 s1 s2
+
+# Finale Zustaende definieren. Muss mit "F:" beginnen, durch Whitespace getrennt.
+F:	s2
+
+# Endliche Menge der Bandzeichen B. Muss mit "B:" beginnen, durch Whitespace getrennt
+B:	* 0 1
+
+# Uebergaenge, Format :
+# Zustand, Bandzeichen, Zielzustand, Neues Bandzeichen, Lesekopfbewegung (durch whitespace getrennt)
+
+s0	*	s1	*	r
+
+s1	0	s1	1	r
+s1	1	s1	0	r
+s1	*	s2	*	l
+
+s2	0	s2	0	l
+s2	1	s2	1	l
+s2	*	s2	*	h
+
+# Optional: Worte, die akzeptiert werden sollen
+AcceptedVerifyWords:	1100 110
+

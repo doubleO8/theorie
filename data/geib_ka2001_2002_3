@@ -1,0 +1,39 @@
+################################################################################
+# Automatendefinition
+Name: GeibKA2001_2002_3
+Beschreibung: Automat zum regulaeren Ausdruck $\alpha=a*(ab)*$
+################################################################################
+
+
+# Alphabet definieren. Muss mit "Sigma:" beginnen, durch Whitespace getrennt.
+Sigma:	a b
+
+# Startzustand definieren. Muss mit "s0:" beginnen, durch Whitespaces getrennt.
+s0:	s0
+
+S:	s0 s1 s2
+
+# Finale Zustaende definieren. Muss mit "F:" beginnen, durch Whitespace getrennt.
+F:	s0 s2
+
+# Uebergaenge, Format :
+# Zustand, Zeichen, Zielzustand (durch whitespace getrennt)
+s0	a	s0
+s0	a	s1
+
+s1	b	s2
+
+s2	a	s1
+
+# Testworte. Muss mit "TestWords:" beginnen, durch Whitespace getrennt.
+TestWords:	a ab abc aabbcc ababc cabc bbabc
+
+RegularExpression:	a*(ab)*
+
+# Optional: Worte, die akzeptiert werden sollen
+AcceptedVerifyWords:	a aab aabab ab
+
+# Optional: Worte, die _nicht akzeptiert werden duerfen
+FailingVerifyWords: 	b bbb
+
+

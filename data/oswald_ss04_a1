@@ -1,0 +1,44 @@
+################################################################################
+# Automatendefinition
+Name: SS04A1(Oswald)
+Beschreibung: Deterministischer Automat fuer Worte ueber {a,b} in der 3,6,9... bs vorkommen
+Type: finite
+################################################################################
+
+
+# Alphabet definieren. Muss mit "Sigma:" beginnen, durch Whitespace getrennt.
+Sigma:	a b
+
+# Startzustand definieren. Muss mit "s0:" beginnen, durch Whitespaces getrennt.
+s0:	0
+
+# Zustaende
+S:	0 1 2 3
+
+# Finale Zustaende definieren. Muss mit "F:" beginnen, durch Whitespace getrennt.
+F:	3
+
+# Uebergaenge, Format :
+# Zustand, Zeichen, Zielzustand (durch whitespace getrennt)
+0	a	0
+0	b	1
+
+1	a	1
+1	b	2
+
+2	a	2
+2	b	3
+
+3	a	3
+3	b	1
+
+# Testworte. Muss mit "TestWords:" beginnen, durch Whitespace getrennt.
+TestWords:	aab bbb abbba abba
+
+# Optional: Worte, die akzeptiert werden sollen
+AcceptedVerifyWords: abbb aababab bbb aaaaaaaaaabbb
+
+# Optional: Worte, die _nicht akzeptiert werden duerfen
+FailingVerifyWords: bb aaa bab baaaaaaaaaaaaaaaaaaab
+
+RegularExpression: (a*)b(a*)b(a*)b(ba*ba*b)*a*

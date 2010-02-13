@@ -1,0 +1,44 @@
+################################################################################
+# Automatendefinition
+Name: SS04A2(Oswald)
+Beschreibung: Nichtdeterministischer Automat fuer Worte ueber {a,b} zum regulaeren Ausdruck $ab|(a|bb)a*b$
+Type: finite
+################################################################################
+
+
+# Alphabet definieren. Muss mit "Sigma:" beginnen, durch Whitespace getrennt.
+Sigma:	a b EPSILON
+
+# Startzustand definieren. Muss mit "s0:" beginnen, durch Whitespaces getrennt.
+s0:	s0
+
+# Zustaende
+S:	s0 0 1 2 3 4 5 6 8
+
+# Finale Zustaende definieren. Muss mit "F:" beginnen, durch Whitespace getrennt.
+F:	8
+
+# Uebergaenge, Format :
+# Zustand, Zeichen, Zielzustand (durch whitespace getrennt)
+s0	EPSILON	0
+s0	EPSILON	3
+
+0	a	1
+1	b	2
+
+2	EPSILON	6
+
+3	a	4
+3	b	5
+
+5	b	4
+
+4	EPSILON	6
+
+6	a	6
+6	b	8
+
+# Testworte. Muss mit "TestWords:" beginnen, durch Whitespace getrennt.
+TestWords:	ab abb aaa ba
+
+RegularExpression: ^ab|(a|bb)a*b$

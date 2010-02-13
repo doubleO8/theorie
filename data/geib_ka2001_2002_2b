@@ -1,0 +1,42 @@
+################################################################################
+# Automatendefinition
+Name: GeibKA01_02_2b
+Beschreibung: Deterministischer Automat
+################################################################################
+
+
+# Alphabet definieren. Muss mit "Sigma:" beginnen, durch Whitespace getrennt.
+Sigma:	a b
+
+# Startzustand definieren. Muss mit "s0:" beginnen, durch Whitespaces getrennt.
+s0:	s0
+
+# Zustaende
+S:	s0 s1 s02 s12 sf
+
+# Finale Zustaende definieren. Muss mit "F:" beginnen, durch Whitespace getrennt.
+F:	s02 s12
+
+# Uebergaenge, Format :
+# Zustand, Zeichen, Zielzustand (durch whitespace getrennt)
+s0	a	s1
+s0	b	s02
+
+s1	a	sf
+s1	b	s12
+
+s02	a	s1
+s02	b	s02
+
+s12	a	s1
+s12	b	s12
+
+sf	a	sf
+sf	b	sf
+
+# Optional: Worte, die akzeptiert werden sollen
+AcceptedVerifyWords:	abbbb
+
+# Optional: Worte, die _nicht akzeptiert werden duerfen
+FailingVerifyWords:	aaa aaaa
+

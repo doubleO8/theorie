@@ -1,0 +1,42 @@
+################################################################################
+# Kellerautomatendefinition
+Name: U10A5
+Beschreibung: Deterministischer Kellerautomat der korrekte Klammerausdruecke erkennt
+################################################################################
+
+# Optional: Automat Typ
+Type:	pushdown
+
+
+# Alphabet definieren. Muss mit "Sigma:" beginnen, durch Whitespace getrennt.
+Sigma:	( )
+
+# Startzustand definieren. Muss mit "s0:" beginnen, durch Whitespaces getrennt.
+s0:	s0
+
+# Zustaende
+S:	s0 sf
+
+# Finale Zustaende definieren. Muss mit "F:" beginnen, durch Whitespace getrennt.
+F:	sf
+
+# Endliche Menge der Kellerzeichen k. Muss mit "K:" beginnen, durch Whitespace getrennt
+K:	k0 [ ]
+
+# Uebergaenge, Format :
+# Zustand, Zeichen, Kellerzeichen, Zielzustand, Kellerzeichen(push) (durch whitespace getrennt)
+# Mehrere (push) Kellerzeichen muessen durch + getrennt werden
+
+s0	(	k0	s0	[+k0
+
+s0	(	[	s0	[+[
+s0	)	[	s0	EPSILON
+
+s0	EPSILON	k0	sf	k0
+
+# Optional: Worte, die akzeptiert werden sollen
+AcceptedVerifyWords:	() (())
+
+# Optional: Worte, die _nicht akzeptiert werden duerfen
+FailingVerifyWords:	(( ()((
+
