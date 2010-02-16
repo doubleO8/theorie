@@ -1,0 +1,45 @@
+################################################################################
+# Turingmaschinendefinition
+Name: SS03A8(Oswald)
+Beschreibung: Turingmaschine, die die Sprache $L=a^{n}b^{2n} | n \geq 0}$ akzeptiert
+################################################################################
+
+# Optional: Automat Typ
+Type:	turing
+
+
+# Alphabet definieren. Muss mit "Sigma:" beginnen, durch Whitespace getrennt.
+Sigma:	a b
+
+# Startzustand definieren. Muss mit "s0:" beginnen, durch Whitespaces getrennt.
+s0:	s0
+
+# Zustaende
+S:	s0 s1 sa sa1 sa2 sr sf
+
+# Finale Zustaende definieren. Muss mit "F:" beginnen, durch Whitespace getrennt.
+F:	sf
+
+# Endliche Menge der Bandzeichen B. Muss mit "B:" beginnen, durch Whitespace getrennt
+B:	* a b
+
+# Uebergaenge, Format :
+# Zustand, Bandzeichen, Zielzustand, Neues Bandzeichen, Lesekopfbewegung (durch whitespace getrennt)
+
+s0	*	s1	*	r
+
+s1	a	sa	*	r
+s1	*	sf	*	h
+
+sa	a	sa	a	r
+sa	b	sa	b	r
+sa	*	sa1	*	l
+
+sa1	b	sa2	*	l
+
+sa2	b	sr	*	l
+
+sr	a	sr	a	l
+sr	b	sr	b	l
+sr	*	s1	*	r
+

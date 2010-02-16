@@ -1,0 +1,51 @@
+################################################################################
+# Automatendefinition
+Name: SS03A4a(Oswald)
+Beschreibung: Endlicher Automat für Regulären Ausdruck $\alpha = 10|(0|11)0*1$
+Type: finite
+################################################################################
+
+
+# Alphabet definieren. Muss mit "Sigma:" beginnen, durch Whitespace getrennt.
+Sigma:	0 1 EPSILON
+
+# Startzustand definieren. Muss mit "s0:" beginnen, durch Whitespaces getrennt.
+s0:	s0
+
+# Zustaende
+S:	s0 a b c d e f g h
+
+# Finale Zustaende definieren. Muss mit "F:" beginnen, durch Whitespace getrennt.
+F:	h
+
+# Uebergaenge, Format :
+# Zustand, Zeichen, Zielzustand (durch whitespace getrennt)
+s0	EPSILON	a
+s0	EPSILON	d
+
+a	1	b
+
+b	0	c
+
+c	EPSILON	g
+
+d	0	e
+d	1	f
+
+f	1	e
+
+e	EPSILON	g
+
+g	0	g
+g	1	h
+
+# Testworte. Muss mit "TestWords:" beginnen, durch Whitespace getrennt.
+TestWords:	0 1 01 110 101 1100 0011 00001111 0000111 101 01 111 1101
+
+# Optional: Worte, die akzeptiert werden sollen
+#AcceptedVerifyWords: 0011 000111
+
+# Optional: Worte, die _nicht akzeptiert werden duerfen
+#FailingVerifyWords: 01 101
+
+RegularExpression: ^10|(0|11)0*1$

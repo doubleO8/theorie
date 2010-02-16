@@ -1,0 +1,36 @@
+################################################################################
+# Automatendefinition
+Name: GeibKA0809_1
+Beschreibung: Deterministischer Automat fuer alle Woerter, deren 3., 6. 9. Element kein a ist
+################################################################################
+
+
+# Alphabet definieren. Muss mit "Sigma:" beginnen, durch Whitespace getrennt.
+Sigma:	a b
+
+# Startzustand definieren. Muss mit "s0:" beginnen, durch Whitespaces getrennt.
+s0:	0
+
+# Zustaende
+S:	0 1 2
+
+# Finale Zustaende definieren. Muss mit "F:" beginnen, durch Whitespace getrennt.
+F:	0 1 2
+
+# Uebergaenge, Format :
+# Zustand, Zeichen, Zielzustand (durch whitespace getrennt)
+0	a	1
+0	b	1
+
+1	a	2
+1	b	2
+
+2	b	0
+
+
+# Optional: Worte, die akzeptiert werden sollen
+AcceptedVerifyWords:	aa baba
+
+# Optional: Worte, die _nicht akzeptiert werden duerfen
+FailingVerifyWords:	aba
+

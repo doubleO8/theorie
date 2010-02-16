@@ -59,6 +59,11 @@ parser.add_option('-s', "--step-by-step",
 					help="Step By Step Verification",
 					dest="step")
 
+parser.add_option('-r', "--regexp",
+					action="store_true", default=False,
+					help="Verification By Regular Expression",
+					dest="regexpVerify")
+
 parser.add_option('-t', "--test-words",
 					default=False,
 					help="Test words (seperated by whitespace)",
@@ -207,6 +212,14 @@ for file in files:
 				#		print A.Grammatik()
 				#	except Exception, e:
 				#		print "Grammatik."
+
+				if options.regexpVerify:
+					try:
+						logger.debug("testing %s via RegExp" % ', '.join(localTestWords))
+						A.verifyByRegExp(localTestWords)
+					except Exception, e:
+						if options.loglevel == logging.DEBUG:
+							logger.debug(e)
 
 				if options.testWords and not options.step:
 					A.checkWords(localTestWords)

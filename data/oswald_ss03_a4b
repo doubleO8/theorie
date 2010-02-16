@@ -1,0 +1,42 @@
+################################################################################
+# Automatendefinition
+Name: SS03A4b(Oswald)
+Beschreibung: Endlicher Automat für Regulären Ausdruck .. ?
+Type: finite
+################################################################################
+
+
+# Alphabet definieren. Muss mit "Sigma:" beginnen, durch Whitespace getrennt.
+Sigma:	0 1
+
+# Startzustand definieren. Muss mit "s0:" beginnen, durch Whitespaces getrennt.
+s0:	s0
+
+# Zustaende
+S:	s0 s1 s2 s3 s4
+
+# Finale Zustaende definieren. Muss mit "F:" beginnen, durch Whitespace getrennt.
+F:	s3 s4
+
+# Uebergaenge, Format :
+# Zustand, Zeichen, Zielzustand (durch whitespace getrennt)
+s0	1	s1
+s0	0	s2
+
+s1	0	s2
+s1	1	s3
+
+s2	0	s4
+
+s3	0	s4
+
+# Testworte. Muss mit "TestWords:" beginnen, durch Whitespace getrennt.
+TestWords:	0 1 01 110 101 1100 0011 00001111 0000111 101 01 111 1101
+
+# Optional: Worte, die akzeptiert werden sollen
+#AcceptedVerifyWords: 0011 000111
+
+# Optional: Worte, die _nicht akzeptiert werden duerfen
+#FailingVerifyWords: 01 101
+
+RegularExpression: ^11|110|100|00$

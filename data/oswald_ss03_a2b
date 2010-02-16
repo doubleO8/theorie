@@ -1,0 +1,50 @@
+################################################################################
+# Automatendefinition
+Name: SS03A2b(Oswald)
+Beschreibung: Deterministischer Automat fuer Worte ueber {a,b} die mit aa beginnen und bb enden $L={aawbb|w \in {a,b}*}$
+Type: finite
+################################################################################
+
+
+# Alphabet definieren. Muss mit "Sigma:" beginnen, durch Whitespace getrennt.
+Sigma:	a b
+
+# Startzustand definieren. Muss mit "s0:" beginnen, durch Whitespaces getrennt.
+s0:	0
+
+# Zustaende
+S:	0 1 23 234 f
+
+# Finale Zustaende definieren. Muss mit "F:" beginnen, durch Whitespace getrennt.
+F:	234
+
+# Uebergaenge, Format :
+# Zustand, Zeichen, Zielzustand (durch whitespace getrennt)
+0	a	1
+0	b	f
+
+1	a	2
+1	b	f
+
+2	a	2
+2	b	23
+
+23	a	2
+23	b	234
+
+234	b	234
+234	a	2
+
+f	a	f
+f	b	f
+
+# Testworte. Muss mit "TestWords:" beginnen, durch Whitespace getrennt.
+TestWords:	aab bbb abbba abba
+
+# Optional: Worte, die akzeptiert werden sollen
+AcceptedVerifyWords: aabb aaaaaabb aabbbb
+
+# Optional: Worte, die _nicht akzeptiert werden duerfen
+FailingVerifyWords: bb aaa bab baaaaaaaab
+
+RegularExpression: aa(ab)*bb

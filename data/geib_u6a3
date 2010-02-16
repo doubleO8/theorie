@@ -1,0 +1,54 @@
+################################################################################
+# Automatendefinition
+Name: U4A3
+Beschreibung: NFA fuer his, hers und she
+################################################################################
+
+
+# Alphabet definieren. Muss mit "Sigma:" beginnen, durch Whitespace getrennt.
+Sigma:	s h e i r
+
+# Startzustand definieren. Muss mit "s0:" beginnen, durch Whitespaces getrennt.
+s0:	0
+
+# Zustaende
+S:	0 H I 1 2 3 4 S H2 5
+
+# Finale Zustaende definieren. Muss mit "F:" beginnen, durch Whitespace getrennt.
+F:	1 4 5
+
+# Uebergaenge, Format :
+# Zustand, Zeichen, Zielzustand (durch whitespace getrennt)
+0	h	H
+0	s	S
+
+H	i	I
+H	e	2
+
+I	s	1
+
+1	h	H2
+
+2	r	3
+
+3	s	4
+
+4	h	H2
+
+S	h	H2
+
+H2	e	5
+
+5	r	3
+
+# Testworte. Muss mit "TestWords:" beginnen, durch Whitespace getrennt.
+#TestWords:	
+
+# Optional: Worte, die akzeptiert werden sollen
+AcceptedVerifyWords:	she hers his
+
+# Optional: Worte, die _nicht akzeptiert werden duerfen
+#FailingVerifyWords: 
+
+#RegularExpression:	
+
