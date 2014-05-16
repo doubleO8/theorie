@@ -21,6 +21,7 @@ import os, sys, tempfile, shutil, random, atexit
 from subprocess import *
 import automaten
 import traceback
+import platform
 
 WORKINGDIR = os.path.abspath('.')
 PDFLATEX_BIN = 'pdflatex'
@@ -80,7 +81,7 @@ def runCommand(command, parameter=None, logger=None, workDir=os.getcwd(), validR
 	logger.debug("Ausfuehren : '%s'" % cmd)
 	try:
 		os.chdir(workDir)
-		p = Popen(cmd, shell=True, bufsize=buffer, stdout=PIPE, stderr=PIPE, close_fds=True)
+		p = Popen(cmd, shell=True, bufsize=buffer, stdout=PIPE, stderr=PIPE, close_fds=(not platform.system() == 'Windows'))
 		p.wait()
 		retcode = p.returncode
 		stdout = p.stdout.read()
