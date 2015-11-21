@@ -2117,8 +2117,8 @@ parser.add_option('-o', "--write-plaintext",
 parser.add_option("--prefix",
                   default='all',
                   help="""Prefix to use.
-					Possible values: 
-					%s""" % ', '.join(DEFAULT_PREFIX_LIST),
+                    Possible values:
+                    %s""" % ', '.join(DEFAULT_PREFIX_LIST),
                   dest="prefix")
 
 parser.add_option('-t', "--test-words",
