@@ -17,17 +17,19 @@ You should have received a copy of the GNU General Public License along
 with this program; if not, write to the Free Software Foundation, Inc.,
 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 """
-import logging, logging.config, os, sys, re
 import automaten
 import kellerautomaten
+import crappy_logger
+from crappy_logger import AutomatLogger
 
 
 def test():
     """
     doctest (unit testing)
     """
-    import doctest, automaten, logging
-    automaten.AutomatLogger(logging.DEBUG).log
+    import doctest
+    import logging
+    crappy_logger.AutomatLogger(logging.DEBUG).log
     failed, total = doctest.testmod()
     print("doctest: %d/%d tests failed." % (failed, total))
 

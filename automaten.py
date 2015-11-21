@@ -17,47 +17,16 @@ You should have received a copy of the GNU General Public License along
 with this program; if not, write to the Free Software Foundation, Inc.,
 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 """
-import logging, logging.config, os, sys, re
+import logging
+import logging.config
+import re
 import copy
-import automatenausgabe, automatenleser
 
-if 'USED_LOGLEVEL' not in dir():
-    USED_LOGLEVEL = logging.INFO
+import automatenausgabe
+import automatenleser
 
-
-class AutomatLogger(object):
-    __instance = None
-
-    class __implementation:
-        def __init__(self, loglevel=None):
-            if not loglevel:
-                global USED_LOGLEVEL
-                loglevel = USED_LOGLEVEL
-            self._initLogging(loglevel)
-
-        def getId(self):
-            return id(self)
-
-        def _initLogging(self, loglevel):
-            self.log = logging.getLogger("automatenlogger")
-            if len(self.log.handlers) == 0:
-                lhandler = logging.StreamHandler()
-                lformatter = logging.Formatter('%(asctime)s %(levelname)s: %(message)s')
-                lhandler.setFormatter(lformatter)
-                self.log.addHandler(lhandler)
-                self.log.setLevel(loglevel)
-                self.log.debug(loglevel)
-
-    def __init__(self, loglevel=None):
-        if AutomatLogger.__instance is None:
-            AutomatLogger.__instance = AutomatLogger.__implementation(loglevel)
-        self.__dict__['_AutomatLogger__instance'] = AutomatLogger.__instance
-
-    def __getattr__(self, attr):
-        return getattr(self.__instance, attr)
-
-    def __setattr__(self, attr, value):
-        return setattr(self.__instance, attr, value)
+import crappy_logger
+from crappy_logger import AutomatLogger
 
 
 class AutomatException(Exception):
@@ -157,7 +126,7 @@ class EndOfWordKellerautomatException(Exception):
 
     def __str__(self):
         return "Wir sind nur bis  Zeichen # %d von '%s' gekommen (%s)." % (
-        self.index, self.word, self.word[:self.index])
+            self.index, self.word, self.word[:self.index])
 
 
 def test():
@@ -297,7 +266,7 @@ class NichtDeterministischerAutomat(automatenausgabe.OAsciiAutomat, automatenaus
 
                 self.log.debug(">> Zustand '%s' : %s => %s" % (zustand, zeichen, ziel))
                 deltaNeu[zustand][zeichen] = ziel
-            # self.log.error("ZZ " + self.dump(deltaNeu))
+                # self.log.error("ZZ " + self.dump(deltaNeu))
 
         # self.log.debug(deltaNeu)
         return deltaNeu
@@ -792,9 +761,9 @@ class NichtDeterministischerAutomat(automatenausgabe.OAsciiAutomat, automatenaus
                     pass
 
         logmessage = "Automat '%s' %sverifiziert%s. ('verifiziert' bedeutet: Erwartungen zumindest erfuellt!)." % (
-        self.name,
-        (not verified and 'NICHT ') or '',
-        (usingRegExp and ' (via RE)') or '')
+            self.name,
+            (not verified and 'NICHT ') or '',
+            (usingRegExp and ' (via RE)') or '')
         if verified:
             self.log.info(logmessage)
         else:

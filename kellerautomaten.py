@@ -1,8 +1,12 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-import logging, logging.config, os, sys, re
+import logging
+import logging.config
+
 import automaten
-import automatenausgabe, automatenleser
+import automatenausgabe
+import crappy_logger
+from crappy_logger import AutomatLogger
 
 
 def test():
@@ -10,7 +14,7 @@ def test():
     doctest (unit testing)
     """
     import doctest
-    automaten.AutomatLogger(logging.DEBUG).log
+    crappy_logger.AutomatLogger(logging.DEBUG).log
     failed, total = doctest.testmod()
     print("doctest: %d/%d tests failed." % (failed, total))
 

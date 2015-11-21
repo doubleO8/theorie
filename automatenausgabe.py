@@ -17,11 +17,18 @@ You should have received a copy of the GNU General Public License along
 with this program; if not, write to the Free Software Foundation, Inc.,
 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 """
-import os, sys, tempfile, shutil, random, atexit
+import os
+import tempfile
+import shutil
+import random
+import atexit
 from subprocess import *
-import automaten
 import traceback
 import platform
+
+import crappy_logger
+from crappy_logger import AutomatLogger
+
 
 WORKINGDIR = os.path.abspath('.')
 PDFLATEX_BIN = 'pdflatex'
@@ -34,8 +41,9 @@ def test():
     """
     doctest (unit testing)
     """
-    import doctest, automaten, logging
-    automaten.AutomatLogger(logging.DEBUG).log
+    import doctest
+    import logging
+    crappy_logger.AutomatLogger(logging.DEBUG).log
     failed, total = doctest.testmod()
     print("doctest: %d/%d tests failed." % (failed, total))
 
@@ -46,7 +54,7 @@ class SelfRemovingTempdir(object):
         self.removeAtExit = removeAtExit
         if log == None:
             import automaten
-            log = automaten.AutomatLogger().log
+            log = crappy_logger.AutomatLogger().log
         self.log = log
         self.tmp = tempfile.mkdtemp(dir=workDir)
         if self.removeAtExit:
@@ -70,7 +78,7 @@ class SelfRemovingTempdir(object):
 def runCommand(command, parameter=None, logger=None, workDir=os.getcwd(), validReturnCodes=[0]):
     if logger == None:
         import automaten
-        logger = automaten.AutomatLogger().log
+        logger = crappy_logger.AutomatLogger().log
 
     cwd = os.getcwd()
     cmd = command
@@ -117,7 +125,7 @@ def kuerzMenge(items, max=5):
 
 class AusgebenderAutomat(object):
     def __init__(self):
-        self.log = automaten.AutomatLogger().log
+        self.log = crappy_logger.AutomatLogger().log
         self.abbildungen = 0
         # self.log.debug("I live ... again")
 

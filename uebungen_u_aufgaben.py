@@ -17,13 +17,12 @@ You should have received a copy of the GNU General Public License along
 with this program; if not, write to the Free Software Foundation, Inc.,
 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 """
+from optparse import OptionParser
+import re
+
 from automaten import *
 from automatenausgabe import *
 from automatenleser import *
-
-import traceback
-from optparse import OptionParser
-import re
 
 DEFAULT_PREFIX_LIST = ['Script', 'Uebungsblatt1', 'Uebungsblatt2', 'Uebungsblatt3', 'Uebungsblatt4', 'Uebungsblatt10']
 
