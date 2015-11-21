@@ -1,9 +1,10 @@
-= english =
-"automatentheorie" is an implementation of an automaton in python (see http://en.wikipedia.org/wiki/Automata_theory).
+# introduction
+*automatentheorie* is an implementation of an automaton in python (see http://en.wikipedia.org/wiki/Automata_theory).
 It was written for studying purposes, comes without warranty of any kind and is released under the GPL.
 Most of comments, method names et al are in german. Feel free to translate. That's it, that's all.
 
-"automatentheorie" ist eine Sammlung von Python Programmen rund um die Vorlesung 
+# Einführung
+*automatentheorie* ist eine Sammlung von Python Programmen rund um die Vorlesung 
 "Automatentheorie und formale Sprachen" (an der FH Wiesbaden) und dient ausschliesslich meinen 
 Lernbeduerftnissen.
 
@@ -11,14 +12,16 @@ Letzere beinhalten vor allem die (einigermassen ansehnliche) Ausgabe von Automat
 Pruefen, ob ein Automat Woerter akzeptiert oder nicht. 
 
 Implementiert sind (in unterschiedlichen Reifegraden und Funktionsumfaengen) folgende Automaten:
-	* Nicht deterministische Automaten (NEA)
-	* Deterministische Automaten (DEA)
-	* Nicht deterministische Automaten mit Epsilon-Uebergaengen (eNEA)
+* Nicht deterministische Automaten (NEA)
+* Deterministische Automaten (DEA)
+* Nicht deterministische Automaten mit Epsilon-Uebergaengen (eNEA)
 
 Automaten (Definition/Spezifikation) werden mit LaTeX (und dot) ausgegeben. Sie koennen entweder 
 als Python code definiert werden, oder aus einfachen Textdateien eingelesen werden.
 
 Beispiel Automaten Definition als Textdatei:
+
+```
 #-------------8<---------------------------------------------------------------
 # Automatendefinition
 # [Barth] Uebungsblatt 4, Aufgabe 3e)
@@ -71,6 +74,7 @@ FailingVerifyWords: 101 0101 0010101 10110 11010
 ## Grammatik generieren (BETA!):
 # ./autool.py -g data/readme_demo
 #-------------8<---------------------------------------------------------------
+```
 
 Die verwendeten Automaten orientieren sich an der Vorlesung bzw. Uebung und koennen durchaus falsche
 Ergebnisse produzieren. 
