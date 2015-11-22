@@ -17,10 +17,11 @@ You should have received a copy of the GNU General Public License along
 with this program; if not, write to the Free Software Foundation, Inc.,
 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 """
+import sys
+import traceback
 from automaten import *
 from automatenausgabe import *
 from automatenleser import *
-import traceback
 from optparse import OptionParser
 
 FILTER_TYPES = set(['NEA', 'DEA', 'eNDA', 'eDEA', 'eNEA', 'finite', 'pushdown', 'turing'])
@@ -91,19 +92,16 @@ parser.add_option('-w', '-o', "--write-pdf",
                   dest="pdf")
 
 parser.add_option("--log-debug",
-                  action="store_const", const=logging.DEBUG,
+                  action="store_const",
+                  const=logging.DEBUG,
                   default=logging.INFO,
                   help="set loglevel to DEBUG",
-                  dest="loglevel")
-
-parser.add_option("--log-info",
-                  action="store_const", const=logging.INFO,
-                  help="set loglevel to INFO",
                   dest="loglevel")
 
 parser.add_option("--log-warning",
                   action="store_const",
                   const=logging.WARNING,
+                  default=logging.INFO,
                   help="set loglevel to WARNING",
                   dest="loglevel")
 
