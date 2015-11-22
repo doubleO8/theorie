@@ -800,7 +800,7 @@ class OAsciiKellerAutomat(AusgebenderKellerAutomat):
 
 
 class OLaTeXKellerAutomat(AusgebenderKellerAutomat, OLaTeXAutomat):
-    def createDotDocument(self, dot_template=None):
+    def createDotDocument(self, dot_template=None, dumpOnly=False):
         """
         Es gibt keine dot-Graphik fuer Kellerautomaten
         """
@@ -995,7 +995,7 @@ class OLaTeXTuringmaschine(OLaTeXAutomat):
             return 'l'
         return 'r'
 
-    def createDotDocument(self, dot_template=None):
+    def createDotDocument(self, dot_template=None, dumpOnly=False):
         """
         Es gibt keine dot-Graphik fuer Turingmaschinen
         """
